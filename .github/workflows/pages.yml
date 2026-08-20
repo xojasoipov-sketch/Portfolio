@@ -1,0 +1,66 @@
+# Publishes the portfolio to GitHub Pages, which is also the URL the Telegram
+# bot opens as its Mini App.
+#
+# Why a static build rather than SSR: none of the SSR hosts reachable from this
+# project's tooling could serve a public URL (Vercel denies production
+# deployments for this account and walls previews behind SSO; Supabase Storage
+# rewrites text/html to text/plain). Pages serves real HTML on HTTPS for free,
+# and the site is a single route, so static loses nothing but the contact
+# form's server function -- see src/lib/api/contact.functions.ts.
+name: Deploy portfolio to GitHub Pages
+
+on:
+  push:
+    branches: [claude/portfolio-template-github-hrvgty]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two Pages deployments race; queue instead of cancelling so a
+# finished build is not discarded half-published.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # No lockfile is committed, so `npm ci` is not an option.
+      - run: npm install
+
+      - name: Build static site
+        env:
+          # Pages serves this repo under /Portfolio/, so assets cannot be
+          # root-relative. vite.config.ts reads SITE_BASE.
+          SITE_BASE: /Portfolio/
+        run: bash scripts/build-static.sh
+
+      # enablement:true turns Pages on the first time this runs, so the repo
+      # needs no manual dashboard step.
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .output/public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

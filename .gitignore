@@ -7,3 +7,6 @@ dist/
 
 # Ephemeral git worktrees created for background agents
 .claude/worktrees/
+
+# Build output (produced by scripts/build-static.sh)
+.output/

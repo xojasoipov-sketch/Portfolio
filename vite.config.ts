@@ -12,8 +12,20 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
-  // Deploy target: Vercel (Build Output API). Force-enables the nitro deploy
-  // plugin outside the Lovable sandbox and targets Vercel's serverless
-  // function format instead of the sandbox default (Cloudflare).
-  nitro: { preset: "vercel" },
+  // Deploy target: node-server. It emits .output/public (client assets) next to
+  // .output/server, which is what scripts/build-static.sh boots and harvests
+  // into a fully static site -- nitro's own prerenderer is broken under the
+  // vite builder in this version (it rebuilds with rolldown, loses the SSR
+  // wiring, and prerenders every route as a 404), and the "static" and
+  // "github-pages" presets fail the build outright.
+  nitro: { preset: "node-server" },
+
+  vite: {
+    // The static build is served from a subpath (Supabase Storage serves every
+    // object under /storage/v1/object/public/<bucket>/), so asset URLs cannot
+    // be root-relative. SITE_BASE is set to the absolute public prefix at build
+    // time; it defaults to "/" so local dev and any root-served host are
+    // unaffected.
+    base: process.env.SITE_BASE || "/",
+  },
 });
