@@ -1,0 +1,104 @@
+import type { Context } from "npm:grammy@1.31.0";
+import { env } from "../../config.ts";
+import { getWeeklyReport } from "../../db/analytics.ts";
+import { db } from "../../db/client.ts";
+import { countLeadsByStatus, listLeads } from "../../db/leads.ts";
+import { isAdmin } from "../../db/users.ts";
+import { escapeTelegramHtml } from "../../security/validation.ts";
+import { adminPanelKeyboard } from "../keyboards.ts";
+import { logger } from "../../utils/logger.ts";
+
+async function requireAdmin(ctx: Context): Promise<boolean> {
+  const telegramUserId = ctx.from?.id;
+  if (!telegramUserId || !(await isAdmin(telegramUserId, env.TELEGRAM_ADMIN_IDS))) {
+    await ctx.reply("Bu buyruq faqat admin uchun.");
+    return false;
+  }
+  return true;
+}
+
+export async function handleAdminPanel(ctx: Context) {
+  if (!(await requireAdmin(ctx))) return;
+  await ctx.reply("⚙️ Admin panel", { reply_markup: adminPanelKeyboard() });
+}
+
+export async function handleLeadsCommand(ctx: Context) {
+  if (!(await requireAdmin(ctx))) return;
+  const counts = await countLeadsByStatus();
+  await ctx.reply(
+    [
+      "💼 <b>Leads</b>",
+      `🆕 New: ${counts.NEW ?? 0}`,
+      `🔄 Reviewing: ${counts.REVIEWING ?? 0}`,
+      `💬 Contacted: ${counts.CONTACTED ?? 0}`,
+      `✅ Qualified: ${counts.QUALIFIED ?? 0}`,
+      `❌ Rejected: ${counts.REJECTED ?? 0}`,
+    ].join("\n"),
+    { parse_mode: "HTML" },
+  );
+}
+
+export async function handleStatsCommand(ctx: Context) {
+  if (!(await requireAdmin(ctx))) return;
+  const report = await getWeeklyReport();
+  await ctx.reply(
+    [
+      "📊 <b>WEEKLY REPORT</b>",
+      `👥 Users: ${report.users}`,
+      `🤖 AI conversations: ${report.aiConversations}`,
+      `💼 Project inquiries: ${report.projectInquiries}`,
+      `🚨 Leads: ${report.leads}`,
+      `🔥 Hot leads: ${report.hotLeads}`,
+      `✅ Qualified: ${report.qualified}`,
+      `Conversion: ${report.conversionRate}%`,
+    ].join("\n"),
+    { parse_mode: "HTML" },
+  );
+}
+
+const BROADCAST_LIMIT_PER_MINUTE = 20; // Telegram's own bulk-send ceiling, roughly
+
+/** /broadcast <message text> — item 32. Confirms recipient count before sending. */
+export async function handleBroadcastCommand(ctx: Context) {
+  if (!(await requireAdmin(ctx))) return;
+  const text = ctx.match?.toString().trim();
+  if (!text) {
+    await ctx.reply("Foydalanish: /broadcast Xabar matni");
+    return;
+  }
+
+  const { data: users, error } = await db.from("users").select("telegram_user_id").eq("is_blocked", false);
+  if (error || !users) {
+    await ctx.reply("Foydalanuvchilar ro'yxatini olib bo'lmadi.");
+    return;
+  }
+
+  await ctx.reply(`📢 ${users.length} foydalanuvchiga yuborilmoqda...`);
+
+  let sent = 0;
+  let failed = 0;
+  for (const u of users) {
+    try {
+      await ctx.api.sendMessage(u.telegram_user_id, escapeTelegramHtml(text), { parse_mode: "HTML" });
+      sent += 1;
+    } catch (err) {
+      failed += 1;
+      logger.warn({ err, telegramUserId: u.telegram_user_id }, "broadcast send failed");
+    }
+    // Stay comfortably under Telegram's rate limits for bulk sends.
+    await new Promise((resolve) => setTimeout(resolve, 60_000 / BROADCAST_LIMIT_PER_MINUTE));
+  }
+
+  await db.from("notifications").insert({ type: "broadcast", payload: { text, sent, failed } });
+  await ctx.reply(`✅ Yuborildi: ${sent} · ❌ Xato: ${failed}`);
+}
+
+export async function handleAdminLeadsList(ctx: Context) {
+  if (!(await requireAdmin(ctx))) return;
+  const leads = await listLeads({ limit: 10 });
+  if (leads.length === 0) return ctx.reply("Lead yo'q.");
+  const text = leads
+    .map((l) => `• <b>${escapeTelegramHtml(l.project_type ?? "—")}</b> — ${escapeTelegramHtml(l.first_name ?? "—")} (${l.priority}, ${l.status})`)
+    .join("\n");
+  await ctx.reply(text, { parse_mode: "HTML" });
+}

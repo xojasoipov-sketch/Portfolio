@@ -1,4 +1,4 @@
-import type { Intent, LeadDraft, Language } from "../db/types.js";
+import type { Intent, LeadDraft, Language } from "../db/types.ts";
 
 export interface AgentTurnInput {
   systemPrompt: string;
