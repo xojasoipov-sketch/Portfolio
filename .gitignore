@@ -4,3 +4,6 @@ dist/
 .env.local
 .env.*.local
 .vercel
+
+# Ephemeral git worktrees created for background agents
+.claude/worktrees/

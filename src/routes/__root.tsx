@@ -10,6 +10,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
+import { useTelegramMiniApp } from "../lib/telegram-miniapp";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
 function NotFoundComponent() {
@@ -112,6 +113,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap",
         },
       ],
+      scripts: [
+        // Telegram Mini App SDK. Defines window.Telegram.WebApp only when the
+        // page is opened from a Telegram client; in a normal browser it loads
+        // and does nothing, so the public site is unaffected.
+        { src: "https://telegram.org/js/telegram-web-app.js" },
+      ],
     }),
     shellComponent: RootShell,
     component: RootComponent,
@@ -136,6 +143,9 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  // Runs the Mini App handshake (ready/expand/theme) when opened inside
+  // Telegram; a no-op everywhere else.
+  useTelegramMiniApp();
 
   return (
     <QueryClientProvider client={queryClient}>
