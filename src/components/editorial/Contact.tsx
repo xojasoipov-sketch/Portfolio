@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { sendContactMessage } from "@/lib/api/contact.functions";
+import { sendContactMessage } from "@/lib/api/contact";
 import { useReveal } from "./useReveal";
 import { Portrait } from "./Portrait";
 
@@ -26,12 +26,10 @@ export function Contact() {
 
     try {
       const result = await sendContactMessage({
-        data: {
-          name: String(fd.get("name") ?? ""),
-          contact: String(fd.get("contact") ?? ""),
-          message: String(fd.get("message") ?? ""),
-          company: String(fd.get("company") ?? ""),
-        },
+        name: String(fd.get("name") ?? ""),
+        contact: String(fd.get("contact") ?? ""),
+        message: String(fd.get("message") ?? ""),
+        company: String(fd.get("company") ?? ""),
       });
 
       if (result.ok) {

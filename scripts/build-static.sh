@@ -19,7 +19,7 @@ SRV=$!
 trap 'kill "$SRV" 2>/dev/null || true' EXIT
 
 for _ in $(seq 1 40); do
-  if curl -sf -o /dev/null "http://127.0.0.1:$PORT/"; then break; fi
+  if curl -sfL -o /dev/null "http://127.0.0.1:$PORT/"; then break; fi
   sleep 0.25
 done
 
@@ -28,9 +28,15 @@ for route in "${ROUTES[@]}"; do
   if [ "$route" = "/" ]; then out=".output/public/index.html"
   else out=".output/public${route%/}/index.html"; mkdir -p "$(dirname "$out")"
   fi
-  code=$(curl -s -o "$out" -w '%{http_code}' "http://127.0.0.1:$PORT$route")
+  # -L is required: when SITE_BASE is a subpath (e.g. /Portfolio/ on GitHub
+  # Pages) the server answers "/" with a 307 to the base, and without
+  # following it we would harvest the redirect body instead of the page.
+  code=$(curl -sL -o "$out" -w '%{http_code}' "http://127.0.0.1:$PORT$route")
   [ "$code" = "200" ] || { echo "FAILED $route -> HTTP $code" >&2; exit 1; }
-  echo "harvested $route -> $out ($(wc -c < "$out") bytes)"
+  size=$(wc -c < "$out")
+  # Guard against harvesting an error or redirect stub that happens to be 200.
+  [ "$size" -gt 2000 ] || { echo "FAILED $route -> only $size bytes, not a real page" >&2; exit 1; }
+  echo "harvested $route -> $out ($size bytes)"
 done
 
 # 4. SPA fallback so deep links don't 404 on a static host
