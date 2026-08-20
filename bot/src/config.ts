@@ -1,24 +1,81 @@
 import { z } from "zod";
 
 /**
- * All runtime config in one validated place. Fails fast on boot if a
- * required variable is missing, instead of surfacing as a confusing runtime
- * error deep inside a Telegram update handler.
+ * All runtime config in one validated place.
  *
- * Reads from Deno.env under the Supabase Edge Functions runtime, and from
- * process.env under Node (Railway / local dev) — same schema, same source
- * file, either way.
+ * Values can arrive from two places, in this precedence order:
+ *   1. The process environment — Deno.env under Supabase Edge Functions,
+ *      process.env under Node (local dev / Railway).
+ *   2. The xbot.bot_config table, merged in at boot by db/botConfig.ts.
+ *
+ * The DB layer exists because Supabase Edge Function secrets can only be set
+ * from the dashboard or the Supabase CLI, while the database is reachable
+ * with the service-role key that the edge runtime injects automatically.
+ * Env always wins, so moving a value to real function secrets later is a
+ * drop-in change with nothing to undo here.
  */
-function readEnvObject(): Record<string, string | undefined> {
-  // @ts-ignore Deno is only defined in the edge runtime.
-  if (typeof Deno !== "undefined") return Object.fromEntries(Deno.env.entries());
-  // Routed through globalThis (not a bare `process` reference) so this
-  // typechecks under Deno too, which has no ambient Node process type.
-  const nodeProcess = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process;
-  return nodeProcess?.env ?? {};
+
+/**
+ * Every key this app reads, listed explicitly. Deno's env API has no
+ * enumeration method that is portable across the Supabase edge runtime
+ * (`Deno.env.entries` does not exist at all; `toObject` needs blanket env
+ * permission), so we ask for exactly the keys we know about instead.
+ */
+const ENV_KEYS = [
+  "TELEGRAM_BOT_TOKEN",
+  "TELEGRAM_ADMIN_IDS",
+  "MINI_APP_URL",
+  "TELEGRAM_WEBHOOK_SECRET",
+  "AI_PROVIDER",
+  "GEMINI_API_KEY",
+  "GEMINI_MODEL",
+  "SUPABASE_URL",
+  "SUPABASE_SERVICE_ROLE_KEY",
+  "CONTACT_EMAIL",
+  "CONTACT_PHONE",
+  "CONTACT_TELEGRAM",
+  "CONTACT_INSTAGRAM",
+  "NODE_ENV",
+  "LOG_LEVEL",
+] as const;
+
+export type ConfigKey = (typeof ENV_KEYS)[number];
+
+interface DenoEnvLike {
+  env?: { get(key: string): string | undefined };
 }
+interface NodeProcessLike {
+  env?: Record<string, string | undefined>;
+}
+
+/**
+ * Reads a single variable from whichever runtime we're on. Both globals are
+ * reached through `globalThis` rather than a bare `Deno` / `process`
+ * reference: that keeps the file typechecking under both compilers *without*
+ * a @ts-ignore, so a genuine mistake here can't hide behind a suppressed
+ * error the way `Deno.env.entries` once did.
+ */
+function readEnvVar(key: string): string | undefined {
+  const denoGlobal = (globalThis as { Deno?: DenoEnvLike }).Deno;
+  if (typeof denoGlobal?.env?.get === "function") return denoGlobal.env.get(key);
+  const nodeProcess = (globalThis as { process?: NodeProcessLike }).process;
+  return nodeProcess?.env?.[key];
+}
+
+function readEnvObject(): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const key of ENV_KEYS) {
+    const value = readEnvVar(key);
+    // Omit blanks entirely so zod's .default()/.optional() still apply.
+    if (value !== undefined && value !== "") out[key] = value;
+  }
+  return out;
+}
+
 const EnvSchema = z.object({
-  TELEGRAM_BOT_TOKEN: z.string().min(20, "TELEGRAM_BOT_TOKEN yo'q yoki noto'g'ri"),
+  /** Optional at load time so the module can import before db/botConfig.ts
+   * has merged the DB values in; requireBotToken() enforces it at use. */
+  TELEGRAM_BOT_TOKEN: z.string().min(20, "TELEGRAM_BOT_TOKEN yo'q yoki noto'g'ri").optional(),
   TELEGRAM_ADMIN_IDS: z
     .string()
     .default("")
@@ -38,8 +95,9 @@ const EnvSchema = z.object({
 
   AI_PROVIDER: z.enum(["gemini"]).default("gemini"),
   GEMINI_API_KEY: z.string().min(10).optional(),
-  GEMINI_MODEL: z.string().default("gemini-2.0-flash"),
+  GEMINI_MODEL: z.string().default("gemini-3.6-flash"),
 
+  /** Injected automatically by the Supabase edge runtime; set by hand under Node. */
   SUPABASE_URL: z.string().url(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(20, "SUPABASE_SERVICE_ROLE_KEY yo'q"),
 
@@ -54,20 +112,48 @@ const EnvSchema = z.object({
 
 export type Env = z.infer<typeof EnvSchema>;
 
-function loadEnv(): Env {
-  const parsed = EnvSchema.safeParse(readEnvObject());
+/** The raw strings we parsed from the environment, kept so runtime overrides
+ * can be merged and the whole set re-validated as one. */
+let rawValues: Record<string, string> = readEnvObject();
+
+function parseOrThrow(values: Record<string, string>): Env {
+  const parsed = EnvSchema.safeParse(values);
   if (!parsed.success) {
     const issues = parsed.error.issues.map((i) => `  - ${i.path.join(".")}: ${i.message}`).join("\n");
     throw new Error(`Environment sozlamalari noto'g'ri:\n${issues}`);
   }
-  if (!parsed.data.GEMINI_API_KEY) {
-    // Non-fatal: the bot boots so /start, Mini App, CV, Contact still work;
-    // the AI Agent path degrades to the fallback (see ai/agent.ts).
-    console.warn(
-      "[config] GEMINI_API_KEY o'rnatilmagan — AI Agent fallback rejimida ishlaydi (faqat lead formasi).",
-    );
-  }
   return parsed.data;
 }
 
-export const env = loadEnv();
+/**
+ * Mutated in place by applyRuntimeOverrides() so every module that already
+ * imported it sees the merged values. Modules must therefore read `env.X` at
+ * call time, not destructure it at import time.
+ */
+export const env: Env = parseOrThrow(rawValues);
+
+/**
+ * Merges late-arriving config (currently: the xbot.bot_config table) under
+ * whatever the environment already provided, then re-validates the result.
+ */
+export function applyRuntimeOverrides(overrides: Record<string, string | null | undefined>): void {
+  const merged: Record<string, string> = { ...rawValues };
+  for (const [key, value] of Object.entries(overrides)) {
+    if (value === undefined || value === null || value === "") continue;
+    if (!(ENV_KEYS as readonly string[]).includes(key)) continue; // ignore unknown rows
+    if (merged[key] !== undefined) continue; // environment wins
+    merged[key] = value;
+  }
+  rawValues = merged;
+  Object.assign(env, parseOrThrow(merged));
+}
+
+/** Throws a clear, actionable error instead of letting grammy fail obscurely. */
+export function requireBotToken(): string {
+  if (!env.TELEGRAM_BOT_TOKEN) {
+    throw new Error(
+      "TELEGRAM_BOT_TOKEN topilmadi — uni Edge Function secrets'ga yoki xbot.bot_config jadvaliga qo'shing.",
+    );
+  }
+  return env.TELEGRAM_BOT_TOKEN;
+}

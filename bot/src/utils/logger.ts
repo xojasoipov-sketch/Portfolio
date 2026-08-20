@@ -29,8 +29,10 @@ function getLogLevel(): Level {
 }
 
 function getEnvSafe(key: string): string | undefined {
-  // @ts-ignore Deno is only defined in the edge runtime.
-  if (typeof Deno !== "undefined") return Deno.env.get(key);
+  // Both globals go through globalThis so this typechecks under Node and Deno
+  // without a suppressed error that could hide a real API mistake.
+  const denoGlobal = (globalThis as { Deno?: { env?: { get(k: string): string | undefined } } }).Deno;
+  if (typeof denoGlobal?.env?.get === "function") return denoGlobal.env.get(key);
   const nodeProcess = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process;
   return nodeProcess?.env?.[key];
 }

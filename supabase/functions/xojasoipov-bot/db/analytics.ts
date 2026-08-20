@@ -1,7 +1,7 @@
 import { db } from "./client.ts";
 
 export async function trackEvent(userId: string | null, eventType: string, metadata: Record<string, unknown> = {}) {
-  await db.from("analytics_events").insert({ user_id: userId, event_type: eventType, metadata });
+  await db.from("xbot_analytics_events").insert({ user_id: userId, event_type: eventType, metadata });
 }
 
 export interface WeeklyReport {
@@ -18,9 +18,9 @@ export async function getWeeklyReport(sinceDays = 7): Promise<WeeklyReport> {
   const since = new Date(Date.now() - sinceDays * 86_400_000).toISOString();
 
   const [{ count: users }, { count: aiConversations }, { data: leadRows }] = await Promise.all([
-    db.from("users").select("id", { count: "exact", head: true }).gte("created_at", since),
-    db.from("conversations").select("id", { count: "exact", head: true }).gte("started_at", since),
-    db.from("leads").select("priority,status").gte("created_at", since),
+    db.from("xbot_users").select("id", { count: "exact", head: true }).gte("created_at", since),
+    db.from("xbot_conversations").select("id", { count: "exact", head: true }).gte("started_at", since),
+    db.from("xbot_leads").select("priority,status").gte("created_at", since),
   ]);
 
   const leads = leadRows ?? [];

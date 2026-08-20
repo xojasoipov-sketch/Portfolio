@@ -1,9 +1,11 @@
 import { env } from "./config.js";
+import { loadBotConfig } from "./db/botConfig.js";
 import { createBot } from "./bot/bot.js";
 import { sweepStaleRateLimitBuckets } from "./security/rateLimit.js";
 import { logger } from "./utils/logger.js";
 
 async function main() {
+  await loadBotConfig();
   const bot = createBot();
 
   await bot.api.setMyCommands([

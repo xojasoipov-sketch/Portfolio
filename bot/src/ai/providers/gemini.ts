@@ -95,19 +95,47 @@ export class GeminiProvider implements AIProvider {
           responseMimeType: "application/json",
           responseSchema: RESPONSE_SCHEMA,
           temperature: 0.4,
-          maxOutputTokens: 1024,
+          // Gemini 3.x is a thinking model and its reasoning tokens are drawn
+          // from this same budget (a trivial prompt already spent 566 of them
+          // on thoughts). At 1024 the knowledge-base-sized system prompt left
+          // nothing for the actual JSON, so responses came back empty and
+          // JSON.parse threw. Give thinking room plus the reply.
+          maxOutputTokens: 8192,
         },
       });
 
       try {
         const result = await model.generateContent({ contents });
+        // finishReason is the thing worth knowing when a turn comes back
+        // unusable (MAX_TOKENS, SAFETY, ...). Without it a truncated response
+        // surfaces as a bare SyntaxError that serializes to "{}" in the logs.
+        const finishReason = result.response.candidates?.[0]?.finishReason ?? "unknown";
         const text = result.response.text();
-        return JSON.parse(text) as AgentTurnOutput;
+        if (!text.trim()) {
+          throw new AIProviderError(`Gemini bo'sh javob qaytardi (finishReason=${finishReason})`);
+        }
+        try {
+          return JSON.parse(text) as AgentTurnOutput;
+        } catch {
+          throw new AIProviderError(
+            `Gemini JSON'ga aylanmaydigan javob qaytardi (finishReason=${finishReason}, uzunlik=${text.length})`,
+          );
+        }
       } catch (err) {
         lastErr = err;
         if (!isQuotaError(err)) {
-          logger.error({ err, keyIndex: idx }, "gemini runTurn failed (non-quota error)");
-          throw new AIProviderError("Gemini so'rovi muvaffaqiyatsiz tugadi", err);
+          // Log err.message explicitly: Error's message is non-enumerable, so
+          // passing the Error object itself logs a useless "{}".
+          logger.error(
+            { err: err instanceof Error ? err.message : String(err), keyIndex: idx },
+            "gemini runTurn failed (non-quota error)",
+          );
+          // Carry the specific reason up: the caller logs this message, and a
+          // generic one would hide finishReason/HTTP status again.
+          throw new AIProviderError(
+            `Gemini so'rovi muvaffaqiyatsiz tugadi: ${err instanceof Error ? err.message : String(err)}`,
+            err,
+          );
         }
         logger.warn(
           { keyIndex: idx, totalKeys: this.clients.length },

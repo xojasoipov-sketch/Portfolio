@@ -67,7 +67,7 @@ export async function handleBroadcastCommand(ctx: Context) {
     return;
   }
 
-  const { data: users, error } = await db.from("users").select("telegram_user_id").eq("is_blocked", false);
+  const { data: users, error } = await db.from("xbot_users").select("telegram_user_id").eq("is_blocked", false);
   if (error || !users) {
     await ctx.reply("Foydalanuvchilar ro'yxatini olib bo'lmadi.");
     return;
@@ -89,7 +89,7 @@ export async function handleBroadcastCommand(ctx: Context) {
     await new Promise((resolve) => setTimeout(resolve, 60_000 / BROADCAST_LIMIT_PER_MINUTE));
   }
 
-  await db.from("notifications").insert({ type: "broadcast", payload: { text, sent, failed } });
+  await db.from("xbot_notifications").insert({ type: "broadcast", payload: { text, sent, failed } });
   await ctx.reply(`✅ Yuborildi: ${sent} · ❌ Xato: ${failed}`);
 }
 

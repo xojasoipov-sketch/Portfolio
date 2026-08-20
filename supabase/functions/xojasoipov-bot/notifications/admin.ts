@@ -45,7 +45,7 @@ export async function notifyNewLead(lead: LeadRow, score: LeadScoreResult): Prom
     .join("\n");
 
   await sendToAllAdmins(text, adminLeadKeyboard(lead.id, lead.telegram_username));
-  await db.from("notifications").insert({ type: "new_lead", lead_id: lead.id, payload: { score: score.score } });
+  await db.from("xbot_notifications").insert({ type: "new_lead", lead_id: lead.id, payload: { score: score.score } });
 }
 
 export async function notifyHumanHandoff(params: {
@@ -64,18 +64,18 @@ export async function notifyHumanHandoff(params: {
     .filter((l): l is string => l !== null)
     .join("\n");
   await sendToAllAdmins(text);
-  await db.from("notifications").insert({ type: "human_handoff", payload: params });
+  await db.from("xbot_notifications").insert({ type: "human_handoff", payload: params });
 }
 
 export async function notifyAiError(context: string, error: unknown): Promise<void> {
   const text = `⚠️ <b>AI ERROR</b>\n\n${escapeTelegramHtml(context)}\n${escapeTelegramHtml(String(error).slice(0, 300))}`;
   await sendToAllAdmins(text);
-  await db.from("notifications").insert({ type: "ai_error", payload: { context } });
+  await db.from("xbot_notifications").insert({ type: "ai_error", payload: { context } });
 }
 
 export async function notifySystemAlert(text: string): Promise<void> {
   await sendToAllAdmins(`🔴 <b>SYSTEM ALERT</b>\n\n${escapeTelegramHtml(text)}`);
-  await db.from("notifications").insert({ type: "system_alert", payload: { text } });
+  await db.from("xbot_notifications").insert({ type: "system_alert", payload: { text } });
 }
 
 async function sendToAllAdmins(text: string, keyboard?: ReturnType<typeof adminLeadKeyboard>): Promise<void> {

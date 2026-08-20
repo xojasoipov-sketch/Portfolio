@@ -14,14 +14,14 @@ export async function upsertUser(input: {
   source?: Source;
 }): Promise<UserRow> {
   const { data: existing } = await db
-    .from("users")
+    .from("xbot_users")
     .select("*")
     .eq("telegram_user_id", input.telegramUserId)
     .maybeSingle();
 
   if (existing) {
     const { data, error } = await db
-      .from("users")
+      .from("xbot_users")
       .update({
         telegram_username: input.telegramUsername ?? existing.telegram_username,
         first_name: input.firstName ?? existing.first_name,
@@ -35,7 +35,7 @@ export async function upsertUser(input: {
   }
 
   const { data, error } = await db
-    .from("users")
+    .from("xbot_users")
     .insert({
       telegram_user_id: input.telegramUserId,
       telegram_username: input.telegramUsername ?? null,
@@ -51,13 +51,13 @@ export async function upsertUser(input: {
 }
 
 export async function setUserLanguage(userId: string, language: Language) {
-  await db.from("users").update({ language }).eq("id", userId);
+  await db.from("xbot_users").update({ language }).eq("id", userId);
 }
 
 export async function isAdmin(telegramUserId: number, envAdminIds: number[]): Promise<boolean> {
   if (envAdminIds.includes(telegramUserId)) return true;
   const { data } = await db
-    .from("admin_users")
+    .from("xbot_admin_users")
     .select("telegram_user_id")
     .eq("telegram_user_id", telegramUserId)
     .maybeSingle();

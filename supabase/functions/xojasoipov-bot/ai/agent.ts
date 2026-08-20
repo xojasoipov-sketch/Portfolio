@@ -47,7 +47,9 @@ export async function generateAgentReply(params: {
 
     return { output: sanitizeOutput(output, params.languageHint), usedFallback: false };
   } catch (err) {
-    logger.error({ err }, "agent turn failed, using fallback reply");
+    // err.message, not err: Error's message is non-enumerable and would be
+    // dropped by the logger's structured serialization.
+    logger.error({ err: err instanceof Error ? err.message : String(err) }, "agent turn failed, using fallback reply");
     return { output: fallbackOutput(params.languageHint), usedFallback: true };
   }
 }

@@ -1,6 +1,6 @@
 import { Bot, GrammyError, HttpError } from "grammy";
 import type { BotContext } from "./context.js";
-import { env } from "../config.js";
+import { requireBotToken } from "../config.js";
 import { upsertUser } from "../db/users.js";
 import { registerAdminNotifier, notifyAiError } from "../notifications/admin.js";
 import { logger } from "../utils/logger.js";
@@ -10,7 +10,7 @@ import { handleCallbackQuery } from "./handlers/callback.js";
 import { handleTextMessage } from "./handlers/message.js";
 
 export function createBot(): Bot<BotContext> {
-  const bot = new Bot<BotContext>(env.TELEGRAM_BOT_TOKEN);
+  const bot = new Bot<BotContext>(requireBotToken());
   registerAdminNotifier(bot.api);
 
   // Every update — command, text, or button — passes through here first, so
