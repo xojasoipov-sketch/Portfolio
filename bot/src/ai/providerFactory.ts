@@ -11,10 +11,21 @@ let cached: AIProvider | null | undefined;
  */
 export function getAIProvider(): AIProvider | null {
   if (cached !== undefined) return cached;
-  if (env.AI_PROVIDER === "gemini" && env.GEMINI_API_KEY) {
-    cached = new GeminiProvider(env.GEMINI_API_KEY);
+  const keys = parseApiKeys(env.GEMINI_API_KEY);
+  if (env.AI_PROVIDER === "gemini" && keys.length > 0) {
+    cached = new GeminiProvider(keys);
   } else {
     cached = null;
   }
   return cached;
+}
+
+/**
+ * GEMINI_API_KEY may hold several free-tier keys, comma-separated — when
+ * one account's quota runs out the provider rotates to the next instead of
+ * degrading to the canned fallback reply.
+ */
+function parseApiKeys(raw: string | undefined): string[] {
+  if (!raw) return [];
+  return [...new Set(raw.split(",").map((k) => k.trim()).filter(Boolean))];
 }

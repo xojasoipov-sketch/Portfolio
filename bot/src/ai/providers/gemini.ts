@@ -46,39 +46,78 @@ const RESPONSE_SCHEMA: Schema = {
   required: ["reply", "language", "intent", "draftUpdates", "readyForSummary", "needsHandoff", "confidence"],
 };
 
+/**
+ * True for Gemini's free-tier rate/quota errors (HTTP 429, RESOURCE_EXHAUSTED)
+ * — the ones worth rotating to the next key for. Any other error (bad
+ * request, network failure, invalid schema) fails fast instead, so a real
+ * bug doesn't silently burn through every configured key.
+ */
+function isQuotaError(err: unknown): boolean {
+  const status = err && typeof err === "object" ? (err as { status?: unknown }).status : undefined;
+  const message = err instanceof Error ? err.message : String(err);
+  return /429|quota|resource_exhausted|rate.?limit/i.test(`${message} ${status ?? ""}`);
+}
+
 export class GeminiProvider implements AIProvider {
   readonly name = "gemini";
-  private client: GoogleGenerativeAI;
+  private readonly clients: GoogleGenerativeAI[];
+  /**
+   * Sticky pointer into `clients` (item: multi-key rotation for the free
+   * tier). Advances only on a quota error and never resets, so once a key
+   * is known exhausted this process stops wasting requests on it — the
+   * next call picks up right after the last key that worked.
+   */
+  private keyIndex = 0;
 
-  constructor(apiKey: string) {
-    this.client = new GoogleGenerativeAI(apiKey);
+  constructor(apiKeys: string[]) {
+    if (apiKeys.length === 0) throw new Error("GeminiProvider requires at least one API key");
+    this.clients = apiKeys.map((key) => new GoogleGenerativeAI(key));
   }
 
   async runTurn(input: AgentTurnInput): Promise<AgentTurnOutput> {
-    const model = this.client.getGenerativeModel({
-      model: env.GEMINI_MODEL,
-      systemInstruction: input.systemPrompt,
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema: RESPONSE_SCHEMA,
-        temperature: 0.4,
-        maxOutputTokens: 1024,
-      },
-    });
-
     const contents = [
       ...input.history.map((h) => ({ role: h.role === "user" ? "user" : "model", parts: [{ text: h.content }] })),
       { role: "user", parts: [{ text: input.userMessage }] },
     ];
 
-    try {
-      const result = await model.generateContent({ contents });
-      const text = result.response.text();
-      const parsed = JSON.parse(text) as AgentTurnOutput;
-      return parsed;
-    } catch (err) {
-      logger.error({ err }, "gemini runTurn failed");
-      throw new AIProviderError("Gemini so'rovi muvaffaqiyatsiz tugadi", err);
+    let lastErr: unknown;
+    // One full pass over the configured keys, starting from the sticky
+    // pointer — at most `clients.length` attempts, so a fully-exhausted
+    // set fails after trying each key exactly once rather than looping.
+    for (let attempt = 0; attempt < this.clients.length; attempt++) {
+      const idx = this.keyIndex;
+      const client = this.clients[idx];
+      if (!client) throw new AIProviderError("Gemini kaliti topilmadi (ichki xato)");
+      const model = client.getGenerativeModel({
+        model: env.GEMINI_MODEL,
+        systemInstruction: input.systemPrompt,
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: RESPONSE_SCHEMA,
+          temperature: 0.4,
+          maxOutputTokens: 1024,
+        },
+      });
+
+      try {
+        const result = await model.generateContent({ contents });
+        const text = result.response.text();
+        return JSON.parse(text) as AgentTurnOutput;
+      } catch (err) {
+        lastErr = err;
+        if (!isQuotaError(err)) {
+          logger.error({ err, keyIndex: idx }, "gemini runTurn failed (non-quota error)");
+          throw new AIProviderError("Gemini so'rovi muvaffaqiyatsiz tugadi", err);
+        }
+        logger.warn(
+          { keyIndex: idx, totalKeys: this.clients.length },
+          "gemini key hit its quota, rotating to the next key",
+        );
+        this.keyIndex = (idx + 1) % this.clients.length;
+      }
     }
+
+    logger.error({ err: lastErr, totalKeys: this.clients.length }, "all configured gemini keys are quota-exhausted");
+    throw new AIProviderError("Barcha Gemini kalitlari kvotasi tugadi", lastErr);
   }
 }
