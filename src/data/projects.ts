@@ -1,3 +1,8 @@
+import zetShot from "@/assets/projects/zet.webp";
+import sadiprimeShot from "@/assets/projects/sadiprime.webp";
+import pariShot from "@/assets/projects/pari.webp";
+import dliShot from "@/assets/projects/dli.webp";
+
 /**
  * Project data — sourced from the actual repositories, not marketing copy.
  * `shot` points at a screenshot in src/assets/projects; when it is null the
@@ -37,7 +42,7 @@ export const PROJECTS: Project[] = [
       "Multi-agent",
     ],
     repo: "https://github.com/xojasoipov-sketch/Aris-ai",
-    shot: null,
+    shot: zetShot,
   },
   {
     id: "sadiprime",
@@ -56,7 +61,7 @@ export const PROJECTS: Project[] = [
     ],
     repo: "https://github.com/xojasoipov-sketch/sadiprimetizim-crm",
     site: "https://sadiprime-tizim.uz",
-    shot: null,
+    shot: sadiprimeShot,
   },
   {
     id: "pari",
@@ -75,7 +80,7 @@ export const PROJECTS: Project[] = [
       "Railway",
     ],
     repo: "https://github.com/xojasoipov-sketch/Jarvis-ai",
-    shot: null,
+    shot: pariShot,
   },
   {
     id: "dli",
@@ -88,6 +93,6 @@ export const PROJECTS: Project[] = [
       "Katalog, qidiruv, narx oralig'i va saralash filtrlari; JWT autentifikatsiya, ko'p tilli interfeys va admin dashboard. \"Look\" tizimi tayyor kiyim to'plamlarini bitta mahsulot sifatida ko'rsatadi — katalogda ham, Telegram mini-ilovasida ham.",
     tech: ["React", "FastAPI", "MongoDB", "Telegram Mini App", "JWT", "i18n"],
     repo: "https://github.com/xojasoipov-sketch/Emergent",
-    shot: null,
+    shot: dliShot,
   },
 ];
