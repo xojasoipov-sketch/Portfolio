@@ -1,30 +1,28 @@
-import { PORTRAIT } from "./portrait";
+import { FACE_FOCUS, PORTRAIT } from "./portrait";
 
 type Treatment = "natural" | "mono" | "duotone";
 
+/** Unique ids so the SVG filter can be referenced from CSS. */
+const DUOTONE_ID = "ed-duotone-red";
+
 /**
- * The portrait as an editorial cutout. Each section gets a different
- * treatment so the same photo never reads as a repeat.
+ * The portrait as an editorial cutout.
  *
- * Until the photo is supplied, this renders a composed placeholder built from
- * the same shapes the final cutout sits in, so the layout is already correct.
+ * `fit="contain"` keeps the whole figure (hero); `fit="cover"` crops to the
+ * face using FACE_FOCUS (about, contact). Treatments differentiate the three
+ * appearances so the same photo never reads as a repeat.
  */
 export function Portrait({
   treatment = "natural",
+  fit = "contain",
   className,
   style,
 }: {
   treatment?: Treatment;
+  fit?: "contain" | "cover";
   className?: string;
   style?: React.CSSProperties;
 }) {
-  const filter =
-    treatment === "mono"
-      ? "grayscale(1) contrast(1.08)"
-      : treatment === "duotone"
-        ? "grayscale(1) contrast(1.15) sepia(1) hue-rotate(-30deg) saturate(4.2)"
-        : undefined;
-
   if (!PORTRAIT) {
     return (
       <PortraitPlaceholder
@@ -35,27 +33,62 @@ export function Portrait({
     );
   }
 
+  const filter =
+    treatment === "duotone"
+      ? `url(#${DUOTONE_ID})`
+      : treatment === "mono"
+        ? "grayscale(1) contrast(1.12)"
+        : undefined;
+
   return (
-    <img
-      src={PORTRAIT}
-      alt="Saidburxon Xojasoipov"
-      className={className}
-      style={{
-        display: "block",
-        width: "100%",
-        height: "100%",
-        objectFit: "contain",
-        objectPosition: "bottom center",
-        filter,
-        ...style,
-      }}
-    />
+    <>
+      {treatment === "duotone" && <DuotoneFilter />}
+      <img
+        src={PORTRAIT}
+        alt="Saidburxon Xojasoipov"
+        className={className}
+        style={{
+          display: "block",
+          width: "100%",
+          height: "100%",
+          objectFit: fit,
+          objectPosition: fit === "cover" ? FACE_FOCUS : "bottom center",
+          filter,
+          ...style,
+        }}
+      />
+    </>
   );
 }
 
 /**
- * Placeholder that keeps the hero's mass and silhouette while the real cutout
- * is pending — a solid editorial shape rather than a grey box.
+ * Maps luminance onto a black → editorial-red ramp while preserving the
+ * cutout's alpha, which a CSS sepia/hue-rotate chain cannot do cleanly.
+ */
+function DuotoneFilter() {
+  return (
+    <svg
+      aria-hidden="true"
+      width="0"
+      height="0"
+      style={{ position: "absolute" }}
+    >
+      <filter id={DUOTONE_ID} colorInterpolationFilters="sRGB">
+        <feColorMatrix type="saturate" values="0" />
+        <feComponentTransfer>
+          {/* lifted black #1A0405 → bright red #C2101C */}
+          <feFuncR type="linear" slope="0.659" intercept="0.102" />
+          <feFuncG type="linear" slope="0.047" intercept="0.016" />
+          <feFuncB type="linear" slope="0.090" intercept="0.020" />
+        </feComponentTransfer>
+      </filter>
+    </svg>
+  );
+}
+
+/**
+ * Kept for the case where the photo is swapped out again: holds the hero's
+ * mass with an editorial shape rather than an empty box.
  */
 function PortraitPlaceholder({
   treatment,
@@ -93,36 +126,12 @@ function PortraitPlaceholder({
         role="img"
         aria-label="Portret uchun ajratilgan joy"
       >
-        {/* head + shoulders silhouette, matching a standing cutout */}
         <path
           d="M150 62c30 0 52 24 52 56 0 21-9 39-22 49 34 11 58 30 72 55 12 22 18 50 20 84 1 8-5 14-13 14H41c-8 0-14-6-13-14 2-34 8-62 20-84 14-25 38-44 72-55-13-10-22-28-22-49 0-32 22-56 52-56Z"
           fill={tone}
           opacity="0.14"
         />
-        <path
-          d="M150 62c30 0 52 24 52 56 0 21-9 39-22 49 34 11 58 30 72 55 12 22 18 50 20 84 1 8-5 14-13 14H41c-8 0-14-6-13-14 2-34 8-62 20-84 14-25 38-44 72-55-13-10-22-28-22-49 0-32 22-56 52-56Z"
-          fill="none"
-          stroke={tone}
-          strokeWidth="1.25"
-          strokeDasharray="7 7"
-          opacity="0.5"
-        />
       </svg>
-
-      <span
-        className="ed-label"
-        style={{
-          position: "absolute",
-          bottom: "12%",
-          left: "50%",
-          transform: "translateX(-50%)",
-          color: tone,
-          opacity: 0.65,
-          whiteSpace: "nowrap",
-        }}
-      >
-        Portret
-      </span>
     </div>
   );
 }

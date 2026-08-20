@@ -196,7 +196,7 @@ export function Contact() {
                 background: "#141414",
               }}
             >
-              <Portrait treatment="duotone" />
+              <Portrait treatment="duotone" fit="cover" />
             </div>
 
             <div>

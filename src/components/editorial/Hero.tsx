@@ -81,7 +81,7 @@ export function Hero() {
             gridArea: "stack",
             transitionDelay: "0.35s",
             zIndex: 2,
-            filter: "drop-shadow(0 32px 60px rgba(142, 7, 16, 0.22))",
+            filter: "drop-shadow(0 18px 34px rgba(5, 5, 5, 0.16))",
           }}
           data-hero-portrait
         >

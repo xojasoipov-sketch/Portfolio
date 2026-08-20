@@ -44,6 +44,9 @@ export function Nav() {
   }, [open]);
 
   const ink = onDark ? "var(--ed-offwhite)" : "var(--ed-black)";
+  const scrim = onDark
+    ? "linear-gradient(to bottom, rgba(5,5,5,0.92) 0%, rgba(5,5,5,0.55) 55%, rgba(5,5,5,0) 100%)"
+    : "linear-gradient(to bottom, rgba(245,242,239,0.94) 0%, rgba(245,242,239,0.6) 55%, rgba(245,242,239,0) 100%)";
 
   return (
     <>
@@ -58,9 +61,10 @@ export function Nav() {
           alignItems: "center",
           justifyContent: "space-between",
           padding: "1.5rem var(--ed-gutter)",
-          mixBlendMode: "normal",
+          paddingBottom: "2.25rem",
+          background: scrim,
           color: ink,
-          transition: "color 0.35s ease",
+          transition: "color 0.35s ease, background 0.35s ease",
         }}
       >
         <a

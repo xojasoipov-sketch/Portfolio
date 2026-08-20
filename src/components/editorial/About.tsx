@@ -55,7 +55,7 @@ export function About() {
                 background: "var(--ed-gray-sf)",
               }}
             >
-              <Portrait treatment="mono" />
+              <Portrait treatment="mono" fit="cover" />
             </div>
           </div>
 

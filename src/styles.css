@@ -635,23 +635,34 @@ body {
 }
 
 /* Anchor targets clear the fixed nav rather than hiding under it. */
-#top, #about, #skills, #services, #work, #contact {
+#top,
+#about,
+#skills,
+#services,
+#work,
+#contact {
   scroll-margin-top: clamp(4.5rem, 9vw, 6rem);
 }
 
 /* ---------- Hero portrait: its own proportions per breakpoint ---------- */
 [data-hero-portrait] {
-  width: min(46vw, 30rem);
-  height: min(62vh, 34rem);
+  width: min(64vw, 46rem);
+  height: min(58vh, 32rem);
+}
+/* The photo's lower edge is a hard crop; dissolve it into the canvas so the
+   figure reads as a cutout standing on the page, not a pasted rectangle. */
+[data-hero-portrait] img {
+  -webkit-mask-image: linear-gradient(to bottom, #000 74%, transparent 99%);
+  mask-image: linear-gradient(to bottom, #000 74%, transparent 99%);
 }
 @media (max-width: 860px) {
   /* Narrow screens get a taller, wider cutout that climbs back into the
      wordmark, so the hero reads as one composition instead of two
      stacked halves with dead space between them. */
   [data-hero-portrait] {
-    width: min(86vw, 26rem);
-    height: min(56vh, 30rem);
+    width: min(112vw, 34rem);
+    height: min(64vh, 34rem);
     align-self: end;
-    margin-top: -14vh;
+    margin-top: -17vh;
   }
 }
