@@ -159,7 +159,7 @@ export async function handleLeadConfirm(ctx: Context, user: UserRow, conversatio
   if (!conversation) return ctx.answerCallbackQuery();
 
   const draft = conversation.draft ?? {};
-  const dedupeHash = computeDedupeHash(user.id, draft);
+  const dedupeHash = await computeDedupeHash(user.id, draft);
   const duplicate = await findRecentDuplicateLead(dedupeHash);
   if (duplicate) {
     await ctx.answerCallbackQuery();

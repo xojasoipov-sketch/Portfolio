@@ -23,7 +23,7 @@ function priorityEmoji(priority: string): string {
 
 /** Item 17: full new-lead notification, sent to every configured admin. */
 export async function notifyNewLead(lead: LeadRow, score: LeadScoreResult): Promise<void> {
-  if (!apiRef) return logger.error("notifyNewLead called before registerAdminNotifier");
+  if (!apiRef) return logger.error({}, "notifyNewLead called before registerAdminNotifier");
 
   const featuresLine = lead.features?.length ? lead.features.map((f) => `• ${f}`).join("\n") : "• —";
   const text = [

@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { db } from "./client.js";
 import type { LeadDraft, LeadPriority, LeadRow, LeadStatus } from "./types.js";
 
@@ -6,10 +5,20 @@ import type { LeadDraft, LeadPriority, LeadRow, LeadStatus } from "./types.js";
  * Fingerprints a lead by user + project type + description so the same
  * person re-sending the same request doesn't create a second row (item 26:
  * duplicate lead detection). Not a security boundary — just noise reduction.
+ *
+ * Uses the Web Crypto API (globalThis.crypto.subtle) instead of node:crypto
+ * so the exact same source file runs under Node (bot/, Railway target) and
+ * Deno (supabase/functions/, the actually-deployed target) without a build
+ * step swapping the implementation.
  */
-export function computeDedupeHash(userId: string, draft: LeadDraft): string {
+export async function computeDedupeHash(userId: string, draft: LeadDraft): Promise<string> {
   const basis = `${userId}::${draft.project_type ?? ""}::${(draft.description ?? "").trim().toLowerCase()}`;
-  return createHash("sha256").update(basis).digest("hex").slice(0, 32);
+  const bytes = new TextEncoder().encode(basis);
+  const digest = await globalThis.crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("")
+    .slice(0, 32);
 }
 
 export async function findRecentDuplicateLead(dedupeHash: string, withinHours = 24): Promise<LeadRow | null> {
@@ -39,7 +48,7 @@ export interface CreateLeadInput extends LeadDraft {
 }
 
 export async function createLead(input: CreateLeadInput): Promise<LeadRow> {
-  const dedupeHash = computeDedupeHash(input.userId, input);
+  const dedupeHash = await computeDedupeHash(input.userId, input);
   const { data, error } = await db
     .from("leads")
     .insert({
