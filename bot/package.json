@@ -1,0 +1,32 @@
+{
+  "name": "xojasoipov-bot",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Xojasoipov Portfolio Bot — AI Client Agent / Receptionist for @Xojasoipovbot",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "seed:knowledge": "tsx scripts/seedKnowledge.ts"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@supabase/supabase-js": "^2.49.4",
+    "grammy": "^1.31.0",
+    "pino": "^9.5.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^4.1.11"
+  }
+}

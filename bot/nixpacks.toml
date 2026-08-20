@@ -1,0 +1,14 @@
+# Railway build config — bot/ is a standalone Node service inside the
+# Portfolio monorepo, deployed as its own Railway service with this
+# directory set as the service's root directory.
+[phases.setup]
+nixPkgs = ["nodejs_20"]
+
+[phases.install]
+cmds = ["npm ci"]
+
+[phases.build]
+cmds = ["npm run build"]
+
+[start]
+cmd = "npm start"
