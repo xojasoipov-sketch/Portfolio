@@ -1,11 +1,18 @@
 import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
 
-const LINKS = [
-  { href: "#work", label: "Work" },
-  { href: "#about", label: "About" },
-  { href: "#skills", label: "Skills" },
-  { href: "#services", label: "Services" },
-  { href: "#contact", label: "Contact" },
+// `hash` links always go through the home route: from any other page (e.g.
+// /xizmatlar) they navigate home and land on the right section instead of
+// scrolling nowhere on the current page. TanStack's <Link> resolves the
+// deploy-time base path itself, so this stays correct under GitHub Pages'
+// /Portfolio/ subpath too.
+const LINKS: { to: string; hash?: string; label: string }[] = [
+  { to: "/", hash: "work", label: "Work" },
+  { to: "/", hash: "about", label: "About" },
+  { to: "/", hash: "skills", label: "Skills" },
+  { to: "/", hash: "services", label: "Services" },
+  { to: "/xizmatlar", label: "Katalog" },
+  { to: "/", hash: "contact", label: "Contact" },
 ];
 
 export function Nav() {
@@ -85,13 +92,18 @@ export function Nav() {
           data-desktop-nav
         >
           {LINKS.map((l) => (
-            <a key={l.href} href={l.href} className="ed-label ed-navlink">
+            <Link
+              key={l.label}
+              to={l.to}
+              hash={l.hash}
+              className="ed-label ed-navlink"
+            >
               {l.label}
-            </a>
+            </Link>
           ))}
-          <a href="#contact" className="ed-label ed-navcv">
+          <Link to="/" hash="contact" className="ed-label ed-navcv">
             CV ↓
-          </a>
+          </Link>
         </nav>
 
         <button
@@ -150,15 +162,16 @@ export function Nav() {
             ×
           </button>
           {LINKS.map((l) => (
-            <a
-              key={l.href}
-              href={l.href}
+            <Link
+              key={l.label}
+              to={l.to}
+              hash={l.hash}
               onClick={() => setOpen(false)}
               className="ed-display"
               style={{ fontSize: "clamp(2.25rem, 11vw, 4rem)" }}
             >
               {l.label}
-            </a>
+            </Link>
           ))}
         </div>
       )}

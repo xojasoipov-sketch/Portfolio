@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useReveal } from "./useReveal";
 
 const SERVICES = [
@@ -80,6 +81,19 @@ export function Services() {
             </span>
           </a>
         ))}
+      </div>
+
+      <div
+        className="ed-shell ed-rise"
+        data-shown={shown}
+        style={{
+          marginTop: "clamp(2rem, 5vw, 3rem)",
+          transitionDelay: "0.35s",
+        }}
+      >
+        <Link to="/xizmatlar" className="ed-label ed-navlink">
+          To'liq xizmatlar katalogi va narxlarni ko'rish →
+        </Link>
       </div>
     </section>
   );

@@ -6,7 +6,7 @@ set -euo pipefail
 
 ROOT="${1:-$PWD}"
 PORT="${PORT:-3179}"
-ROUTES=("/")            # add more routes here as the app grows
+ROUTES=("/" "/xizmatlar")
 
 cd "$ROOT"
 
