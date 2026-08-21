@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { motion, useMotionValue, useSpring } from "framer-motion";
 import { Arrow } from "./icons";
 
 // `hash` links always go through the home route: from any other page (e.g.
@@ -7,17 +8,53 @@ import { Arrow } from "./icons";
 // scrolling nowhere on the current page. TanStack's <Link> resolves the
 // deploy-time base path itself, so this stays correct under GitHub Pages'
 // /Portfolio/ subpath too.
+//
+// Labels are Uzbek throughout — the rest of the site's copy is Uzbek, and a
+// nav row mixing "Work / About / Skills" with Uzbek section content read as
+// inconsistent (client feedback: "biroz tushunarsiz").
 const LINKS: { to: string; hash?: string; label: string }[] = [
-  { to: "/", hash: "work", label: "Work" },
-  { to: "/", hash: "about", label: "About" },
-  { to: "/", hash: "skills", label: "Skills" },
-  { to: "/", hash: "services", label: "Services" },
-  { to: "/", hash: "contact", label: "Contact" },
+  { to: "/", hash: "work", label: "Ishlarim" },
+  { to: "/", hash: "about", label: "Men haqimda" },
+  { to: "/", hash: "skills", label: "Ko'nikmalar" },
+  { to: "/", hash: "services", label: "Xizmatlar" },
+  { to: "/", hash: "contact", label: "Aloqa" },
 ];
+
+const MotionLink = motion.create(Link);
+
+/**
+ * Subtle magnetic pull toward the cursor — mouse only (pointerType check),
+ * and a no-op under prefers-reduced-motion. Reserved for the single most
+ * prominent CTA on the page (the catalog pill) rather than every link, so
+ * it reads as one deliberate "premium" touch instead of noise.
+ */
+function useMagnetic(strength = 10) {
+  const ref = useRef<HTMLAnchorElement>(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const springX = useSpring(x, { stiffness: 300, damping: 20, mass: 0.4 });
+  const springY = useSpring(y, { stiffness: 300, damping: 20, mass: 0.4 });
+
+  const onPointerMove = (e: React.PointerEvent<HTMLAnchorElement>) => {
+    if (e.pointerType !== "mouse") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const rect = ref.current?.getBoundingClientRect();
+    if (!rect) return;
+    x.set(((e.clientX - rect.left - rect.width / 2) / rect.width) * strength);
+    y.set(((e.clientY - rect.top - rect.height / 2) / rect.height) * strength);
+  };
+  const onPointerLeave = () => {
+    x.set(0);
+    y.set(0);
+  };
+
+  return { ref, style: { x: springX, y: springY }, onPointerMove, onPointerLeave };
+}
 
 export function Nav() {
   const [open, setOpen] = useState(false);
   const [onDark, setOnDark] = useState(false);
+  const magnet = useMagnetic();
 
   // The nav sits over both light and dark sections; sample what is behind it
   // so the type stays legible without painting a card behind the bar.
@@ -116,9 +153,16 @@ export function Nav() {
               stays visible on mobile without opening the menu -- the
               catalog is the site's main conversion path and shouldn't be
               a tap-to-reveal secret. */}
-          <Link to="/xizmatlar" className="ed-label ed-navpricing">
-            Narxlar
-          </Link>
+          <MotionLink
+            to="/xizmatlar"
+            ref={magnet.ref}
+            style={magnet.style}
+            onPointerMove={magnet.onPointerMove}
+            onPointerLeave={magnet.onPointerLeave}
+            className="ed-label ed-navpricing"
+          >
+            XIZMATLAR
+          </MotionLink>
 
           <button
             type="button"
@@ -182,7 +226,7 @@ export function Nav() {
             className="ed-display"
             style={{ fontSize: "clamp(2.25rem, 11vw, 4rem)", color: "var(--ed-red-br)" }}
           >
-            Narxlar
+            XIZMATLAR
           </Link>
           {LINKS.map((l) => (
             <Link

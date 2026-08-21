@@ -285,6 +285,20 @@ body {
   }
 }
 
+/* Cursor-follow ambient glow for dark sections — set as a background layer
+   (not a positioned overlay) so it always paints behind real content with
+   no z-index bookkeeping. `--spot-x`/`--spot-y` are written by useSpotlight;
+   they default to the section's center so nothing looks broken before the
+   first pointermove. */
+.ed-spotlight {
+  background-image: radial-gradient(
+    560px circle at var(--spot-x, 50%) var(--spot-y, 30%),
+    rgba(178, 13, 24, 0.16),
+    transparent 62%
+  );
+  background-repeat: no-repeat;
+}
+
 /* Hairline red rule used between editorial blocks */
 .ed-rule {
   height: 1px;
@@ -470,6 +484,7 @@ body {
 
 /* ---------- Buttons ---------- */
 .ed-btn {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 0.6rem;
@@ -483,19 +498,51 @@ body {
   cursor: pointer;
   background: none;
   color: inherit;
+  overflow: hidden;
   transition:
     background 0.35s ease,
     color 0.35s ease,
-    border-color 0.35s ease;
+    border-color 0.35s ease,
+    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+/* Diagonal light sweep on hover — one deliberate "premium" cue reused by
+   every button on the site instead of a bespoke effect per call site. */
+.ed-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 35%;
+  height: 100%;
+  background: linear-gradient(
+    115deg,
+    transparent,
+    rgba(245, 242, 239, 0.4),
+    transparent
+  );
+  transform: skewX(-20deg);
+  transition: left 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
 }
 .ed-btn:hover:not(:disabled) {
   background: var(--ed-red);
   border-color: var(--ed-red);
   color: var(--ed-offwhite);
+  transform: translateY(-2px);
+}
+.ed-btn:hover:not(:disabled)::before {
+  left: 130%;
 }
 .ed-btn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ed-btn,
+  .ed-btn::before {
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    transform: none !important;
+  }
 }
 
 /* ---------- Contact form ---------- */

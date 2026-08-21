@@ -1,6 +1,44 @@
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { useReveal } from "./useReveal";
 import { Portrait } from "./Portrait";
 import { RedArc } from "./Curve";
+
+/**
+ * Cursor-reactive tilt on the hero portrait — mouse only, and inert under
+ * prefers-reduced-motion. Kept as its own inner wrapper (not on the outer
+ * `.ed-rise` element) so it never fights that element's own CSS entrance
+ * transform: the rise-in plays first, then this takes over afterwards.
+ */
+function TiltPortrait() {
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const springX = useSpring(x, { stiffness: 120, damping: 14, mass: 0.6 });
+  const springY = useSpring(y, { stiffness: 120, damping: 14, mass: 0.6 });
+  const rotateX = useTransform(springY, [-40, 40], [5, -5]);
+  const rotateY = useTransform(springX, [-40, 40], [-5, 5]);
+
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType !== "mouse") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    x.set(((e.clientX - rect.left) / rect.width - 0.5) * 80);
+    y.set(((e.clientY - rect.top) / rect.height - 0.5) * 80);
+  };
+  const onPointerLeave = () => {
+    x.set(0);
+    y.set(0);
+  };
+
+  return (
+    <motion.div
+      onPointerMove={onPointerMove}
+      onPointerLeave={onPointerLeave}
+      style={{ x: springX, y: springY, rotateX, rotateY, transformPerspective: 900 }}
+    >
+      <Portrait treatment="natural" />
+    </motion.div>
+  );
+}
 
 export function Hero() {
   const { ref, shown } = useReveal<HTMLElement>(0.05);
@@ -85,7 +123,7 @@ export function Hero() {
           }}
           data-hero-portrait
         >
-          <Portrait treatment="natural" />
+          <TiltPortrait />
         </div>
       </div>
 
@@ -105,11 +143,11 @@ export function Hero() {
         }}
       >
         <p className="ed-label" style={{ margin: 0, lineHeight: 1.8 }}>
-          Full-stack
+          To'liq stack
           <br />
-          Developer
+          dasturchi
           <br />
-          &amp; AI Builder
+          &amp; AI mutaxassisi
         </p>
         <p
           className="ed-label"
@@ -120,9 +158,9 @@ export function Hero() {
             color: "var(--ed-gray-tx)",
           }}
         >
-          Based in
+          Manzil:
           <br />
-          Tashkent, Uzbekistan
+          Toshkent, O'zbekiston
         </p>
       </div>
     </section>

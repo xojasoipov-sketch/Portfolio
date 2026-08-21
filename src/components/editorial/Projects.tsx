@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PROJECTS } from "@/data/projects";
 import { useReveal } from "./useReveal";
+import { useSpotlight } from "./useSpotlight";
 import { Arrow } from "./icons";
 
 export function Projects() {
   const { ref, shown } = useReveal<HTMLElement>(0.06);
+  const spotlightRef = useSpotlight<HTMLElement>();
   const [active, setActive] = useState(0);
   const total = PROJECTS.length;
 
@@ -41,11 +43,15 @@ export function Projects() {
   return (
     <section
       id="work"
-      ref={ref}
+      ref={(node) => {
+        ref.current = node;
+        spotlightRef.current = node;
+      }}
       tabIndex={-1}
       data-surface="black"
+      className="ed-spotlight"
       style={{
-        background: "var(--ed-black)",
+        backgroundColor: "var(--ed-black)",
         color: "var(--ed-offwhite)",
         paddingBlock: "var(--ed-section)",
         outline: "none",
@@ -69,7 +75,7 @@ export function Projects() {
             className="ed-label"
             style={{ margin: 0, color: "var(--ed-red-br)" }}
           >
-            04 — Selected Work
+            04 — Tanlangan loyihalar
           </p>
           <p className="ed-label" style={{ margin: 0, opacity: 0.55 }}>
             {String(active + 1).padStart(2, "0")} /{" "}

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { sendContactMessage } from "@/lib/api/contact";
 import { useReveal } from "./useReveal";
+import { useSpotlight } from "./useSpotlight";
 import { Portrait } from "./Portrait";
 import { Arrow } from "./icons";
 
@@ -14,6 +15,7 @@ type Status = "idle" | "sending" | "sent" | "error";
 
 export function Contact() {
   const { ref, shown } = useReveal<HTMLElement>(0.06);
+  const spotlightRef = useSpotlight<HTMLElement>();
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
 
@@ -49,10 +51,14 @@ export function Contact() {
   return (
     <section
       id="contact"
-      ref={ref}
+      ref={(node) => {
+        ref.current = node;
+        spotlightRef.current = node;
+      }}
       data-surface="black"
+      className="ed-spotlight"
       style={{
-        background: "var(--ed-black)",
+        backgroundColor: "var(--ed-black)",
         color: "var(--ed-offwhite)",
         paddingBlock: "var(--ed-section)",
         position: "relative",

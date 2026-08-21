@@ -24,7 +24,7 @@ export function About() {
               01
             </p>
             <p className="ed-label" style={{ marginTop: "0.5rem" }}>
-              About
+              Profil
             </p>
           </div>
 

@@ -41,7 +41,7 @@ export function Skills() {
           }}
         >
           <p className="ed-label" style={{ margin: 0, color: "var(--ed-red)" }}>
-            02 — Technologies
+            02 — Texnologiyalar
           </p>
           <p
             className="ed-label"

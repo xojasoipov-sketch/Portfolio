@@ -5,22 +5,22 @@ import { Arrow } from "./icons";
 const SERVICES = [
   {
     num: "01",
-    name: "Full-stack Development",
+    name: "To'liq stack ishlab chiqish",
     note: "Sayt, marketplace, dashboard va mobil ilova — bitta izchil arxitektura bilan.",
   },
   {
     num: "02",
-    name: "AI Systems",
+    name: "AI tizimlari",
     note: "Real ma'lumot bazasiga ulangan AI xizmat, agentlar va model routing.",
   },
   {
     num: "03",
-    name: "SaaS Products",
+    name: "SaaS mahsulotlar",
     note: "Ko'p-tenantli CRM va boshqaruv tizimlari, obuna va to'lov davrlari bilan.",
   },
   {
     num: "04",
-    name: "Automation",
+    name: "Avtomatlashtirish",
     note: "Telegram botlar, mini-ilovalar va takroriy jarayonlarni avtomatlashtirish.",
   },
 ];
@@ -47,7 +47,7 @@ export function Services() {
           data-shown={shown}
           style={{ margin: 0, color: "var(--ed-red)" }}
         >
-          03 — Services
+          03 — Xizmatlar
         </p>
       </div>
 
