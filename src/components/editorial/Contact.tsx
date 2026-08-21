@@ -6,7 +6,6 @@ import { Portrait } from "./Portrait";
 import { Arrow } from "./icons";
 
 const SOCIALS = [
-  { label: "GitHub", href: "https://github.com/xojasoipov-sketch" },
   { label: "Telegram", href: "https://t.me/xojasoipov" },
   { label: "Email", href: "mailto:xojasoipov@gmail.com" },
 ];

@@ -210,5 +210,4 @@ export const FAQ = [
 export const CONTACT = {
   email: "xojasoipov@gmail.com",
   telegram: "@xojasoipov",
-  github: "github.com/xojasoipov-sketch",
 } as const;
