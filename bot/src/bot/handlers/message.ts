@@ -185,7 +185,7 @@ export async function handleLeadConfirm(ctx: Context, user: UserRow, conversatio
     source: user.source,
   });
 
-  await notifyNewLead(lead, score);
+  await notifyNewLead(lead);
   await endConversation(conversationId, conversationSummary);
   await clearDraft(conversationId);
   await trackEvent(user.id, "lead_created", { lead_id: lead.id, score: score.score, priority: score.priority });

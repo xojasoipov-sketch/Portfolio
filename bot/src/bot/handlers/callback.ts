@@ -6,6 +6,9 @@ import { env } from "../../config.js";
 import { escapeTelegramHtml } from "../../security/validation.js";
 import type { UserRow } from "../../db/types.js";
 import { handleHandoffCancel, handleHandoffSend, handleLeadCancel, handleLeadConfirm, handleLeadEdit } from "./message.js";
+import { adminLeadKeyboard } from "../keyboards.js";
+import { buildLeadNotificationText } from "../../notifications/admin.js";
+import { logger } from "../../utils/logger.js";
 import { t } from "../i18n.js";
 
 /**
@@ -49,6 +52,7 @@ async function handleAdminCallback(ctx: Context, data: string) {
     const [leadId, status] = rest;
     await updateLeadStatus(leadId!, status as never, String(ctx.from?.id ?? "admin"));
     await ctx.answerCallbackQuery({ text: `Status: ${status}` });
+    await refreshLeadCard(ctx, leadId!);
     return;
   }
 
@@ -56,6 +60,7 @@ async function handleAdminCallback(ctx: Context, data: string) {
     const [leadId, priority] = rest;
     await updateLeadPriority(leadId!, priority as never, String(ctx.from?.id ?? "admin"));
     await ctx.answerCallbackQuery({ text: `Priority: ${priority}` });
+    await refreshLeadCard(ctx, leadId!);
     return;
   }
 
@@ -111,6 +116,34 @@ async function handleAdminCallback(ctx: Context, data: string) {
       ].join("\n"),
       { parse_mode: "HTML" },
     );
+  }
+}
+
+/**
+ * Re-renders the admin lead card in place after a status/priority tap.
+ *
+ * Without this, `answerCallbackQuery`'s toast was the *only* feedback —
+ * it disappears in a couple of seconds, the card's text and buttons never
+ * changed, and tapping "Qabul qilish" again looked exactly like the first
+ * time. An admin has no way to tell, days later, whether a card was ever
+ * actioned. Editing the message is what makes the tap actually stick.
+ */
+async function refreshLeadCard(ctx: Context, leadId: string): Promise<void> {
+  const lead = await getLead(leadId);
+  if (!lead) return;
+  try {
+    await ctx.editMessageText(buildLeadNotificationText(lead), {
+      parse_mode: "HTML",
+      reply_markup: adminLeadKeyboard(lead.id, lead.telegram_username),
+    });
+  } catch (err) {
+    // Telegram rejects an edit whose content is byte-identical to what's
+    // already there (e.g. tapping the same status twice in a row) — that's
+    // not a real failure, so only the genuinely unexpected case is logged.
+    const message = err instanceof Error ? err.message : String(err);
+    if (!message.includes("message is not modified")) {
+      logger.warn({ err: message, leadId }, "failed to refresh lead card after a status/priority change");
+    }
   }
 }
 

@@ -1,11 +1,10 @@
 import type { Api } from "npm:grammy@1.31.0";
 import { env } from "../config.ts";
-import type { LeadDraft, LeadRow } from "../db/types.ts";
+import type { LeadRow } from "../db/types.ts";
 import { db } from "../db/client.ts";
 import { escapeTelegramHtml } from "../security/validation.ts";
 import { logger } from "../utils/logger.ts";
 import { adminLeadKeyboard } from "../bot/keyboards.ts";
-import type { LeadScoreResult } from "../ai/scoring.ts";
 
 /**
  * Set once from index.ts after the bot is constructed. Kept as a small
@@ -21,12 +20,25 @@ function priorityEmoji(priority: string): string {
   return { LOW: "🟢", MEDIUM: "🟡", HIGH: "🟠", URGENT: "🔴" }[priority] ?? "⚪️";
 }
 
-/** Item 17: full new-lead notification, sent to every configured admin. */
-export async function notifyNewLead(lead: LeadRow, score: LeadScoreResult): Promise<void> {
-  if (!apiRef) return logger.error({}, "notifyNewLead called before registerAdminNotifier");
+const STATUS_LABEL: Record<string, string> = {
+  NEW: "Yangi",
+  REVIEWING: "Ko'rib chiqilmoqda",
+  CONTACTED: "Bog'lanildi",
+  QUALIFIED: "Qabul qilindi",
+  REJECTED: "Rad etildi",
+  COMPLETED: "Yakunlandi",
+};
 
-  const featuresLine = lead.features?.length ? lead.features.map((f) => `• ${f}`).join("\n") : "• —";
-  const text = [
+/**
+ * Builds the admin lead card's text from the lead's current DB row — the
+ * single source both the first notification and every later refresh (after
+ * an admin taps Qabul qilish / Reviewing / Reject) render from, so the card
+ * always shows what is actually true instead of what was true when it was
+ * first sent.
+ */
+export function buildLeadNotificationText(lead: LeadRow): string {
+  const featuresLine = lead.features?.length ? lead.features.map((f) => `• ${f}`).join("\n") : "—";
+  return [
     "🚨 <b>YANGI MIJOZ</b>",
     "",
     `👤 <b>Ism:</b> ${escapeTelegramHtml(lead.first_name ?? "—")}`,
@@ -37,15 +49,21 @@ export async function notifyNewLead(lead: LeadRow, score: LeadScoreResult): Prom
     escapeTelegramHtml(featuresLine),
     `💰 <b>Budjet:</b> ${escapeTelegramHtml(lead.budget ?? "Aniqlanmagan")}`,
     `⏱ <b>Muddat:</b> ${escapeTelegramHtml(lead.deadline ?? "Aniqlanmagan")}`,
-    `🔥 <b>Lead Score:</b> ${score.score}/100`,
-    `📌 <b>Priority:</b> ${priorityEmoji(score.priority)} ${score.priority}`,
+    `🔥 <b>Lead Score:</b> ${lead.lead_score ?? 0}/100`,
+    `📌 <b>Priority:</b> ${priorityEmoji(lead.priority)} ${lead.priority}`,
+    `📍 <b>Status:</b> ${STATUS_LABEL[lead.status] ?? lead.status}`,
     lead.ai_summary ? `\n🧠 <b>AI SUMMARY:</b>\n${escapeTelegramHtml(lead.ai_summary)}` : null,
   ]
     .filter((l): l is string => l !== null)
     .join("\n");
+}
 
-  await sendToAllAdmins(text, adminLeadKeyboard(lead.id, lead.telegram_username));
-  await db.from("xbot_notifications").insert({ type: "new_lead", lead_id: lead.id, payload: { score: score.score } });
+/** Item 17: full new-lead notification, sent to every configured admin. */
+export async function notifyNewLead(lead: LeadRow): Promise<void> {
+  if (!apiRef) return logger.error({}, "notifyNewLead called before registerAdminNotifier");
+
+  await sendToAllAdmins(buildLeadNotificationText(lead), adminLeadKeyboard(lead.id, lead.telegram_username));
+  await db.from("xbot_notifications").insert({ type: "new_lead", lead_id: lead.id, payload: { score: lead.lead_score } });
 }
 
 export async function notifyHumanHandoff(params: {
