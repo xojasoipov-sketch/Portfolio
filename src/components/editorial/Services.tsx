@@ -88,16 +88,22 @@ export function Services() {
         className="ed-shell ed-rise"
         data-shown={shown}
         style={{
-          marginTop: "clamp(2rem, 5vw, 3rem)",
+          marginTop: "clamp(2.5rem, 6vw, 4rem)",
           transitionDelay: "0.35s",
+          display: "flex",
+          justifyContent: "center",
         }}
       >
         <Link
           to="/xizmatlar"
-          className="ed-label ed-navlink"
-          style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
+          className="ed-btn"
+          style={{
+            background: "var(--ed-red-br)",
+            borderColor: "var(--ed-red-br)",
+            color: "var(--ed-offwhite)",
+          }}
         >
-          To'liq xizmatlar katalogi va narxlarni ko'rish <Arrow size="0.85em" />
+          Barcha narxlarni ko'rish <Arrow size="0.85em" />
         </Link>
       </div>
     </section>

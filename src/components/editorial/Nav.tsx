@@ -12,7 +12,6 @@ const LINKS: { to: string; hash?: string; label: string }[] = [
   { to: "/", hash: "about", label: "About" },
   { to: "/", hash: "skills", label: "Skills" },
   { to: "/", hash: "services", label: "Services" },
-  { to: "/xizmatlar", label: "Katalog" },
   { to: "/", hash: "contact", label: "Contact" },
 ];
 
@@ -83,53 +82,63 @@ export function Nav() {
           SX
         </a>
 
-        <nav
-          aria-label="Asosiy menyu"
-          style={{
-            display: "flex",
-            gap: "clamp(1rem, 2.4vw, 2.4rem)",
-            alignItems: "center",
-          }}
-          data-desktop-nav
-        >
-          {LINKS.map((l) => (
-            <Link
-              key={l.label}
-              to={l.to}
-              hash={l.hash}
-              className="ed-label ed-navlink"
-            >
-              {l.label}
-            </Link>
-          ))}
-          <Link
-            to="/"
-            hash="contact"
-            className="ed-label ed-navcv"
-            style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+          <nav
+            aria-label="Asosiy menyu"
+            style={{
+              display: "flex",
+              gap: "clamp(1rem, 2.4vw, 2.4rem)",
+              alignItems: "center",
+            }}
+            data-desktop-nav
           >
-            CV <Arrow direction="down" size="0.85em" />
-          </Link>
-        </nav>
+            {LINKS.map((l) => (
+              <Link
+                key={l.label}
+                to={l.to}
+                hash={l.hash}
+                className="ed-label ed-navlink"
+              >
+                {l.label}
+              </Link>
+            ))}
+            <Link
+              to="/"
+              hash="contact"
+              className="ed-label ed-navcv"
+              style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
+            >
+              CV <Arrow direction="down" size="0.85em" />
+            </Link>
+          </nav>
 
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          aria-label="Menyuni ochish"
-          data-mobile-toggle
-          style={{
-            display: "none",
-            flexDirection: "column",
-            gap: 5,
-            background: "none",
-            border: 0,
-            cursor: "pointer",
-            padding: 4,
-          }}
-        >
-          <span style={{ width: 24, height: 1.5, background: ink }} />
-          <span style={{ width: 24, height: 1.5, background: ink }} />
-        </button>
+          {/* Kept outside data-desktop-nav so it's the one nav item that
+              stays visible on mobile without opening the menu -- the
+              catalog is the site's main conversion path and shouldn't be
+              a tap-to-reveal secret. */}
+          <Link to="/xizmatlar" className="ed-label ed-navpricing">
+            Narxlar
+          </Link>
+
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            aria-label="Menyuni ochish"
+            data-mobile-toggle
+            style={{
+              display: "none",
+              flexDirection: "column",
+              gap: 5,
+              background: "none",
+              border: 0,
+              cursor: "pointer",
+              padding: 4,
+            }}
+          >
+            <span style={{ width: 24, height: 1.5, background: ink }} />
+            <span style={{ width: 24, height: 1.5, background: ink }} />
+          </button>
+        </div>
       </header>
 
       {open && (
@@ -167,6 +176,14 @@ export function Nav() {
           >
             ×
           </button>
+          <Link
+            to="/xizmatlar"
+            onClick={() => setOpen(false)}
+            className="ed-display"
+            style={{ fontSize: "clamp(2.25rem, 11vw, 4rem)", color: "var(--ed-red-br)" }}
+          >
+            Narxlar
+          </Link>
           {LINKS.map((l) => (
             <Link
               key={l.label}

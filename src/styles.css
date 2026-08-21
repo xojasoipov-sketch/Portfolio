@@ -364,6 +364,23 @@ body {
   color: var(--ed-offwhite);
 }
 
+/* Filled (not outlined) so it reads as the one thing to notice, and stays
+   visible on mobile where the rest of the nav collapses into the menu. */
+.ed-navpricing {
+  background: var(--ed-red-br);
+  color: var(--ed-offwhite);
+  border-radius: 999px;
+  padding: 0.45rem 1.1rem;
+  white-space: nowrap;
+  transition:
+    background 0.3s ease,
+    transform 0.3s ease;
+}
+.ed-navpricing:hover {
+  background: var(--ed-red);
+  transform: translateY(-1px);
+}
+
 @media (max-width: 860px) {
   [data-desktop-nav] {
     display: none !important;
