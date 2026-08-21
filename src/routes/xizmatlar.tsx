@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
+  Wrench,
   ShieldCheck,
   Globe,
   Smartphone,
@@ -10,6 +11,7 @@ import {
 } from "lucide-react";
 import { Nav } from "@/components/editorial/Nav";
 import { Footer } from "@/components/editorial/Footer";
+import { Arrow } from "@/components/editorial/icons";
 import { useReveal } from "@/components/editorial/useReveal";
 import {
   CATALOG,
@@ -39,6 +41,7 @@ export const Route = createFileRoute("/xizmatlar")({
 
 /** SVG glyph per category — no emoji, matches the editorial line-art system. */
 const CATEGORY_ICON: Record<CatalogCategory["key"], React.ComponentType<{ size?: number; strokeWidth?: number }>> = {
+  quick: Wrench,
   audit: ShieldCheck,
   web: Globe,
   mobile: Smartphone,
@@ -117,8 +120,8 @@ function CatalogHero() {
           }}
         >
           Har bir xizmat alohida buyurtma qilinishi yoki tayyor paketlar
-          tarkibida olinishi mumkin. Narxlar O'zbekiston bozori sharoitiga
-          moslashtirilgan (1$ ≈ 12 000 so'm asosida taxminiy).
+          tarkibida olinishi mumkin. Kichik tuzatishdan to to'liq ekotizim
+          qurishgacha — barcha narxlar dollarda ko'rsatilgan.
         </p>
       </div>
     </section>
@@ -169,10 +172,7 @@ function CategoryBlock({ category }: { category: CatalogCategory }) {
             style={{ transitionDelay: `${Math.min(i * 0.06, 0.3)}s` }}
           >
             <span className="ed-cat-item-name">{item.name}</span>
-            <span className="ed-cat-item-price">
-              <span className="ed-cat-item-som">{item.som}</span>
-              <span className="ed-cat-item-usd">{item.usd}</span>
-            </span>
+            <span className="ed-cat-item-price">{item.price}</span>
             <span className="ed-cat-item-duration">{item.duration}</span>
           </div>
         ))}
@@ -234,7 +234,7 @@ function PackagesSection() {
                   {pkg.price}
                 </p>
                 <p style={{ margin: "0.2rem 0 0", fontSize: "0.85rem", opacity: 0.55 }}>
-                  {pkg.priceUsd} · {pkg.duration}
+                  {pkg.duration}
                 </p>
               </div>
 
@@ -253,7 +253,7 @@ function PackagesSection() {
                 className="ed-btn"
                 style={{ alignSelf: "flex-start" }}
               >
-                Shu paketni tanlash →
+                Shu paketni tanlash <Arrow size="0.85em" />
               </Link>
             </div>
           ))}
@@ -356,7 +356,7 @@ function TermsAndCta() {
               Xizmat tanladingizmi? 30 daqiqalik bepul suhbatdan boshlaymiz.
             </p>
             <Link to="/" hash="contact" className="ed-btn">
-              Bog'lanish →
+              Bog'lanish <Arrow size="0.85em" />
             </Link>
           </div>
         </div>

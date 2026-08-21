@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PROJECTS } from "@/data/projects";
 import { useReveal } from "./useReveal";
+import { Arrow } from "./icons";
 
 export function Projects() {
   const { ref, shown } = useReveal<HTMLElement>(0.06);
@@ -164,17 +165,17 @@ export function Projects() {
                     target="_blank"
                     rel="noreferrer"
                   >
-                    Saytni ochish ↗
+                    Saytni ochish <Arrow direction="upRight" size="0.85em" />
                   </a>
                 )}
-                {project.repo && (
+                {project.bot && (
                   <a
                     className="ed-btn"
-                    href={project.repo}
+                    href={`https://t.me/${project.bot}`}
                     target="_blank"
                     rel="noreferrer"
                   >
-                    GitHub ↗
+                    Telegram bot <Arrow direction="upRight" size="0.85em" />
                   </a>
                 )}
               </div>
@@ -184,7 +185,7 @@ export function Projects() {
 
         <div className="ed-proj-nav">
           <button type="button" className="ed-btn" onClick={() => go(-1)}>
-            ← {PROJECTS[(active - 1 + total) % total].title}
+            <Arrow direction="left" size="0.85em" /> {PROJECTS[(active - 1 + total) % total].title}
           </button>
 
           <div style={{ display: "flex", gap: "0.5rem" }}>
@@ -211,7 +212,7 @@ export function Projects() {
           </div>
 
           <button type="button" className="ed-btn" onClick={() => go(1)}>
-            {PROJECTS[(active + 1) % total].title} →
+            {PROJECTS[(active + 1) % total].title} <Arrow size="0.85em" />
           </button>
         </div>
       </div>

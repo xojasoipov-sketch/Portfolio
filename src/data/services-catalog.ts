@@ -1,29 +1,73 @@
 /**
- * Full pricing catalog — sourced verbatim from
- * Xojasoipov_Xizmatlar_Katalogi.docx (the approved services catalog).
- *
- * This mirrors the same figures the AI bot quotes from
+ * Full pricing catalog. The audit-through-retainer categories are sourced
+ * verbatim from Xojasoipov_Xizmatlar_Katalogi.docx (the approved services
+ * catalog) and mirror the same figures the AI bot quotes from
  * (bot/src/ai/knowledgeData.ts / supabase/functions/xojasoipov-bot/ai/knowledgeData.ts)
- * so the public site and the bot never disagree on a price. Kept as a
- * separate file (not imported cross-app) since the site and the bot are two
- * different deploy targets — update both together when the catalog changes.
+ * so the public site and the bot never disagree on a price.
+ *
+ * "quick" is new: small, fast-turnaround jobs a solo full-stack/AI developer
+ * actually takes on between the larger engagements above -- a bug fix, one
+ * API hookup, a bot command -- priced and scoped for that, not padded down
+ * from a bigger package.
+ *
+ * Every price is USD-only by design: this catalog's audience includes
+ * clients outside Uzbekistan, and a single currency is one less thing to
+ * mentally convert. Kept as a separate file (not imported cross-app) since
+ * the site and the bot are two different deploy targets -- update both
+ * together when the catalog changes.
  */
 
 export interface CatalogItem {
   name: string;
   duration: string;
-  som: string;
-  usd: string;
+  price: string;
 }
 
 export interface CatalogCategory {
-  key: "audit" | "web" | "mobile" | "ai" | "crm" | "retainer";
+  key: "quick" | "audit" | "web" | "mobile" | "ai" | "crm" | "retainer";
   num: string;
   title: string;
   items: CatalogItem[];
 }
 
 export const CATALOG: CatalogCategory[] = [
+  {
+    key: "quick",
+    num: "4.0",
+    title: "Mayda ishlar va tezkor tuzatishlar",
+    items: [
+      {
+        name: "Tezkor bug tuzatish (1 ta xato, mavjud loyihada)",
+        duration: "1 kun",
+        price: "$40 – $80",
+      },
+      {
+        name: "Telegram botga yangi buyruq yoki funksiya qo'shish",
+        duration: "1–2 kun",
+        price: "$80 – $200",
+      },
+      {
+        name: "Mavjud saytga kichik UI/dizayn tuzatish",
+        duration: "1 kun",
+        price: "$50 – $120",
+      },
+      {
+        name: "Bitta tashqi API integratsiyasi (to'lov, xarita, SMS va h.k.)",
+        duration: "2–3 kun",
+        price: "$150 – $350",
+      },
+      {
+        name: "Server/hosting sozlash va deploy qilish",
+        duration: "1 kun",
+        price: "$60 – $150",
+      },
+      {
+        name: "Texnik konsultatsiya",
+        duration: "1 soat",
+        price: "$40 /soat",
+      },
+    ],
+  },
   {
     key: "audit",
     num: "4.1",
@@ -32,20 +76,17 @@ export const CATALOG: CatalogCategory[] = [
       {
         name: "Tezkor audit (1 kanal/mahsulot)",
         duration: "3–5 kun",
-        som: "3 000 000 – 6 000 000 so'm",
-        usd: "$250 – $500",
+        price: "$250 – $500",
       },
       {
         name: "To'liq raqamli ekotizim auditi (sayt + bot + ilova + SMM)",
         duration: "1–2 hafta",
-        som: "8 000 000 – 15 000 000 so'm",
-        usd: "$650 – $1 250",
+        price: "$650 – $1 250",
       },
       {
         name: "Xavfsizlik va brend auditi (klon bot, domen tekshiruvi)",
         duration: "3–5 kun",
-        som: "4 000 000 – 8 000 000 so'm",
-        usd: "$350 – $650",
+        price: "$350 – $650",
       },
     ],
   },
@@ -57,20 +98,17 @@ export const CATALOG: CatalogCategory[] = [
       {
         name: "Landing / korporativ sayt",
         duration: "2–3 hafta",
-        som: "6 000 000 – 20 000 000 so'm",
-        usd: "$500 – $1 700",
+        price: "$500 – $1 700",
       },
       {
         name: "E-commerce/marketplace qurish yoki qayta qurish",
         duration: "4–8 hafta",
-        som: "20 000 000 – 45 000 000 so'm",
-        usd: "$1 700 – $3 800",
+        price: "$1 700 – $3 800",
       },
       {
         name: "SEO / ASO optimallashtirish (Google + App Store)",
         duration: "2–3 hafta",
-        som: "5 000 000 – 10 000 000 so'm",
-        usd: "$400 – $850",
+        price: "$400 – $850",
       },
     ],
   },
@@ -82,20 +120,17 @@ export const CATALOG: CatalogCategory[] = [
       {
         name: "Bot ekotizimini konsolidatsiya qilish (bir nechtasini birlashtirish)",
         duration: "2–3 hafta",
-        som: "10 000 000 – 20 000 000 so'm",
-        usd: "$850 – $1 700",
+        price: "$850 – $1 700",
       },
       {
         name: "Onboarding UX qayta qurish (og'ir video → tugma-oqim)",
         duration: "1–2 hafta",
-        som: "5 000 000 – 9 000 000 so'm",
-        usd: "$400 – $750",
+        price: "$400 – $750",
       },
       {
         name: "Native mobil ilova — yangi funksiya / yaxshilash",
         duration: "loyihaga qarab",
-        som: "15 000 000 so'mdan",
-        usd: "$1 250 dan",
+        price: "$1 250 dan",
       },
     ],
   },
@@ -107,20 +142,17 @@ export const CATALOG: CatalogCategory[] = [
       {
         name: "AI mijozlarga xizmat (real buyurtma bazasiga ulangan)",
         duration: "3–5 hafta",
-        som: "15 000 000 – 30 000 000 so'm",
-        usd: "$1 250 – $2 500",
+        price: "$1 250 – $2 500",
       },
       {
         name: "AI-SMM avtomatlashtirish (oylik xizmat)",
         duration: "doimiy",
-        som: "3 000 000 – 7 000 000 so'm/oy",
-        usd: "$250 – $600 /oy",
+        price: "$250 – $600 /oy",
       },
       {
         name: "AI xarid/narx yordamchisi (kalkulyator)",
         duration: "2–3 hafta",
-        som: "8 000 000 – 20 000 000 so'm",
-        usd: "$650 – $1 700",
+        price: "$650 – $1 700",
       },
     ],
   },
@@ -132,8 +164,7 @@ export const CATALOG: CatalogCategory[] = [
       {
         name: "Buyurtma/mijoz CRM (yagona ma'lumot bazasi)",
         duration: "6–10 hafta",
-        som: "35 000 000 – 95 000 000 so'm",
-        usd: "$3 000 – $8 000+",
+        price: "$3 000 – $8 000+",
       },
     ],
   },
@@ -145,8 +176,7 @@ export const CATALOG: CatalogCategory[] = [
       {
         name: "Oylik texnik qo'llab-quvvatlash (retainer)",
         duration: "doimiy",
-        som: "4 000 000 – 12 000 000 so'm/oy",
-        usd: "$350 – $1 000 /oy",
+        price: "$350 – $1 000 /oy",
       },
     ],
   },
@@ -155,7 +185,6 @@ export const CATALOG: CatalogCategory[] = [
 export interface Package {
   name: string;
   price: string;
-  priceUsd: string;
   duration: string;
   popular?: boolean;
   features: string[];
@@ -164,8 +193,7 @@ export interface Package {
 export const PACKAGES: Package[] = [
   {
     name: "Boshlang'ich",
-    price: "12 000 000 so'm",
-    priceUsd: "~$1 000",
+    price: "$1 000",
     duration: "2 hafta",
     features: [
       "To'liq raqamli ekotizim auditi",
@@ -176,8 +204,7 @@ export const PACKAGES: Package[] = [
   },
   {
     name: "O'sish",
-    price: "35 000 000 so'm",
-    priceUsd: "~$2 900",
+    price: "$2 900",
     duration: "4–5 hafta",
     popular: true,
     features: [
@@ -190,8 +217,7 @@ export const PACKAGES: Package[] = [
   },
   {
     name: "Raqobatbardosh ekotizim",
-    price: "95 000 000 so'm",
-    priceUsd: "~$8 000",
+    price: "$8 000",
     duration: "8–12 hafta",
     features: [
       "O'sish paketining barchasi",

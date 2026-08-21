@@ -2,6 +2,7 @@ import { useState } from "react";
 import { sendContactMessage } from "@/lib/api/contact";
 import { useReveal } from "./useReveal";
 import { Portrait } from "./Portrait";
+import { Arrow } from "./icons";
 
 const SOCIALS = [
   { label: "GitHub", href: "https://github.com/xojasoipov-sketch" },
@@ -152,7 +153,13 @@ export function Contact() {
                   className="ed-btn"
                   disabled={status === "sending"}
                 >
-                  {status === "sending" ? "Yuborilmoqda…" : "Yuborish →"}
+                  {status === "sending" ? (
+                    "Yuborilmoqda…"
+                  ) : (
+                    <>
+                      Yuborish <Arrow size="0.85em" />
+                    </>
+                  )}
                 </button>
 
                 {status === "sent" && (
@@ -232,8 +239,9 @@ export function Contact() {
                   target="_blank"
                   rel="noreferrer"
                   className="ed-navlink ed-label"
+                  style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
                 >
-                  {s.label} ↗
+                  {s.label} <Arrow direction="upRight" size="0.8em" />
                 </a>
               ))}
             </div>

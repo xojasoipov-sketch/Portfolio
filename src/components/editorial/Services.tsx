@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useReveal } from "./useReveal";
+import { Arrow } from "./icons";
 
 const SERVICES = [
   {
@@ -77,7 +78,7 @@ export function Services() {
               </span>
             </span>
             <span className="ed-service-arrow" aria-hidden="true">
-              →
+              <Arrow />
             </span>
           </a>
         ))}
@@ -91,8 +92,12 @@ export function Services() {
           transitionDelay: "0.35s",
         }}
       >
-        <Link to="/xizmatlar" className="ed-label ed-navlink">
-          To'liq xizmatlar katalogi va narxlarni ko'rish →
+        <Link
+          to="/xizmatlar"
+          className="ed-label ed-navlink"
+          style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
+        >
+          To'liq xizmatlar katalogi va narxlarni ko'rish <Arrow size="0.85em" />
         </Link>
       </div>
     </section>

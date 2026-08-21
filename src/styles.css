@@ -698,21 +698,11 @@ body {
 .ed-cat-item-price {
   grid-column: 2;
   grid-row: 1 / span 2;
-  text-align: right;
   align-self: center;
-}
-.ed-cat-item-som {
-  display: block;
+  text-align: right;
   font-weight: 700;
   white-space: nowrap;
   font-size: clamp(0.95rem, 1.4vw, 1.1rem);
-}
-.ed-cat-item-usd {
-  display: block;
-  margin-top: 0.15rem;
-  font-size: 0.78rem;
-  color: var(--ed-gray-tx);
-  white-space: nowrap;
 }
 
 /* Package tariff cards */

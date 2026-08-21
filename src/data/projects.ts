@@ -18,7 +18,8 @@ export type Project = {
   summary: string;
   detail: string;
   tech: string[];
-  repo?: string;
+  /** Telegram username (no @) of the project's own bot, when it has one. */
+  bot?: string;
   site?: string;
   shot?: string | null;
 };
@@ -41,7 +42,7 @@ export const PROJECTS: Project[] = [
       "Redis",
       "Multi-agent",
     ],
-    repo: "https://github.com/xojasoipov-sketch/Aris-ai",
+    bot: "zetassbot",
     shot: zetShot,
   },
   {
@@ -59,7 +60,7 @@ export const PROJECTS: Project[] = [
       "Cloudflare",
       "Docker",
     ],
-    repo: "https://github.com/xojasoipov-sketch/sadiprimetizim-crm",
+    bot: "sadiprimebot",
     site: "https://sadiprime-tizim.uz",
     shot: sadiprimeShot,
   },
@@ -79,7 +80,7 @@ export const PROJECTS: Project[] = [
       "Ollama",
       "Railway",
     ],
-    repo: "https://github.com/xojasoipov-sketch/Jarvis-ai",
+    bot: "Pariaiuzbot",
     shot: pariShot,
   },
   {
@@ -92,7 +93,7 @@ export const PROJECTS: Project[] = [
     detail:
       "Katalog, qidiruv, narx oralig'i va saralash filtrlari; JWT autentifikatsiya, ko'p tilli interfeys va admin dashboard. \"Look\" tizimi tayyor kiyim to'plamlarini bitta mahsulot sifatida ko'rsatadi — katalogda ham, Telegram mini-ilovasida ham.",
     tech: ["React", "FastAPI", "MongoDB", "Telegram Mini App", "JWT", "i18n"],
-    repo: "https://github.com/xojasoipov-sketch/Emergent",
+    bot: "Dli_shinebot",
     shot: dliShot,
   },
 ];

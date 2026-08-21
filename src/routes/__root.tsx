@@ -76,6 +76,12 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
+// Files in public/ aren't run through the bundler, so a hardcoded "/x" href
+// would point at the domain root even under GitHub Pages' /Portfolio/
+// subpath -- has to be joined with the same base Vite already resolved for
+// every bundled asset (see vite.config.ts's SITE_BASE).
+const asset = (path: string) => `${import.meta.env.BASE_URL}${path}`.replace(/\/{2,}/g, "/");
+
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   {
     head: () => ({
@@ -101,6 +107,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         { name: "twitter:card", content: "summary_large_image" },
       ],
       links: [
+        { rel: "icon", type: "image/svg+xml", href: asset("favicon.svg") },
+        { rel: "apple-touch-icon", href: asset("apple-touch-icon.png") },
         { rel: "stylesheet", href: appCss },
         { rel: "preconnect", href: "https://fonts.googleapis.com" },
         {

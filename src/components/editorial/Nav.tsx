@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { Arrow } from "./icons";
 
 // `hash` links always go through the home route: from any other page (e.g.
 // /xizmatlar) they navigate home and land on the right section instead of
@@ -101,8 +102,13 @@ export function Nav() {
               {l.label}
             </Link>
           ))}
-          <Link to="/" hash="contact" className="ed-label ed-navcv">
-            CV ↓
+          <Link
+            to="/"
+            hash="contact"
+            className="ed-label ed-navcv"
+            style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
+          >
+            CV <Arrow direction="down" size="0.85em" />
           </Link>
         </nav>
 
