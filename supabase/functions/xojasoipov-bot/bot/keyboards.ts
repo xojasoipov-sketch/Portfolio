@@ -5,8 +5,10 @@ import { env } from "../config.ts";
 
 /**
  * The live services catalog page — same site the "XIZMATLAR" pill on the
- * portfolio's own nav bar links to. A plain URL button (not a Telegram
- * WebApp) since the catalog page isn't set up as a mini app.
+ * portfolio's own nav bar links to. Opened as a Telegram WebApp (not a plain
+ * URL button) so it launches full-screen inside Telegram itself, with no
+ * external-browser address bar — a `.url()` button was popping the raw
+ * github.io link open in Safari/Chrome instead.
  */
 const CATALOG_URL = "https://xojasoipov-sketch.github.io/Portfolio/xizmatlar";
 
@@ -23,9 +25,9 @@ export function mainMenuKeyboard(lang: Language): Keyboard {
     .resized();
 }
 
-/** Katalog tugmasi bosilganda — to'g'ridan-to'g'ri xizmatlar katalogi sahifasiga olib boradi. */
+/** Katalog tugmasi bosilganda — to'g'ridan-to'g'ri xizmatlar katalogi sahifasiga, mini ilova sifatida ochiladi. */
 export function catalogKeyboard(lang: Language): InlineKeyboard {
-  return new InlineKeyboard().url(t(lang, "catalogOpen"), CATALOG_URL);
+  return new InlineKeyboard().webApp(t(lang, "catalogOpen"), CATALOG_URL);
 }
 
 export function portfolioKeyboard(lang: Language): InlineKeyboard {
