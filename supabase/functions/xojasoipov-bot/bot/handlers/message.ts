@@ -22,16 +22,17 @@ import { notifyHumanHandoff, notifyNewLead } from "../../notifications/admin.ts"
 import { checkRateLimit } from "../../security/rateLimit.ts";
 import { clampMessage, looksLikeSpam } from "../../security/validation.ts";
 import { logger } from "../../utils/logger.ts";
-import { handoffKeyboard, leadConfirmKeyboard, portfolioKeyboard } from "../keyboards.ts";
+import { catalogKeyboard, handoffKeyboard, leadConfirmKeyboard, portfolioKeyboard } from "../keyboards.ts";
 import { t } from "../i18n.ts";
 
-const MENU_LOOKUP: Record<string, "portfolio" | "ai" | "hire" | "cv" | "contact"> = {};
+const MENU_LOOKUP: Record<string, "portfolio" | "ai" | "hire" | "cv" | "contact" | "catalog"> = {};
 for (const lang of ["uz", "en"] as const) {
   MENU_LOOKUP[t(lang, "menuPortfolio")] = "portfolio";
   MENU_LOOKUP[t(lang, "menuAI")] = "ai";
   MENU_LOOKUP[t(lang, "menuHire")] = "hire";
   MENU_LOOKUP[t(lang, "menuCV")] = "cv";
   MENU_LOOKUP[t(lang, "menuContact")] = "contact";
+  MENU_LOOKUP[t(lang, "menuCatalog")] = "catalog";
 }
 
 export async function handleTextMessage(ctx: Context, user: UserRow) {
@@ -53,12 +54,16 @@ export async function handleTextMessage(ctx: Context, user: UserRow) {
   await handleFreeText(ctx, user, clampMessage(text));
 }
 
-async function handleMenuAction(ctx: Context, user: UserRow, action: "portfolio" | "ai" | "hire" | "cv" | "contact") {
+async function handleMenuAction(ctx: Context, user: UserRow, action: "portfolio" | "ai" | "hire" | "cv" | "contact" | "catalog") {
   const lang = user.language;
   switch (action) {
     case "portfolio":
       await trackEvent(user.id, "mini_app_open");
       await ctx.reply(t(lang, "menuPortfolio"), { reply_markup: portfolioKeyboard(lang) });
+      return;
+    case "catalog":
+      await trackEvent(user.id, "catalog_open");
+      await ctx.reply(t(lang, "catalogPrompt"), { reply_markup: catalogKeyboard(lang) });
       return;
     case "ai":
       await ctx.reply(t(lang, "aiPrompt"));

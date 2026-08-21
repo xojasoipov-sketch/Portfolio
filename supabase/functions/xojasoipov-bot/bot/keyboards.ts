@@ -3,6 +3,13 @@ import type { Language } from "../db/types.ts";
 import { t } from "./i18n.ts";
 import { env } from "../config.ts";
 
+/**
+ * The live services catalog page — same site the "XIZMATLAR" pill on the
+ * portfolio's own nav bar links to. A plain URL button (not a Telegram
+ * WebApp) since the catalog page isn't set up as a mini app.
+ */
+const CATALOG_URL = "https://xojasoipov-sketch.github.io/Portfolio/xizmatlar";
+
 export function mainMenuKeyboard(lang: Language): Keyboard {
   return new Keyboard()
     .text(t(lang, "menuPortfolio"))
@@ -12,7 +19,13 @@ export function mainMenuKeyboard(lang: Language): Keyboard {
     .text(t(lang, "menuCV"))
     .row()
     .text(t(lang, "menuContact"))
+    .text(t(lang, "menuCatalog"))
     .resized();
+}
+
+/** Katalog tugmasi bosilganda — to'g'ridan-to'g'ri xizmatlar katalogi sahifasiga olib boradi. */
+export function catalogKeyboard(lang: Language): InlineKeyboard {
+  return new InlineKeyboard().url(t(lang, "catalogOpen"), CATALOG_URL);
 }
 
 export function portfolioKeyboard(lang: Language): InlineKeyboard {
