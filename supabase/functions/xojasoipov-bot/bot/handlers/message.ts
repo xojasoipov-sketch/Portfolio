@@ -86,7 +86,6 @@ async function handleMenuAction(ctx: Context, user: UserRow, action: "portfolio"
           t(lang, "contactHeader"),
           `📧 ${CONTACT.email}`,
           `💬 ${CONTACT.telegram}`,
-          `🐙 ${CONTACT.github}`,
         ].join("\n"),
       );
       return;
