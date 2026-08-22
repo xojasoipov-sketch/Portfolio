@@ -28,6 +28,18 @@ ishonchni yo'qotadi. Sayt va bot ham xuddi shu qoida bilan qurilgan.
 
 ---
 
+## Matnlar qayerda turadi
+
+Postlarning to'liq matni **`xbot_channel_posts` jadvalida** — kodda emas.
+Sababi: matn eng ko'p o'zgaradigan qism, va uni bazada saqlash o'zgartirish
+uchun qayta deploy talab qilmaydi. Bitta post matnini tahrirlash = bitta
+`update` so'rovi.
+
+Jadval ustunlari: `slot` (tartib), `kind`, `title`, `body`, `photo_path`,
+`status` (`pending` → `posted` / `skipped`).
+
+Quyidagi ro'yxat — o'sha jadvalning qisqacha ko'rinishi.
+
 ## Kontent aylanmasi (16 post)
 
 Loyiha → xizmat → foyda → loyiha… tartibida ketadi, ya'ni ketma-ket ikkita
