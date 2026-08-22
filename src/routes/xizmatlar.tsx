@@ -40,7 +40,10 @@ export const Route = createFileRoute("/xizmatlar")({
 });
 
 /** SVG glyph per category — no emoji, matches the editorial line-art system. */
-const CATEGORY_ICON: Record<CatalogCategory["key"], React.ComponentType<{ size?: number; strokeWidth?: number }>> = {
+const CATEGORY_ICON: Record<
+  CatalogCategory["key"],
+  React.ComponentType<{ size?: number; strokeWidth?: number }>
+> = {
   quick: Wrench,
   audit: ShieldCheck,
   web: Globe,
@@ -101,7 +104,9 @@ function CatalogHero() {
             data-shown={shown}
             style={{ transitionDelay: "0.08s" }}
           >
-            <span style={{ color: "var(--ed-red-br)", transitionDelay: "0.08s" }}>
+            <span
+              style={{ color: "var(--ed-red-br)", transitionDelay: "0.08s" }}
+            >
               aniq narx bilan.
             </span>
           </span>
@@ -130,7 +135,10 @@ function CatalogHero() {
 
 function CatalogSections() {
   return (
-    <section data-surface="offwhite" style={{ background: "var(--ed-offwhite)" }}>
+    <section
+      data-surface="offwhite"
+      style={{ background: "var(--ed-offwhite)" }}
+    >
       <div className="ed-shell">
         {CATALOG.map((category) => (
           <CategoryBlock key={category.key} category={category} />
@@ -156,7 +164,10 @@ function CategoryBlock({ category }: { category: CatalogCategory }) {
           </p>
           <h2
             className="ed-display"
-            style={{ fontSize: "clamp(1.4rem, 3vw, 2.1rem)", margin: "0.2rem 0 0" }}
+            style={{
+              fontSize: "clamp(1.4rem, 3vw, 2.1rem)",
+              margin: "0.2rem 0 0",
+            }}
           >
             {category.title}
           </h2>
@@ -233,7 +244,13 @@ function PackagesSection() {
                 <p className="ed-pkg-price" style={{ margin: "0.6rem 0 0" }}>
                   {pkg.price}
                 </p>
-                <p style={{ margin: "0.2rem 0 0", fontSize: "0.85rem", opacity: 0.55 }}>
+                <p
+                  style={{
+                    margin: "0.2rem 0 0",
+                    fontSize: "0.85rem",
+                    opacity: 0.55,
+                  }}
+                >
                   {pkg.duration}
                 </p>
               </div>
@@ -270,7 +287,10 @@ function ProcessSection() {
     <section
       ref={ref}
       data-surface="offwhite"
-      style={{ background: "var(--ed-offwhite)", paddingBlock: "var(--ed-section)" }}
+      style={{
+        background: "var(--ed-offwhite)",
+        paddingBlock: "var(--ed-section)",
+      }}
     >
       <div className="ed-shell">
         <p
@@ -326,7 +346,10 @@ function TermsAndCta() {
           }}
         >
           <div>
-            <p className="ed-label" style={{ margin: 0, color: "var(--ed-red)" }}>
+            <p
+              className="ed-label"
+              style={{ margin: 0, color: "var(--ed-red)" }}
+            >
               7 — Shartlar va kafolat
             </p>
             <ul className="ed-terms" style={{ marginTop: "1.25rem" }}>
@@ -355,9 +378,14 @@ function TermsAndCta() {
             >
               Xizmat tanladingizmi? 30 daqiqalik bepul suhbatdan boshlaymiz.
             </p>
-            <Link to="/" hash="contact" className="ed-btn">
-              Bog'lanish <Arrow size="0.85em" />
-            </Link>
+            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+              <Link to="/" hash="contact" className="ed-btn">
+                Bog'lanish <Arrow size="0.85em" />
+              </Link>
+              <Link to="/demo" className="ed-btn">
+                Jonli demo <Arrow size="0.85em" />
+              </Link>
+            </div>
           </div>
         </div>
       </div>

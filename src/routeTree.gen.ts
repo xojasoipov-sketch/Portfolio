@@ -10,12 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as XizmatlarRouteImport } from './routes/xizmatlar'
+import { Route as DemoRouteImport } from './routes/demo'
 import { Route as CvRouteImport } from './routes/cv'
 import { Route as IndexRouteImport } from './routes/index'
 
 const XizmatlarRoute = XizmatlarRouteImport.update({
   id: '/xizmatlar',
   path: '/xizmatlar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoRoute = DemoRouteImport.update({
+  id: '/demo',
+  path: '/demo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CvRoute = CvRouteImport.update({
@@ -32,30 +38,34 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/cv': typeof CvRoute
+  '/demo': typeof DemoRoute
   '/xizmatlar': typeof XizmatlarRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cv': typeof CvRoute
+  '/demo': typeof DemoRoute
   '/xizmatlar': typeof XizmatlarRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/cv': typeof CvRoute
+  '/demo': typeof DemoRoute
   '/xizmatlar': typeof XizmatlarRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/cv' | '/xizmatlar'
+  fullPaths: '/' | '/cv' | '/demo' | '/xizmatlar'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/cv' | '/xizmatlar'
-  id: '__root__' | '/' | '/cv' | '/xizmatlar'
+  to: '/' | '/cv' | '/demo' | '/xizmatlar'
+  id: '__root__' | '/' | '/cv' | '/demo' | '/xizmatlar'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CvRoute: typeof CvRoute
+  DemoRoute: typeof DemoRoute
   XizmatlarRoute: typeof XizmatlarRoute
 }
 
@@ -66,6 +76,13 @@ declare module '@tanstack/react-router' {
       path: '/xizmatlar'
       fullPath: '/xizmatlar'
       preLoaderRoute: typeof XizmatlarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo': {
+      id: '/demo'
+      path: '/demo'
+      fullPath: '/demo'
+      preLoaderRoute: typeof DemoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cv': {
@@ -88,6 +105,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CvRoute: CvRoute,
+  DemoRoute: DemoRoute,
   XizmatlarRoute: XizmatlarRoute,
 }
 export const routeTree = rootRouteImport

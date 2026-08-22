@@ -2,6 +2,7 @@ import zetShot from "@/assets/projects/zet.webp";
 import sadiprimeShot from "@/assets/projects/sadiprime.webp";
 import pariShot from "@/assets/projects/pari.webp";
 import dliShot from "@/assets/projects/dli.webp";
+import businessHubShot from "@/assets/projects/business-hub.webp";
 
 /**
  * Project data — sourced from the actual repositories, not marketing copy.
@@ -21,6 +22,8 @@ export type Project = {
   /** Telegram username (no @) of the project's own bot, when it has one. */
   bot?: string;
   site?: string;
+  /** Route on this site, for a project a visitor can open and operate here. */
+  demo?: string;
   shot?: string | null;
 };
 
@@ -95,5 +98,26 @@ export const PROJECTS: Project[] = [
     tech: ["React", "FastAPI", "MongoDB", "Telegram Mini App", "JWT", "i18n"],
     bot: "Dli_shinebot",
     shot: dliShot,
+  },
+  {
+    id: "business-hub",
+    index: "05",
+    title: "BUSINESS",
+    titleAlt: "HUB",
+    category: "Bot + panel / Demo",
+    summary:
+      "Telegram bot va boshqaruv paneli bitta tizim sifatida — ochib, o'zingiz ishlatib ko'rasiz.",
+    detail:
+      "Xizmat ko'rsatuvchi bizneslar uchun tayyor asos: botda navbat olinadi, u shu zahoti paneldagi kalendar, mijozlar bazasi va xabarnomalarda paydo bo'ladi. Besh yo'nalish uchun sozlangan — salon, restoran, o'quv markazi, klinika, avtoservis. AI operator haqiqiy model bilan ishlaydi; savol serverdagi funksiyaga boradi, kalit brauzerga chiqmaydi.",
+    tech: [
+      "TanStack Start",
+      "TypeScript",
+      "Recharts",
+      "Supabase Edge Functions",
+      "Gemini",
+      "Telegram Bot API",
+    ],
+    demo: "/demo",
+    shot: businessHubShot,
   },
 ];

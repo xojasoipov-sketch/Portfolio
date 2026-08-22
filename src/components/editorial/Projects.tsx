@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { PROJECTS } from "@/data/projects";
 import { useReveal } from "./useReveal";
 import { useSpotlight } from "./useSpotlight";
@@ -164,6 +165,11 @@ export function Projects() {
                   marginTop: "1.5rem",
                 }}
               >
+                {project.demo && (
+                  <Link className="ed-btn" to={project.demo}>
+                    Jonli demo <Arrow direction="right" size="0.85em" />
+                  </Link>
+                )}
                 {project.site && (
                   <a
                     className="ed-btn"
@@ -191,7 +197,8 @@ export function Projects() {
 
         <div className="ed-proj-nav">
           <button type="button" className="ed-btn" onClick={() => go(-1)}>
-            <Arrow direction="left" size="0.85em" /> {PROJECTS[(active - 1 + total) % total].title}
+            <Arrow direction="left" size="0.85em" />{" "}
+            {PROJECTS[(active - 1 + total) % total].title}
           </button>
 
           <div style={{ display: "flex", gap: "0.5rem" }}>

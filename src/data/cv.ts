@@ -58,14 +58,21 @@ export interface CvProject {
   link?: string;
 }
 
-/** Selected work — the same four projects the site shows, condensed. */
+/** Selected work — the same projects the site shows, condensed. */
 export const CV_PROJECTS: CvProject[] = [
   {
     title: "ZET",
     category: "AI Operating System",
     summary:
       "Shaxsiy AI operatsion tizimi: Buyruq → Reja → Harakat → Tekshirish → Natija modeli. To'rt bosqichli model strategiyasi va qattiq budjet chegaralari bilan.",
-    tech: ["Python 3.12", "FastAPI", "PostgreSQL", "pgvector", "Redis", "Multi-agent"],
+    tech: [
+      "Python 3.12",
+      "FastAPI",
+      "PostgreSQL",
+      "pgvector",
+      "Redis",
+      "Multi-agent",
+    ],
     link: "t.me/zetassbot",
   },
   {
@@ -73,7 +80,13 @@ export const CV_PROJECTS: CvProject[] = [
     category: "AI SaaS / Education",
     summary:
       "O'quv markazlari uchun ko'p-tenantli boshqaruv platformasi: o'qituvchilar, guruhlar, davomat, to'lov davrlari va obunalar. Ishlab turgan mahsulot.",
-    tech: ["TanStack Start", "TypeScript", "PostgreSQL", "Cloudflare", "Docker"],
+    tech: [
+      "TanStack Start",
+      "TypeScript",
+      "PostgreSQL",
+      "Cloudflare",
+      "Docker",
+    ],
     link: "sadiprime-tizim.uz",
   },
   {
@@ -91,6 +104,23 @@ export const CV_PROJECTS: CvProject[] = [
       "To'liq e-commerce platformasi va unga ulangan Telegram do'koni: katalog, filtrlar, JWT autentifikatsiya, ko'p tilli interfeys va admin dashboard.",
     tech: ["React", "FastAPI", "MongoDB", "Telegram Mini App", "JWT", "i18n"],
     link: "t.me/Dli_shinebot",
+  },
+  {
+    title: "Business Hub",
+    category: "Bot + boshqaruv paneli",
+    summary:
+      "Xizmat ko'rsatuvchi bizneslar uchun asos: Telegram botda olingan navbat shu zahoti paneldagi kalendar, mijozlar bazasi va xabarnomalarda paydo bo'ladi. Besh yo'nalish uchun sozlangan; AI operator server tomonidagi funksiya orqali ishlaydi.",
+    tech: [
+      "TanStack Start",
+      "TypeScript",
+      "Recharts",
+      "Supabase Edge Functions",
+      "Gemini",
+    ],
+    // No address here on purpose: the CV is a document that travels, and the
+    // only URL this demo has is the site's own host. It is reachable from the
+    // portfolio's work section instead.
+    link: "portfolio saytidagi jonli demo",
   },
 ];
 
@@ -114,7 +144,12 @@ export const CV_SKILLS: CvSkillGroup[] = [
   },
   {
     group: "AI",
-    items: ["LLM API integratsiya", "AI agentlar", "Multi-provider routing", "Ollama"],
+    items: [
+      "LLM API integratsiya",
+      "AI agentlar",
+      "Multi-provider routing",
+      "Ollama",
+    ],
   },
   {
     group: "Infratuzilma",

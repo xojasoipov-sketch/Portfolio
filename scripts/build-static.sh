@@ -6,7 +6,7 @@ set -euo pipefail
 
 ROOT="${1:-$PWD}"
 PORT="${PORT:-3179}"
-ROUTES=("/" "/xizmatlar" "/cv")
+ROUTES=("/" "/xizmatlar" "/cv" "/demo")
 
 cd "$ROOT"
 
