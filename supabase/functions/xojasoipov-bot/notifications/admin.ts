@@ -91,7 +91,6 @@ export async function notifyAiError(context: string, error: unknown): Promise<vo
   await db.from("xbot_notifications").insert({ type: "ai_error", payload: { context } });
 }
 
-
 async function sendToAllAdmins(text: string, keyboard?: ReturnType<typeof adminLeadKeyboard>): Promise<void> {
   if (!apiRef) return;
   for (const adminId of env.TELEGRAM_ADMIN_IDS) {

@@ -94,7 +94,6 @@ export async function updateLeadPriority(leadId: string, priority: LeadPriority,
   await logLeadEvent(leadId, "priority_change", actor, { priority });
 }
 
-
 export async function getLead(leadId: string): Promise<LeadRow | null> {
   const { data } = await db.from("xbot_leads").select("*").eq("id", leadId).maybeSingle();
   return (data as LeadRow) ?? null;

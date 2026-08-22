@@ -50,7 +50,6 @@ export async function upsertUser(input: {
   return data as UserRow;
 }
 
-
 export async function isAdmin(telegramUserId: number, envAdminIds: number[]): Promise<boolean> {
   if (envAdminIds.includes(telegramUserId)) return true;
   const { data } = await db

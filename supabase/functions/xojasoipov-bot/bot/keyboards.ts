@@ -59,7 +59,6 @@ export function portfolioKeyboard(lang: Language): InlineKeyboard {
   return kb;
 }
 
-
 export function leadConfirmKeyboard(lang: Language, leadDraftKey: string): InlineKeyboard {
   return new InlineKeyboard()
     .text(t(lang, "confirmSend"), `lead_confirm:${leadDraftKey}`)

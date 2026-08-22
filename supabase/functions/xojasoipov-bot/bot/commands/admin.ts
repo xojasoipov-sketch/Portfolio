@@ -22,7 +22,6 @@ export async function handleAdminPanel(ctx: Context) {
   await ctx.reply("⚙️ Admin panel", { reply_markup: adminPanelKeyboard() });
 }
 
-
 export async function handleStatsCommand(ctx: Context) {
   if (!(await requireAdmin(ctx))) return;
   const [report, site] = await Promise.all([getWeeklyReport(), getSiteReport()]);
