@@ -33,7 +33,15 @@ const NPM_PINS = {
 };
 
 /** Files whose Deno counterpart is intentionally hand-written, not generated. */
-const EXCLUDED = new Set(["index.ts"]);
+const EXCLUDED = new Set([
+  // Genuinely different programs, not two spellings of one: long polling under
+  // Node, a webhook handler under Deno.
+  "index.ts",
+  // Seed-only. seedKnowledge.ts upserts it into xbot_knowledge_items and the
+  // agent reads it back from there, so shipping it inside the edge function
+  // would be a second copy of the same facts, free to drift.
+  "ai/knowledgeSeed.ts",
+]);
 
 const IMPORT_RE = /(\bfrom\s*|\bimport\s*|\bexport\s*\*\s*from\s*)(["'])([^"']+)\2/g;
 

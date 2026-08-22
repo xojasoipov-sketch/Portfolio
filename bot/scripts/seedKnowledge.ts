@@ -1,21 +1,20 @@
 /**
- * Upserts knowledgeData.ts into xbot.knowledge_items. Idempotent — safe to
- * re-run after editing the source facts; run via `npm run seed:knowledge`.
+ * Upserts the source facts into xbot_knowledge_items, which is what the AI
+ * agent actually reads. Idempotent — safe to re-run after an edit; run via
+ * `npm run seed:knowledge`.
  */
 import { db } from "../src/db/client.js";
+import { PROFILE, PROJECTS, CONTACT } from "../src/ai/knowledgeData.js";
 import {
-  CONTACT,
   DIFFERENTIATORS,
   DIRECTIONS,
   FAQ,
   PACKAGES,
   PROCESS,
-  PROFILE,
-  PROJECTS,
   SERVICE_CATALOG,
   TECH_STACK,
   TERMS,
-} from "../src/ai/knowledgeData.js";
+} from "../src/ai/knowledgeSeed.js";
 
 const rows: { category: string; key: string; content: unknown }[] = [
   { category: "portfolio", key: "profile", content: PROFILE },

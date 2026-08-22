@@ -3,10 +3,15 @@ import { logger } from "../utils/logger.js";
 import * as fallback from "./knowledgeData.js";
 
 /**
- * Loads facts from xbot.knowledge_items (so edits don't need a redeploy) and
- * falls back to the bundled static data if the DB read fails — the AI Agent
- * degrades to slightly-stale-but-still-real facts rather than going silent
- * on a transient DB error.
+ * Loads facts from xbot_knowledge_items, which is the source of truth: the
+ * catalogue, packages, terms and FAQ live there and nowhere else, so a price
+ * edit needs a re-seed but never a redeploy.
+ *
+ * The fallback is deliberately thin -- who Saidburxon is, the projects, how to
+ * reach him. It is a floor for the narrow case where that one table cannot be
+ * read while the rest of the database works; the bot cannot run at all without
+ * the database, so a fatter fallback would only be a second copy of the same
+ * facts, free to drift.
  */
 export async function buildKnowledgeContext(): Promise<string> {
   try {
@@ -27,13 +32,8 @@ export async function buildKnowledgeContext(): Promise<string> {
 
 function staticContext(): string {
   return renderContext({
-    portfolio: [fallback.PROFILE, ...fallback.DIFFERENTIATORS],
+    portfolio: [fallback.PROFILE],
     projects: fallback.PROJECTS,
-    services: fallback.DIRECTIONS,
-    skills: fallback.TECH_STACK,
-    experience: fallback.PROCESS,
-    pricing: [...fallback.SERVICE_CATALOG, ...fallback.PACKAGES],
-    faq: [...fallback.FAQ, { terms: fallback.TERMS }],
     contact: [fallback.CONTACT],
   });
 }
