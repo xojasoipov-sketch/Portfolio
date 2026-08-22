@@ -4,13 +4,20 @@ import { t } from "./i18n.js";
 import { env } from "../config.js";
 
 /**
- * The live services catalog page — same site the "XIZMATLAR" pill on the
- * portfolio's own nav bar links to. Opened as a Telegram WebApp (not a plain
- * URL button) so it launches full-screen inside Telegram itself, with no
+ * Everything the bot links to lives on the deployed portfolio, so the origin
+ * is named once here rather than repeated per URL.
+ *
+ * The catalog and the CV page are opened as Telegram WebApps (not plain URL
+ * buttons) so they launch full-screen inside Telegram itself, with no
  * external-browser address bar — a `.url()` button was popping the raw
- * github.io link open in Safari/Chrome instead.
+ * github.io link open in Safari/Chrome instead. The PDF stays a `.url()`
+ * button on purpose: a WebApp container cannot hand the file to the phone's
+ * downloads, the external handler can.
  */
-const CATALOG_URL = "https://xojasoipov-sketch.github.io/Portfolio/xizmatlar";
+const SITE_ORIGIN = "https://xojasoipov-sketch.github.io/Portfolio";
+const CATALOG_URL = `${SITE_ORIGIN}/xizmatlar`;
+const CV_URL = `${SITE_ORIGIN}/cv`;
+const CV_PDF_URL = `${SITE_ORIGIN}/Saidburxon-Xojasoipov-CV.pdf`;
 
 export function mainMenuKeyboard(lang: Language): Keyboard {
   return new Keyboard()
@@ -28,6 +35,18 @@ export function mainMenuKeyboard(lang: Language): Keyboard {
 /** Katalog tugmasi bosilganda — to'g'ridan-to'g'ri xizmatlar katalogi sahifasiga, mini ilova sifatida ochiladi. */
 export function catalogKeyboard(lang: Language): InlineKeyboard {
   return new InlineKeyboard().webApp(t(lang, "catalogOpen"), CATALOG_URL);
+}
+
+/**
+ * The CV menu item used to reply with the bare string "📄 CV" and nothing
+ * else — a dead end. It now opens the real CV page inside Telegram, with a
+ * direct PDF download beside it.
+ */
+export function cvKeyboard(lang: Language): InlineKeyboard {
+  return new InlineKeyboard()
+    .webApp(t(lang, "cvView"), CV_URL)
+    .row()
+    .url(t(lang, "cvDownload"), CV_PDF_URL);
 }
 
 export function portfolioKeyboard(lang: Language): InlineKeyboard {

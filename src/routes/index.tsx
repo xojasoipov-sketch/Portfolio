@@ -6,6 +6,7 @@ import { About } from "@/components/editorial/About";
 import { Skills } from "@/components/editorial/Skills";
 import { Services } from "@/components/editorial/Services";
 import { Projects } from "@/components/editorial/Projects";
+import { Testimonials } from "@/components/editorial/Testimonials";
 import { Contact } from "@/components/editorial/Contact";
 import { Footer } from "@/components/editorial/Footer";
 import { CurveDivider } from "@/components/editorial/Curve";
@@ -42,6 +43,9 @@ function Index() {
       <Projects />
 
       <CurveDivider from="black" to="offwhite" flip />
+      {/* Renders only once real testimonials exist; until then the spacer
+          alone keeps the two dark panels apart. */}
+      <Testimonials />
       <ServicesSpacer />
 
       <CurveDivider from="offwhite" to="black" />

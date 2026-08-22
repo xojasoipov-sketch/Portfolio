@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -11,29 +12,81 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { useTelegramMiniApp } from "../lib/telegram-miniapp";
+import { trackPageview } from "../lib/analytics";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
+/**
+ * Branded 404, in the site's own editorial language rather than the generic
+ * shadcn card -- a wrong URL is often a visitor's first impression (a stale
+ * link from a chat), so it should still look like the rest of the site and
+ * route them somewhere useful instead of dead-ending.
+ */
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">
-          Page not found
-        </h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
+    <main
+      data-surface="black"
+      style={{
+        minHeight: "100vh",
+        background: "var(--ed-black)",
+        color: "var(--ed-offwhite)",
+        display: "grid",
+        placeItems: "center",
+        padding: "var(--ed-gutter)",
+      }}
+    >
+      <div style={{ maxWidth: "44rem", width: "100%" }}>
+        <p className="ed-label" style={{ color: "var(--ed-red-br)", margin: 0 }}>
+          Xatolik 404
         </p>
-        <div className="mt-6">
+        <h1
+          className="ed-display"
+          style={{
+            fontSize: "clamp(3rem, 16vw, 11rem)",
+            margin: "0.5rem 0 0",
+            lineHeight: 0.86,
+          }}
+        >
+          Sahifa
+          <br />
+          <span style={{ color: "var(--ed-red-br)" }}>topilmadi.</span>
+        </h1>
+        <p
+          style={{
+            marginTop: "clamp(1.5rem, 4vw, 2.5rem)",
+            maxWidth: "32rem",
+            fontSize: "clamp(1rem, 1.5vw, 1.15rem)",
+            lineHeight: 1.65,
+            opacity: 0.7,
+          }}
+        >
+          Siz izlagan sahifa mavjud emas yoki ko'chirilgan. Quyidagilardan
+          birini tanlashingiz mumkin.
+        </p>
+        <div
+          style={{
+            display: "flex",
+            gap: "0.75rem",
+            flexWrap: "wrap",
+            marginTop: "clamp(1.75rem, 4vw, 2.5rem)",
+          }}
+        >
           <Link
             to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="ed-btn"
+            style={{
+              background: "var(--ed-red-br)",
+              borderColor: "var(--ed-red-br)",
+              color: "var(--ed-offwhite)",
+            }}
           >
-            Go home
+            Bosh sahifa
+          </Link>
+          <Link to="/xizmatlar" className="ed-btn">
+            Xizmatlar katalogi
           </Link>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 
@@ -82,29 +135,44 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 // every bundled asset (see vite.config.ts's SITE_BASE).
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path}`.replace(/\/{2,}/g, "/");
 
+/** Absolute origin of the deployed site. og:image and og:url must be absolute
+ *  URLs -- Telegram, WhatsApp and LinkedIn all refuse to resolve a relative
+ *  one, which is why the link preview rendered with no image at all. */
+const SITE_ORIGIN = "https://xojasoipov-sketch.github.io";
+const absolute = (path: string) => `${SITE_ORIGIN}${asset(path)}`;
+
+const SITE_TITLE = "Saidburxon Xojasoipov — Full-stack Developer & AI Builder";
+const SITE_DESCRIPTION =
+  "Saidburxon Xojasoipov — full-stack dasturchi va AI-yechimlar mutaxassisi. Web, AI tizimlar, SaaS mahsulotlar va biznes avtomatlashtirish.";
+
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   {
     head: () => ({
       meta: [
         { charSet: "utf-8" },
         { name: "viewport", content: "width=device-width, initial-scale=1" },
-        { title: "Saidburxon Xojasoipov — Full-stack Developer & AI Builder" },
+        { title: SITE_TITLE },
+        { name: "description", content: SITE_DESCRIPTION },
+        { property: "og:title", content: SITE_TITLE },
+        { property: "og:description", content: SITE_DESCRIPTION },
+        { property: "og:type", content: "website" },
+        { property: "og:site_name", content: "Saidburxon Xojasoipov" },
+        { property: "og:locale", content: "uz_UZ" },
+        { property: "og:url", content: absolute("") },
+        // twitter:card promised a large image long before there was one to
+        // show, so every share rendered as a bare text card.
+        { property: "og:image", content: absolute("og.png") },
+        { property: "og:image:width", content: "1200" },
+        { property: "og:image:height", content: "630" },
         {
-          name: "description",
-          content:
-            "Saidburxon Xojasoipov — full-stack dasturchi va AI-yechimlar mutaxassisi.",
-        },
-        {
-          property: "og:title",
+          property: "og:image:alt",
           content: "Saidburxon Xojasoipov — Full-stack Developer & AI Builder",
         },
-        {
-          property: "og:description",
-          content:
-            "Saidburxon Xojasoipov — full-stack dasturchi va AI-yechimlar mutaxassisi.",
-        },
-        { property: "og:type", content: "website" },
         { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: SITE_TITLE },
+        { name: "twitter:description", content: SITE_DESCRIPTION },
+        { name: "twitter:image", content: absolute("og.png") },
+        { name: "theme-color", content: "#050505" },
       ],
       links: [
         { rel: "icon", type: "image/svg+xml", href: asset("favicon.svg") },
@@ -137,7 +205,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="uz">
       <head>
         <HeadContent />
       </head>
@@ -154,6 +222,13 @@ function RootComponent() {
   // Runs the Mini App handshake (ready/expand/theme) when opened inside
   // Telegram; a no-op everywhere else.
   useTelegramMiniApp();
+
+  // One pageview per route, including client-side navigations -- a plain
+  // load-time beacon would miss every move between / and /xizmatlar.
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  useEffect(() => {
+    trackPageview(pathname);
+  }, [pathname]);
 
   return (
     <QueryClientProvider client={queryClient}>

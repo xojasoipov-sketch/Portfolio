@@ -1,0 +1,5 @@
+# Saidburxon Xojasoipov — portfolio
+User-agent: *
+Allow: /
+
+Sitemap: https://xojasoipov-sketch.github.io/Portfolio/sitemap.xml

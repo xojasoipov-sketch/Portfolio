@@ -22,7 +22,7 @@ import { notifyHumanHandoff, notifyNewLead } from "../../notifications/admin.js"
 import { checkRateLimit } from "../../security/rateLimit.js";
 import { clampMessage, looksLikeSpam } from "../../security/validation.js";
 import { logger } from "../../utils/logger.js";
-import { catalogKeyboard, handoffKeyboard, leadConfirmKeyboard, portfolioKeyboard } from "../keyboards.js";
+import { catalogKeyboard, cvKeyboard, handoffKeyboard, leadConfirmKeyboard, portfolioKeyboard } from "../keyboards.js";
 import { t } from "../i18n.js";
 
 const MENU_LOOKUP: Record<string, "portfolio" | "ai" | "hire" | "cv" | "contact" | "catalog"> = {};
@@ -77,7 +77,7 @@ async function handleMenuAction(ctx: Context, user: UserRow, action: "portfolio"
     }
     case "cv":
       await trackEvent(user.id, "cv_view");
-      await ctx.reply(t(lang, "cvText"));
+      await ctx.reply(t(lang, "cvText"), { reply_markup: cvKeyboard(lang) });
       return;
     case "contact": {
       await trackEvent(user.id, "contact_click");

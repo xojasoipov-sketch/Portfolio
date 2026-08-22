@@ -925,3 +925,357 @@ body {
     margin-top: -17vh;
   }
 }
+
+/* ============================================================
+   CV — a real, printable document at /cv.
+   Screen: the site's editorial language on an off-white sheet.
+   Print:  A4 with proper margins, no toolbar, no page-break
+           mid-entry. window.print() is what produces the PDF, so
+           the print rules ARE the PDF layout.
+   ============================================================ */
+.cv-page {
+  background: var(--ed-gray-sf);
+  min-height: 100vh;
+  padding: clamp(1rem, 4vw, 3rem) var(--ed-gutter) clamp(3rem, 8vw, 5rem);
+}
+
+.cv-sheet {
+  max-width: 52rem;
+  margin-inline: auto;
+  background: var(--ed-offwhite);
+  color: var(--ed-black);
+  padding: clamp(1.75rem, 5vw, 3.5rem);
+  box-shadow: 0 24px 60px rgba(5, 5, 5, 0.16);
+}
+
+.cv-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: clamp(1.5rem, 4vw, 2.5rem);
+}
+.cv-toolbar .ed-navlink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.cv-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: clamp(1rem, 4vw, 3rem);
+  flex-wrap: wrap;
+  padding-bottom: clamp(1.25rem, 3vw, 2rem);
+  border-bottom: 2px solid var(--ed-black);
+}
+.cv-name {
+  font-size: clamp(2.25rem, 7vw, 4rem);
+  margin: 0;
+  line-height: 0.88;
+}
+.cv-role {
+  margin: 0.9rem 0 0;
+  color: var(--ed-gray-tx);
+}
+.cv-contact {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  text-align: right;
+  font-size: 0.9rem;
+  line-height: 1.75;
+}
+.cv-contact a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(5, 5, 5, 0.25);
+}
+.cv-site {
+  color: var(--ed-gray-tx);
+  font-size: 0.82rem;
+}
+
+.cv-section {
+  display: grid;
+  grid-template-columns: 9rem 1fr;
+  gap: clamp(1rem, 3vw, 2rem);
+  padding: clamp(1.4rem, 3.5vw, 2.2rem) 0;
+  border-bottom: 1px solid rgba(5, 5, 5, 0.12);
+}
+.cv-section:last-of-type {
+  border-bottom: 0;
+}
+.cv-section-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.cv-num {
+  color: var(--ed-red);
+  margin: 0;
+}
+.cv-section-title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.cv-summary {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.7;
+  max-width: 40rem;
+}
+
+.cv-highlights {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+.cv-highlights li {
+  display: grid;
+  gap: 0.15rem;
+}
+.cv-highlights strong {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+.cv-highlights span {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--ed-gray-tx);
+}
+
+.cv-projects {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1.4rem;
+}
+.cv-project {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.cv-project-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.cv-project-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+.cv-project-cat {
+  margin: 0;
+  color: var(--ed-red);
+}
+.cv-project-summary {
+  margin: 0.4rem 0 0;
+  font-size: 0.92rem;
+  line-height: 1.65;
+}
+.cv-project-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 0.45rem;
+  font-size: 0.78rem;
+  color: var(--ed-gray-tx);
+}
+.cv-project-link {
+  white-space: nowrap;
+}
+
+.cv-skills {
+  margin: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+.cv-skill-row {
+  display: grid;
+  grid-template-columns: 10rem 1fr;
+  gap: 0.75rem;
+  align-items: baseline;
+}
+.cv-skill-row dt {
+  margin: 0;
+  color: var(--ed-gray-tx);
+}
+.cv-skill-row dd {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.cv-services {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.45rem 1.5rem;
+  font-size: 0.92rem;
+}
+.cv-services li::before {
+  content: "—";
+  color: var(--ed-red);
+  margin-right: 0.5rem;
+}
+
+.cv-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: clamp(1.25rem, 3vw, 2rem);
+  padding-top: 1rem;
+  border-top: 2px solid var(--ed-black);
+}
+.cv-foot-dim {
+  color: var(--ed-gray-tx);
+}
+
+@media (max-width: 760px) {
+  .cv-section {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  .cv-section-head {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 0.75rem;
+  }
+  .cv-contact {
+    text-align: left;
+  }
+  .cv-skill-row {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm 13mm;
+  }
+  html,
+  body,
+  #root {
+    background: #ffffff !important;
+  }
+  .cv-page {
+    background: #ffffff;
+    padding: 0;
+    min-height: 0;
+  }
+  .cv-sheet {
+    max-width: none;
+    box-shadow: none;
+    padding: 0;
+    background: #ffffff;
+  }
+  /* Controls are screen affordances; they must not print into the PDF. */
+  .cv-toolbar {
+    display: none !important;
+  }
+  /* Sections must be allowed to flow across a page break: "Tanlangan
+     loyihalar" is taller than the space left on page 1, so forcing the whole
+     section to stay together pushed it wholesale onto page 2 and left the
+     first page half empty (a 3-page CV out of 2 pages of content). Only the
+     individual entries are kept intact -- see .cv-project. */
+  .cv-section {
+    padding: 0.8rem 0;
+  }
+  /* Never orphan a section heading at the foot of a page. */
+  .cv-section-head {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+  .cv-highlights li,
+  .cv-skill-row {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .cv-name {
+    font-size: 2.6rem;
+  }
+  .cv-contact a {
+    border-bottom: 0;
+  }
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+}
+
+.cv-toolbar-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.cv-toolbar-actions .ed-btn {
+  padding: 0.7rem 1.35rem;
+  font-size: 0.66rem;
+}
+
+/* ---------- Testimonials ---------- */
+.ed-quotes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  gap: clamp(1.5rem, 4vw, 2.5rem);
+}
+.ed-quote {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: clamp(1.5rem, 3vw, 2.25rem);
+  border: 1px solid rgba(5, 5, 5, 0.14);
+  background: var(--ed-white);
+  transition:
+    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.45s ease;
+}
+.ed-quote:hover {
+  transform: translateY(-4px);
+  border-color: var(--ed-red);
+}
+.ed-quote-text {
+  margin: 0;
+  font-size: clamp(1rem, 1.5vw, 1.15rem);
+  line-height: 1.6;
+  font-weight: 500;
+}
+.ed-quote-by {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(5, 5, 5, 0.12);
+}
+.ed-quote-author {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+.ed-quote-role {
+  font-size: 0.85rem;
+  color: var(--ed-gray-tx);
+}
+.ed-quote-project {
+  margin-top: 0.4rem;
+  color: var(--ed-red);
+}

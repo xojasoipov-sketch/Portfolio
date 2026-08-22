@@ -1,5 +1,5 @@
 import type { Context } from "npm:grammy@1.31.0";
-import { getWeeklyReport } from "../../db/analytics.ts";
+import { getSiteReport, getWeeklyReport } from "../../db/analytics.ts";
 import { countLeadsByStatus, getLead, listLeads, updateLeadPriority, updateLeadStatus } from "../../db/leads.ts";
 import { isAdmin } from "../../db/users.ts";
 import { env } from "../../config.ts";
@@ -7,6 +7,7 @@ import { escapeTelegramHtml } from "../../security/validation.ts";
 import type { UserRow } from "../../db/types.ts";
 import { handleHandoffCancel, handleHandoffSend, handleLeadCancel, handleLeadConfirm, handleLeadEdit } from "./message.ts";
 import { adminLeadKeyboard } from "../keyboards.ts";
+import { formatWeeklyReport } from "../commands/admin.ts";
 import { buildLeadNotificationText } from "../../notifications/admin.ts";
 import { logger } from "../../utils/logger.ts";
 import { t } from "../i18n.ts";
@@ -74,21 +75,9 @@ async function handleAdminCallback(ctx: Context, data: string) {
   }
 
   if (action === "admin_stats") {
-    const report = await getWeeklyReport();
+    const [report, site] = await Promise.all([getWeeklyReport(), getSiteReport()]);
     await ctx.answerCallbackQuery();
-    await ctx.reply(
-      [
-        "📊 <b>WEEKLY REPORT</b>",
-        `👥 Users: ${report.users}`,
-        `🤖 AI conversations: ${report.aiConversations}`,
-        `💼 Project inquiries: ${report.projectInquiries}`,
-        `🚨 Leads: ${report.leads}`,
-        `🔥 Hot leads: ${report.hotLeads}`,
-        `✅ Qualified: ${report.qualified}`,
-        `Conversion: ${report.conversionRate}%`,
-      ].join("\n"),
-      { parse_mode: "HTML" },
-    );
+    await ctx.reply(formatWeeklyReport(report, site), { parse_mode: "HTML" });
     return;
   }
 

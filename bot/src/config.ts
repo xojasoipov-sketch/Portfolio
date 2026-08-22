@@ -24,6 +24,7 @@ import { z } from "zod";
 const ENV_KEYS = [
   "TELEGRAM_BOT_TOKEN",
   "TELEGRAM_ADMIN_IDS",
+  "TELEGRAM_CHANNEL",
   "MINI_APP_URL",
   "TELEGRAM_WEBHOOK_SECRET",
   "AI_PROVIDER",
@@ -87,6 +88,9 @@ const EnvSchema = z.object({
         .map(Number)
         .filter((n) => Number.isFinite(n)),
     ),
+  /** Public showcase channel, e.g. "@xojasoipov_works". Set it in the
+   *  xbot_bot_config table; /post is a no-op until it exists. */
+  TELEGRAM_CHANNEL: z.string().optional(),
   MINI_APP_URL: z.string().url().optional(),
   /** Only used by the Deno webhook entrypoint (supabase/functions/) — verifies
    * inbound requests actually came from Telegram, since that deploy target

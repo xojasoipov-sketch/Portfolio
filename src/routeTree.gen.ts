@@ -10,11 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as XizmatlarRouteImport } from './routes/xizmatlar'
+import { Route as CvRouteImport } from './routes/cv'
 import { Route as IndexRouteImport } from './routes/index'
 
 const XizmatlarRoute = XizmatlarRouteImport.update({
   id: '/xizmatlar',
   path: '/xizmatlar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CvRoute = CvRouteImport.update({
+  id: '/cv',
+  path: '/cv',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -25,27 +31,31 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/cv': typeof CvRoute
   '/xizmatlar': typeof XizmatlarRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/cv': typeof CvRoute
   '/xizmatlar': typeof XizmatlarRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/cv': typeof CvRoute
   '/xizmatlar': typeof XizmatlarRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/xizmatlar'
+  fullPaths: '/' | '/cv' | '/xizmatlar'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/xizmatlar'
-  id: '__root__' | '/' | '/xizmatlar'
+  to: '/' | '/cv' | '/xizmatlar'
+  id: '__root__' | '/' | '/cv' | '/xizmatlar'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CvRoute: typeof CvRoute
   XizmatlarRoute: typeof XizmatlarRoute
 }
 
@@ -56,6 +66,13 @@ declare module '@tanstack/react-router' {
       path: '/xizmatlar'
       fullPath: '/xizmatlar'
       preLoaderRoute: typeof XizmatlarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cv': {
+      id: '/cv'
+      path: '/cv'
+      fullPath: '/cv'
+      preLoaderRoute: typeof CvRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -70,6 +87,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CvRoute: CvRoute,
   XizmatlarRoute: XizmatlarRoute,
 }
 export const routeTree = rootRouteImport

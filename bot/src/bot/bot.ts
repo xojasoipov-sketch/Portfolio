@@ -4,7 +4,7 @@ import { requireBotToken } from "../config.js";
 import { upsertUser } from "../db/users.js";
 import { registerAdminNotifier, notifyAiError } from "../notifications/admin.js";
 import { logger } from "../utils/logger.js";
-import { handleAdminPanel, handleBroadcastCommand, handleAdminLeadsList, handleStatsCommand } from "./commands/admin.js";
+import { handleAdminPanel, handleBroadcastCommand, handleAdminLeadsList, handlePostCommand, handleStatsCommand } from "./commands/admin.js";
 import { handleStart, resolveSource } from "./commands/start.js";
 import { handleCallbackQuery } from "./handlers/callback.js";
 import { handleTextMessage } from "./handlers/message.js";
@@ -39,6 +39,7 @@ export function createBot(): Bot<BotContext> {
   bot.command("leads", (ctx) => handleAdminLeadsList(ctx));
   bot.command("stats", (ctx) => handleStatsCommand(ctx));
   bot.command("broadcast", (ctx) => handleBroadcastCommand(ctx));
+  bot.command("post", (ctx) => handlePostCommand(ctx));
 
   bot.on("message:text", (ctx) => handleTextMessage(ctx, getUser(ctx)));
   bot.on("callback_query:data", (ctx) => handleCallbackQuery(ctx, getUser(ctx)));

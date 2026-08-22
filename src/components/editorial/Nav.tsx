@@ -139,13 +139,15 @@ export function Nav() {
                 {l.label}
               </Link>
             ))}
+            {/* Points at the real CV page. It used to carry a download
+                arrow and go to the contact form -- a promise the site could
+                not keep, since no CV existed anywhere. */}
             <Link
-              to="/"
-              hash="contact"
+              to="/cv"
               className="ed-label ed-navcv"
               style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
             >
-              CV <Arrow direction="down" size="0.85em" />
+              CV <Arrow size="0.85em" />
             </Link>
           </nav>
 
@@ -240,6 +242,14 @@ export function Nav() {
               {l.label}
             </Link>
           ))}
+          <Link
+            to="/cv"
+            onClick={() => setOpen(false)}
+            className="ed-display"
+            style={{ fontSize: "clamp(2.25rem, 11vw, 4rem)" }}
+          >
+            CV
+          </Link>
         </div>
       )}
     </>
