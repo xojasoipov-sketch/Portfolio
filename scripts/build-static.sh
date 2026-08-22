@@ -66,10 +66,26 @@ done
 #    it has no file for. Harvesting an actually-missing route renders the
 #    branded not-found UI into it; copying index.html instead would flash the
 #    whole homepage before the client router corrected itself.
+#
+#    The scripts are then stripped, which is what makes the page survive being
+#    served from the wrong URL. The harvest is a snapshot taken at
+#    /__not-found__, but Pages serves that same file for /anything-else, so
+#    rehydrating it throws TanStack Router's "Invariant failed" and React
+#    unmounts the tree -- a blank black screen where the branded 404 had just
+#    rendered. Nothing on this page needs JavaScript: both buttons are real
+#    anchors with absolute hrefs, so as static HTML + CSS it is complete.
 notfound=$(curl -sL --max-time 20 "http://127.0.0.1:$PORT/__not-found__" || true)
 if [ "${#notfound}" -gt 2000 ]; then
-  printf '%s' "$notfound" > .output/public/404.html
-  echo "harvested 404 -> .output/public/404.html (${#notfound} bytes)"
+  printf '%s' "$notfound" \
+    | python3 -c 'import re,sys; sys.stdout.write(re.sub(r"<script\b.*?</script>", "", sys.stdin.read(), flags=re.S|re.I))' \
+    > .output/public/404.html
+  # A page that still carries a <script> would blank out on the visitor, so
+  # fail the build rather than ship it.
+  if grep -qi '<script' .output/public/404.html; then
+    echo "FAILED: 404.html still contains a <script>; it would blank on hydration." >&2
+    exit 1
+  fi
+  echo "harvested 404 -> .output/public/404.html ($(wc -c < .output/public/404.html) bytes, scripts stripped)"
 else
   # Fall back to the SPA shell rather than shipping no 404 page at all.
   cp .output/public/index.html .output/public/404.html
