@@ -6,6 +6,7 @@ import {
   getNextPending,
   getPost,
   queueCounts,
+  recordMessageId,
   restorePending,
   settlePost,
   type ChannelPostRow,
@@ -14,24 +15,30 @@ import { isAdmin } from "../../db/users.js";
 import { escapeTelegramHtml } from "../../security/validation.js";
 import { logger } from "../../utils/logger.js";
 
+/**
+ * Only ever handed to Telegram as the source of a photo to fetch, never
+ * written into a message: the portfolio's host must not appear in anything a
+ * reader can see. Everything a reader is pointed at goes through the bot.
+ */
 const SITE_ORIGIN = "https://xojasoipov-sketch.github.io/Portfolio";
 
+const BOT_HANDLE = "@Xojasoipovbot";
+
 /**
- * Appended at publish time rather than stored in each row, so the links stay
- * uniform and a change to them is one edit instead of sixteen.
+ * Appended at publish time rather than stored in each row, so a change to it
+ * is one edit instead of sixteen.
  */
-const FOOTER = `\n\n🔗 ${SITE_ORIGIN}/\n📋 Narxlar: ${SITE_ORIGIN}/xizmatlar\n💬 @Xojasoipovbot`;
+const FOOTER = `\n\n💼 Portfolio, narxlar va aloqa — ${BOT_HANDLE}`;
 
 // The channel title carries the name, so the description spends its budget on
 // what the title cannot say: the work, the method, and where to go next.
-// Telegram caps it at 255 characters; this is 252.
+// Telegram caps it at 255 characters; this is 232.
 const CHANNEL_ABOUT = [
   "Veb-saytlar, Telegram bot va mini-app, AI integratsiya, CRM va ichki tizimlar.",
   "",
   "Har bir loyiha auditdan boshlanadi — avval muammo aniqlanadi, keyin yechim quriladi.",
   "",
-  `Narxlar: ${SITE_ORIGIN}/xizmatlar`,
-  "Aloqa: @Xojasoipovbot",
+  `Portfolio, narxlar, CV va buyurtma — hammasi botda: ${BOT_HANDLE}`,
 ].join("\n");
 
 function render(post: ChannelPostRow): string {
@@ -234,14 +241,15 @@ export async function handleChannelCallback(ctx: Context, data: string): Promise
 
   try {
     const text = render(post);
-    if (post.photo_path) {
-      await ctx.api.sendPhoto(channel, `${SITE_ORIGIN}/${post.photo_path}`, {
-        caption: text,
-        parse_mode: "HTML",
-      });
-    } else {
-      await ctx.api.sendMessage(channel, text, { parse_mode: "HTML" });
-    }
+    const sent = post.photo_path
+      ? await ctx.api.sendPhoto(channel, `${SITE_ORIGIN}/${post.photo_path}`, {
+          caption: text,
+          parse_mode: "HTML",
+        })
+      : await ctx.api.sendMessage(channel, text, { parse_mode: "HTML" });
+    // Kept so the post can be edited or removed later without having to guess
+    // which message it became from the order things were published in.
+    await recordMessageId(post.id, sent.message_id);
   } catch (err) {
     // Put it back in the queue: a post that failed to send must not be marked
     // as published, or it would silently disappear from the rotation.

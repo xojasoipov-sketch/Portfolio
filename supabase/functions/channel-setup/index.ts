@@ -1,9 +1,12 @@
-// One-shot channel setup: title, description, photo, and the opening posts.
+// Channel setup: title, description, photo, and the opening posts.
 //
 // A separate function rather than a bot command because the work is a
-// migration, not a feature -- it runs once against an empty channel and then
-// has no reason to exist. Keeping it out of the bot also keeps the bot's
-// deployed bundle from carrying a code path that can rename the channel.
+// migration, not a feature -- it runs against the channel as a whole, not in
+// response to anything a user did. Keeping it out of the bot also keeps the
+// bot's deployed bundle from carrying a code path that can rename the channel.
+//
+// `?refresh=1` re-applies the description and rewrites the footer on posts
+// already in the channel, for when the wording changes after publishing.
 //
 // The bot token is read server-side from xbot_bot_config and never leaves this
 // process, which is the whole reason the work happens here instead of from a
@@ -17,8 +20,12 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.4";
 
+// Only ever handed to Telegram as a file to fetch, never written into a
+// message: the portfolio's host must not appear in anything a reader can see.
 const SITE_ORIGIN = "https://xojasoipov-sketch.github.io/Portfolio";
 const AVATAR_URL = `${SITE_ORIGIN}/channel-avatar.png`;
+
+const BOT_HANDLE = "@Xojasoipovbot";
 
 // Name first, discipline second: the name is the thing being built, and a
 // Telegram chat list truncates the tail anyway.
@@ -26,20 +33,19 @@ const TITLE = "Saidburxon Xojasoipov | Full-stack & AI";
 
 // The title already carries the name, so the description spends its budget on
 // what the title cannot say: the work, the method, and where to go next.
-// Telegram caps it at 255 characters; this is 252.
+// Telegram caps it at 255 characters; this is 232.
 const ABOUT = [
   "Veb-saytlar, Telegram bot va mini-app, AI integratsiya, CRM va ichki tizimlar.",
   "",
   "Har bir loyiha auditdan boshlanadi — avval muammo aniqlanadi, keyin yechim quriladi.",
   "",
-  `Narxlar: ${SITE_ORIGIN}/xizmatlar`,
-  "Aloqa: @Xojasoipovbot",
+  `Portfolio, narxlar, CV va buyurtma — hammasi botda: ${BOT_HANDLE}`,
 ].join("\n");
 
 /** Published in this order; the first one is pinned. */
 const OPENING_SLOTS = [0, 1, 5, 9, 13];
 
-const FOOTER = `\n\n🔗 ${SITE_ORIGIN}/\n📋 Narxlar: ${SITE_ORIGIN}/xizmatlar\n💬 @Xojasoipovbot`;
+const FOOTER = `\n\n💼 Portfolio, narxlar va aloqa — ${BOT_HANDLE}`;
 
 const db = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -59,6 +65,7 @@ interface Post {
   body: string;
   photo_path: string | null;
   status: string;
+  message_id: number | null;
 }
 
 /** Every Bot API call goes through here so one failure shape is handled once. */
@@ -117,13 +124,73 @@ Deno.serve(async (req: Request) => {
 
   const { data: postRows } = await db
     .from("xbot_channel_posts")
-    .select("id,slot,title,body,photo_path,status")
+    .select("id,slot,title,body,photo_path,status,message_id")
     .in("slot", OPENING_SLOTS)
     .order("slot", { ascending: true });
   const posts = (postRows ?? []) as Post[];
   steps.queue = `${posts.filter((p) => p.status === "pending").length} ta post nashrga tayyor`;
 
   if (dry) return Response.json({ ok: true, dry: true, steps });
+
+  // Rewrites what is already in the channel instead of publishing anything
+  // new, for when the footer or description changes after the fact. A post
+  // whose message id was never recorded is reported rather than guessed at.
+  if (url.searchParams.get("refresh") === "1") {
+    const about = await tg(token, "setChatDescription", { chat_id: channel, description: ABOUT });
+    steps.description = about.ok || about.error?.includes("is not modified")
+      ? `${ABOUT.length} belgi`
+      : `XATO: ${about.error}`;
+
+    const { data: postedRows } = await db
+      .from("xbot_channel_posts")
+      .select("id,slot,title,body,photo_path,status,message_id")
+      .eq("status", "posted")
+      .order("slot", { ascending: true });
+
+    const done: string[] = [];
+    const already: string[] = [];
+    const problems: string[] = [];
+    for (const post of (postedRows ?? []) as Post[]) {
+      if (!post.message_id) {
+        problems.push(`#${post.slot} ${post.title}: message_id yo'q`);
+        continue;
+      }
+      const text = post.body + FOOTER;
+      const edited = post.photo_path
+        ? await tg(token, "editMessageCaption", {
+            chat_id: channel,
+            message_id: post.message_id,
+            caption: text,
+            parse_mode: "HTML",
+          })
+        : await tg(token, "editMessageText", {
+            chat_id: channel,
+            message_id: post.message_id,
+            text,
+            parse_mode: "HTML",
+            link_preview_options: { is_disabled: true },
+          });
+      // "not modified" means the message already holds exactly this post --
+      // the desired end state, and the only read Telegram offers: it is the
+      // one answer that says something about content the caller did not just
+      // write. Running a refresh twice and seeing every post come back
+      // unchanged is what proves each message id points where it claims to.
+      if (!edited.ok && edited.error?.includes("message is not modified")) {
+        already.push(`#${post.slot} ${post.title}`);
+        continue;
+      }
+      if (!edited.ok) {
+        problems.push(`#${post.slot} ${post.title}: ${edited.error}`);
+        continue;
+      }
+      done.push(`#${post.slot} ${post.title}`);
+      await new Promise((r) => setTimeout(r, 400));
+    }
+    steps.refreshed = done.join(", ") || "(hech narsa)";
+    if (already.length) steps.unchanged = already.join(", ");
+    if (problems.length) steps.failed = problems.join(" | ");
+    return Response.json({ ok: problems.length === 0, refresh: true, steps });
+  }
 
   const title = await tg(token, "setChatTitle", { chat_id: channel, title: TITLE });
   steps.title = title.ok ? `"${TITLE}"` : `XATO: ${title.error}`;
@@ -187,6 +254,12 @@ Deno.serve(async (req: Request) => {
       continue;
     }
     published.push(`#${post.slot} ${post.title}`);
+    if (sent.result?.message_id) {
+      await db
+        .from("xbot_channel_posts")
+        .update({ message_id: sent.result.message_id })
+        .eq("id", post.id);
+    }
 
     // The opener is the first thing a new subscriber should read, so it goes
     // to the top rather than scrolling away under the project posts.

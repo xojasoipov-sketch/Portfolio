@@ -9,6 +9,7 @@ export interface ChannelPostRow {
   body: string;
   photo_path: string | null;
   status: "pending" | "posted" | "skipped";
+  message_id: number | null;
   approved_by: number | null;
   posted_at: string | null;
   created_at: string;
@@ -64,7 +65,15 @@ export async function queueCounts(): Promise<{ pending: number; posted: number; 
   };
 }
 
+/** Remembers which channel message a published post became. */
+export async function recordMessageId(id: string, messageId: number): Promise<void> {
+  await db.from("xbot_channel_posts").update({ message_id: messageId }).eq("id", id);
+}
+
 /** Returns a post to the queue after a failed publish. */
 export async function restorePending(id: string): Promise<void> {
-  await db.from("xbot_channel_posts").update({ status: "pending", posted_at: null }).eq("id", id);
+  await db
+    .from("xbot_channel_posts")
+    .update({ status: "pending", posted_at: null, message_id: null })
+    .eq("id", id);
 }

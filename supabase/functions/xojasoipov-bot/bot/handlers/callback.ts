@@ -4,9 +4,9 @@ import { countLeadsByStatus, getLead, listLeads, updateLeadPriority, updateLeadS
 import { isAdmin } from "../../db/users.ts";
 import { env } from "../../config.ts";
 import { escapeTelegramHtml } from "../../security/validation.ts";
-import type { UserRow } from "../../db/types.ts";
+import type { Language, UserRow } from "../../db/types.ts";
 import { handleHandoffCancel, handleHandoffSend, handleLeadCancel, handleLeadConfirm, handleLeadEdit } from "./message.ts";
-import { adminLeadKeyboard } from "../keyboards.ts";
+import { CV_PDF_URL, adminLeadKeyboard } from "../keyboards.ts";
 import { formatWeeklyReport } from "../commands/admin.ts";
 import { buildLeadNotificationText } from "../../notifications/admin.ts";
 import { logger } from "../../utils/logger.ts";
@@ -37,6 +37,7 @@ export async function handleCallbackQuery(ctx: Context, user: UserRow) {
   }
   if (data === "handoff_send") return handleHandoffSend(ctx, user);
   if (data === "handoff_cancel") return handleHandoffCancel(ctx);
+  if (data === "cv_pdf") return handleCvPdf(ctx, user.language);
 
   if (
     data.startsWith("lead_status:") ||
@@ -54,6 +55,26 @@ export async function handleCallbackQuery(ctx: Context, user: UserRow) {
   }
 
   await ctx.answerCallbackQuery();
+}
+
+/**
+ * Sends the CV as a document instead of linking to the file.
+ *
+ * Telegram fetches the address itself, so the reader receives an ordinary
+ * attachment and never sees where it was hosted -- a `.url()` button printed
+ * that host on the button and again in whatever browser it opened.
+ */
+async function handleCvPdf(ctx: Context, lang: Language): Promise<void> {
+  await ctx.answerCallbackQuery();
+  try {
+    await ctx.replyWithDocument(CV_PDF_URL);
+  } catch (err) {
+    logger.error(
+      { err: err instanceof Error ? err.message : String(err) },
+      "CV pdf yuborilmadi",
+    );
+    await ctx.reply(t(lang, "cvPdfFailed"));
+  }
 }
 
 async function handleAdminCallback(ctx: Context, data: string) {

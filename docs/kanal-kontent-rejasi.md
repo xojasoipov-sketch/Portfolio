@@ -103,10 +103,13 @@ Manba: `PACKAGES`. Narxlar katalogdagidek so'zma-so'z, o'zgartirilmaydi.
 
 <2–4 qator: muammo va yechim. Sifatlash emas, aniqlik.>
 
-🔗 Portfolio: xojasoipov-sketch.github.io/Portfolio/
-📋 Narxlar: .../xizmatlar
-💬 Savol: @Xojasoipovbot
+💼 Portfolio, narxlar va aloqa — @Xojasoipovbot
 ```
+
+Postda sayt havolasi **yozilmaydi**. Hamma yo'l bot orqali o'tadi: portfolio,
+xizmatlar katalogi, narxlar, CV va buyurtma — hammasi bot ichida. Sayt manzili
+faqat botning ichki ishida (rasm olish, mini-app ochish) ishlatiladi va hech
+qachon o'quvchiga ko'rinmaydi.
 
 Ohang: xotirjam va aniq. Baqiriq yo'q, emoji ko'p emas, "ENG ZO'R!!!" yo'q.
 Katalogdagi narxlar allaqachon o'zi haqida gapiradi.
