@@ -4,20 +4,15 @@ import jpeg from "jpeg-js";
  * Perceptual image fingerprinting, so two submissions can be compared as
  * pictures rather than as filenames or captions.
  *
- * Telegram's own `file_unique_id` already catches the easy case: the exact
- * same file sent twice. It does not catch the case that actually happens --
- * the same photo saved, cropped a little, re-sent, and re-encoded along the
- * way. Those are byte-different files that a person would call the same item.
- *
- * dHash handles that. The picture is reduced to a 9x8 grey thumbnail and each
- * pixel compared to its right-hand neighbour, giving 64 bits that describe the
- * image's gradients rather than its pixels. Resizing, recompression and
- * brightness shifts leave those gradients intact, so the hash barely moves.
- * Comparison is Hamming distance.
+ * Telegram's `file_unique_id` only catches the exact same file sent twice,
+ * which is not what happens: the same photo gets saved, cropped a little and
+ * re-sent, and Telegram re-encodes it on the way through. dHash handles that
+ * -- the picture is reduced to a 9x8 grey thumbnail and each pixel compared to
+ * its right-hand neighbour, so the 64 bits describe gradients rather than
+ * pixels and survive resizing and recompression. Compared by Hamming distance.
  *
  * Deliberately not a neural embedding: this runs inside an edge function while
- * an admin waits, and 64 bits of arithmetic over a thumbnail costs
- * microseconds with no model to load and no API to call.
+ * an admin waits, with no model to load and no API to call.
  */
 
 /** 9 columns so that 8 left-to-right comparisons fit per row. */
@@ -25,11 +20,10 @@ const HASH_W = 9;
 const HASH_H = 8;
 
 /**
- * Hamming distance below which two photos are treated as the same item.
- * Measured: a re-encoded or resized copy lands at 0-2 bits, a crop around 4-8,
- * two genuinely different photos past 20. 8 sits in the empty space between,
- * and errs toward flagging -- a false duplicate is a message the admin reads
- * and overrides, a missed one silently pollutes the base.
+ * Measured (npm run test:imagehash): a resized or re-encoded copy scores 0-2,
+ * a crop 4-8, a genuinely different photo past 20. 8 sits in the gap and errs
+ * toward flagging -- a false duplicate is a message the admin overrides, a
+ * missed one silently pollutes the base.
  */
 export const DUPLICATE_DISTANCE = 8;
 
@@ -37,10 +31,9 @@ export const DUPLICATE_DISTANCE = 8;
 export const HASH_LENGTH = 16;
 
 /**
- * Box-filter downscale to a small greyscale grid. Averaging over each source
- * block, rather than sampling one pixel per cell, is what makes the result
- * stable across resolutions: point sampling a 1280px and a 320px copy of one
- * photo can land on different pixels and drift the hash.
+ * Box-filter downscale to a small greyscale grid. Averaging each source block,
+ * rather than sampling one pixel per cell, is what keeps the result stable
+ * across resolutions.
  */
 function downscaleToGrey(
   rgba: Uint8Array | Uint8ClampedArray,
@@ -72,10 +65,9 @@ function downscaleToGrey(
 }
 
 /**
- * The 16-character hex dHash of a JPEG, or null if the bytes cannot be
- * decoded. Telegram always serves photos as JPEG, so a decode failure means
- * the download went wrong -- and it must not take the submission down with it,
- * since the file-id and caption comparisons still work without a hash.
+ * The 16-character hex dHash of a JPEG, or null if it cannot be decoded --
+ * which must not fail the submission, since the file-id and caption
+ * comparisons still work without a hash.
  */
 export function computeImageHash(bytes: Uint8Array): string | null {
   let decoded: { width: number; height: number; data: Uint8Array };

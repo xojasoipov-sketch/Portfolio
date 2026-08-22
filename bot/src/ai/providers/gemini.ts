@@ -47,10 +47,8 @@ const RESPONSE_SCHEMA: Schema = {
 };
 
 /**
- * True for Gemini's free-tier rate/quota errors (HTTP 429, RESOURCE_EXHAUSTED)
- * — the ones worth rotating to the next key for. Any other error (bad
- * request, network failure, invalid schema) fails fast instead, so a real
- * bug doesn't silently burn through every configured key.
+ * True for free-tier rate/quota errors, the ones worth rotating a key for.
+ * Anything else fails fast, so a real bug cannot silently burn every key.
  */
 function isQuotaError(err: unknown): boolean {
   const status = err && typeof err === "object" ? (err as { status?: unknown }).status : undefined;
@@ -62,10 +60,8 @@ export class GeminiProvider implements AIProvider {
   readonly name = "gemini";
   private readonly clients: GoogleGenerativeAI[];
   /**
-   * Sticky pointer into `clients` (item: multi-key rotation for the free
-   * tier). Advances only on a quota error and never resets, so once a key
-   * is known exhausted this process stops wasting requests on it — the
-   * next call picks up right after the last key that worked.
+   * Advances only on a quota error and never resets, so once a key is known
+   * exhausted this process stops spending requests on it.
    */
   private keyIndex = 0;
 
@@ -81,9 +77,8 @@ export class GeminiProvider implements AIProvider {
     ];
 
     let lastErr: unknown;
-    // One full pass over the configured keys, starting from the sticky
-    // pointer — at most `clients.length` attempts, so a fully-exhausted
-    // set fails after trying each key exactly once rather than looping.
+    // One pass over the keys from the sticky pointer, so a fully exhausted
+    // set fails after trying each exactly once rather than looping.
     for (let attempt = 0; attempt < this.clients.length; attempt++) {
       const idx = this.keyIndex;
       const client = this.clients[idx];
@@ -95,20 +90,17 @@ export class GeminiProvider implements AIProvider {
           responseMimeType: "application/json",
           responseSchema: RESPONSE_SCHEMA,
           temperature: 0.4,
-          // Gemini 3.x is a thinking model and its reasoning tokens are drawn
-          // from this same budget (a trivial prompt already spent 566 of them
-          // on thoughts). At 1024 the knowledge-base-sized system prompt left
-          // nothing for the actual JSON, so responses came back empty and
-          // JSON.parse threw. Give thinking room plus the reply.
+          // Reasoning tokens come out of this same budget: at 1024 the
+          // knowledge-base-sized prompt left nothing for the JSON, so replies
+          // came back empty and JSON.parse threw. Room to think, plus a reply.
           maxOutputTokens: 8192,
         },
       });
 
       try {
         const result = await model.generateContent({ contents });
-        // finishReason is the thing worth knowing when a turn comes back
-        // unusable (MAX_TOKENS, SAFETY, ...). Without it a truncated response
-        // surfaces as a bare SyntaxError that serializes to "{}" in the logs.
+        // finishReason (MAX_TOKENS, SAFETY, ...) is the thing worth knowing
+        // when a turn is unusable; without it a truncated response logs "{}".
         const finishReason = result.response.candidates?.[0]?.finishReason ?? "unknown";
         const text = result.response.text();
         if (!text.trim()) {
@@ -124,14 +116,12 @@ export class GeminiProvider implements AIProvider {
       } catch (err) {
         lastErr = err;
         if (!isQuotaError(err)) {
-          // Log err.message explicitly: Error's message is non-enumerable, so
-          // passing the Error object itself logs a useless "{}".
+          // err.message explicitly: Error's message is non-enumerable.
           logger.error(
             { err: err instanceof Error ? err.message : String(err), keyIndex: idx },
             "gemini runTurn failed (non-quota error)",
           );
-          // Carry the specific reason up: the caller logs this message, and a
-          // generic one would hide finishReason/HTTP status again.
+          // Carry the reason up; a generic one hides finishReason again.
           throw new AIProviderError(
             `Gemini so'rovi muvaffaqiyatsiz tugadi: ${err instanceof Error ? err.message : String(err)}`,
             err,

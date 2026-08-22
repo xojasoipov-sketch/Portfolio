@@ -3,9 +3,8 @@ import type { ProductRow } from "./types.ts";
 import { DUPLICATE_DISTANCE, hammingDistance } from "../utils/imageHash.ts";
 
 /**
- * Strips a caption down to something two people would type the same way:
- * lowercased, punctuation and repeated whitespace gone. Without this,
- * "Nike Air Max 90" and "nike air-max 90!" read as two different products.
+ * Normalizes a caption so "Nike Air Max 90" and "nike air-max 90!" compare
+ * equal: lowercased, punctuation and repeated whitespace gone.
  */
 export function normalizeTitle(raw: string | null | undefined): string | null {
   if (!raw) return null;
@@ -33,10 +32,9 @@ export interface ProductCandidate {
 }
 
 /**
- * Ceiling on the visual scan. Comparing dHashes needs them in memory --
- * Postgres cannot do a Hamming-distance lookup without an extension -- so this
- * is deliberate, not an accident. Past it the scan stops covering the oldest
- * rows, which is why it reports `truncated` for the caller to log.
+ * Ceiling on the visual scan: Postgres cannot do a Hamming-distance lookup
+ * without an extension, so the hashes come into memory. Past this the scan
+ * stops covering the oldest rows, hence `truncated` for the caller to log.
  */
 export const VISUAL_SCAN_LIMIT = 5000;
 

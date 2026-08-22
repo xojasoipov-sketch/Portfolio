@@ -1,25 +1,18 @@
 import { z } from "npm:zod@3.24.1";
 
 /**
- * All runtime config in one validated place.
- *
- * Values can arrive from two places, in this precedence order:
- *   1. The process environment — Deno.env under Supabase Edge Functions,
- *      process.env under Node (local dev / Railway).
- *   2. The xbot.bot_config table, merged in at boot by db/botConfig.ts.
- *
- * The DB layer exists because Supabase Edge Function secrets can only be set
- * from the dashboard or the Supabase CLI, while the database is reachable
- * with the service-role key that the edge runtime injects automatically.
- * Env always wins, so moving a value to real function secrets later is a
- * drop-in change with nothing to undo here.
+ * All runtime config in one validated place. Values come from the process
+ * environment first (Deno.env or process.env), then from the xbot_bot_config
+ * table merged in at boot by db/botConfig.ts. The table exists because edge
+ * function secrets can only be set from the dashboard or CLI, while the
+ * database is reachable with the injected service-role key. Env always wins,
+ * so moving a value to real secrets later needs no code change.
  */
 
 /**
- * Every key this app reads, listed explicitly. Deno's env API has no
- * enumeration method that is portable across the Supabase edge runtime
- * (`Deno.env.entries` does not exist at all; `toObject` needs blanket env
- * permission), so we ask for exactly the keys we know about instead.
+ * Every key this app reads, listed explicitly: Deno's env API has no
+ * enumeration that works here (`entries` does not exist, `toObject` needs
+ * blanket permission).
  */
 const ENV_KEYS = [
   "TELEGRAM_BOT_TOKEN",
@@ -50,11 +43,9 @@ interface NodeProcessLike {
 }
 
 /**
- * Reads a single variable from whichever runtime we're on. Both globals are
- * reached through `globalThis` rather than a bare `Deno` / `process`
- * reference: that keeps the file typechecking under both compilers *without*
- * a @ts-ignore, so a genuine mistake here can't hide behind a suppressed
- * error the way `Deno.env.entries` once did.
+ * Both globals are reached through `globalThis` rather than a bare `Deno` /
+ * `process`, so the file typechecks under both compilers without a @ts-ignore
+ * that could hide a real mistake -- the way `Deno.env.entries` once did.
  */
 function readEnvVar(key: string): string | undefined {
   const denoGlobal = (globalThis as { Deno?: DenoEnvLike }).Deno;
@@ -92,9 +83,8 @@ const EnvSchema = z.object({
    *  xbot_bot_config table; /post is a no-op until it exists. */
   TELEGRAM_CHANNEL: z.string().optional(),
   MINI_APP_URL: z.string().url().optional(),
-  /** Only used by the Deno webhook entrypoint (supabase/functions/) — verifies
-   * inbound requests actually came from Telegram, since that deploy target
-   * disables Supabase's own JWT check in favor of Telegram's own scheme. */
+  /** Verifies inbound requests really came from Telegram; the webhook deploy
+   * disables Supabase's own JWT check in favour of Telegram's scheme. */
   TELEGRAM_WEBHOOK_SECRET: z.string().min(16).optional(),
 
   AI_PROVIDER: z.enum(["gemini"]).default("gemini"),
@@ -130,9 +120,8 @@ function parseOrThrow(values: Record<string, string>): Env {
 }
 
 /**
- * Mutated in place by applyRuntimeOverrides() so every module that already
- * imported it sees the merged values. Modules must therefore read `env.X` at
- * call time, not destructure it at import time.
+ * Mutated in place by applyRuntimeOverrides() so modules that already imported
+ * it see merged values -- read `env.X` at call time, never destructure it.
  */
 export const env: Env = parseOrThrow(rawValues);
 

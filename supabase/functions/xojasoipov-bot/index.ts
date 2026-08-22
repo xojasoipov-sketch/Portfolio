@@ -1,14 +1,7 @@
-// Xojasoipov Portfolio Bot — Deno/Supabase Edge Functions entrypoint.
-//
-// Deployed target: webhook mode, not long-polling. Telegram POSTs each
-// update straight to this function's URL; there is no persistent process to
-// keep alive, so Render/Railway-style "sleeping" simply doesn't apply here —
-// every invocation is a fresh, fast (sub-second) cold or warm start.
-//
-// The rest of the bot (bot/, ai/, db/, ...) is the exact same source as
-// bot/src/ in the Node target, copied over by scripts/portToDeno (relative
-// imports rewritten .js -> .ts, bare package imports rewritten to npm:
-// specifiers). Business logic lives in one place.
+// Deno/Supabase Edge Functions entrypoint: webhook mode, not long polling.
+// Telegram POSTs each update here, so there is no process to keep alive and
+// nothing to "wake up". Everything below index.ts is generated from bot/src by
+// scripts/port-to-deno.mjs; business logic lives in one place.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { webhookCallback } from "npm:grammy@1.31.0";
 import { createBot } from "./bot/bot.ts";
@@ -17,11 +10,9 @@ import { loadBotConfig } from "./db/botConfig.ts";
 import { logger } from "./utils/logger.ts";
 
 /**
- * Built once per isolate and reused across warm invocations. It has to be
- * lazy and async because the Telegram token and AI keys come from
- * xbot.bot_config, which is a database read — the edge runtime injects
- * SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY for us, and everything else is
- * loaded through them.
+ * Built once per isolate, reused across warm invocations. Lazy and async
+ * because the Telegram token and AI keys come from xbot_bot_config, which is a
+ * database read.
  */
 let handlerPromise: ReturnType<typeof buildHandler> | null = null;
 
@@ -29,19 +20,14 @@ async function buildHandler() {
   await loadBotConfig();
   const bot = createBot();
   await bot.init(); // resolves getMe once, so webhookCallback doesn't per request
-  // grammy performs the X-Telegram-Bot-Api-Secret-Token comparison itself,
-  // before it parses the body. Handing it the secret is what makes that check
-  // pass; omitting it makes grammy reject every request that carries the
-  // header -- which is every real Telegram update, since setWebhook was
-  // configured with a secret_token.
+  // grammy compares X-Telegram-Bot-Api-Secret-Token itself, before parsing the
+  // body. Omitting the secret makes it reject every real update, since
+  // setWebhook was configured with one.
   return webhookCallback(bot, "std/http", {
     secretToken: env.TELEGRAM_WEBHOOK_SECRET,
-    // A full AI turn (cold start + knowledge base + Gemini) measured ~26s,
-    // well past grammy's 10s default. On timeout grammy's default is to
-    // throw, which reaches bot.catch and fires an "AI ERROR" alert at the
-    // admin even though the user got a perfectly good reply. Give the turn
-    // room to finish inside Telegram's own ~60s webhook budget, and log
-    // rather than throw if it still overruns.
+    // A full AI turn measured ~26s, well past grammy's 10s default, and a
+    // timeout throws into bot.catch -- alerting the admin about a reply the
+    // user actually received. Fit Telegram's ~60s budget and log instead.
     timeoutMilliseconds: 55_000,
     onTimeout: () => logger.warn({}, "webhook turn exceeded 55s; reply may arrive late"),
   });
@@ -50,8 +36,8 @@ async function buildHandler() {
 function getHandler() {
   if (!handlerPromise) {
     handlerPromise = buildHandler().catch((err) => {
-      // Don't cache a failed boot: a fixed config row should recover the
-      // next request instead of pinning this isolate to the error forever.
+      // Don't cache a failed boot: a fixed config row should recover on the
+      // next request, not be pinned to the error forever.
       handlerPromise = null;
       throw err;
     });
@@ -60,9 +46,8 @@ function getHandler() {
 }
 
 Deno.serve(async (req: Request) => {
-  // A plain GET is the health check: it reports whether the bot can actually
-  // boot, so a misconfiguration is visible in a browser without having to
-  // send a real Telegram update.
+  // A plain GET is the health check: it reports whether the bot can boot, so a
+  // misconfiguration is visible without sending a real Telegram update.
   if (req.method === "GET") {
     try {
       await getHandler();
@@ -73,12 +58,9 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  // Authentication is grammy's job (see buildHandler): it compares the
-  // X-Telegram-Bot-Api-Secret-Token header against the configured secret and
-  // answers 401 itself. This function runs with verify_jwt disabled --
-  // Telegram doesn't send a Supabase JWT -- so that comparison is the entire
-  // authentication boundary, and it must not be duplicated here or the two
-  // checks could drift apart.
+  // Authentication is grammy's job (see buildHandler). verify_jwt is disabled
+  // because Telegram sends no Supabase JWT, so that comparison is the entire
+  // auth boundary -- duplicating it here would let the two checks drift.
   let handleUpdate: Awaited<ReturnType<typeof buildHandler>>;
   try {
     handleUpdate = await getHandler();
@@ -92,9 +74,8 @@ Deno.serve(async (req: Request) => {
     return await handleUpdate(req);
   } catch (err) {
     logger.error({ err: String(err) }, "unhandled error in webhook handler");
-    // Telegram retries on non-2xx, which would just replay the same update
-    // into the same failure — acknowledge receipt and let bot.catch's own
-    // admin notification (already fired inside handleUpdate) be the signal.
+    // Telegram retries on non-2xx, replaying the same update into the same
+    // failure. Acknowledge, and let bot.catch's admin alert be the signal.
     return new Response("ok", { status: 200 });
   }
 });

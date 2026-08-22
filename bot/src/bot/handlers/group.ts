@@ -16,22 +16,18 @@ import { escapeTelegramHtml } from "../../security/validation.js";
 import { computeImageHash } from "../../utils/imageHash.js";
 import { logger } from "../../utils/logger.js";
 
-/**
- * Product submissions arrive as photos posted to one bound group.
- *
- * The group is bound explicitly with /setgroup rather than "any group the bot
- * is in", because this handler deletes the sender's message -- doing that in a
- * group nobody opted into would destroy messages the admin meant to keep.
- */
+// Submissions arrive as photos in one group, bound explicitly with /setgroup
+// rather than "any group the bot is in": this deletes the sender's message,
+// and doing that in a group nobody opted into would destroy messages the admin
+// meant to keep.
 
 /** Telegram serves photo files from a different host than the Bot API. */
 const FILE_API = "https://api.telegram.org/file/bot";
 
 /**
- * Width to fetch for hashing. dHash is scale-invariant, so the smallest
- * variant carrying the picture's structure is the right one to download: it
- * keeps the admin's wait short and memory flat, and Telegram's thumbnails are
- * re-encodes of the same source, so the hash still matches the full-size copy.
+ * dHash is scale-invariant and Telegram's thumbnails are re-encodes of one
+ * source, so the smallest useful variant hashes the same as the full copy --
+ * and keeps the admin's wait short.
  */
 const HASH_TARGET_WIDTH = 320;
 
@@ -91,10 +87,7 @@ function describeMatch(match: DuplicateMatch): string {
   }
 }
 
-/**
- * /setgroup — run inside the group that will receive submissions. Binds that
- * chat so this handler acts there, and nowhere else.
- */
+/** /setgroup — binds the group this runs in, so the handler acts nowhere else. */
 export async function handleSetGroupCommand(ctx: Context) {
   const chat = ctx.chat;
   const fromId = ctx.from?.id;
@@ -115,7 +108,7 @@ export async function handleSetGroupCommand(ctx: Context) {
     return;
   }
 
-  // Say plainly what still has to be true, rather than letting the first real
+  // Say what still has to be true, rather than letting the first real
   // submission fail on a missing permission.
   await ctx.reply(
     [
@@ -152,10 +145,7 @@ export async function handleProductsCommand(ctx: Context) {
   await ctx.reply(lines.join("\n"), { parse_mode: "HTML" });
 }
 
-/**
- * A photo landed in the bound group: compare it against the base, add it if it
- * is new, and clear the submission out of the group afterwards.
- */
+/** Compare a photo against the base, add it if new, then clear the submission. */
 export async function handleGroupPhoto(ctx: Context, user: UserRow) {
   const chat = ctx.chat;
   const message = ctx.message;
@@ -174,8 +164,8 @@ export async function handleGroupPhoto(ctx: Context, user: UserRow) {
   const bytes = await downloadPhoto(ctx, pickHashVariant(photos).file_id);
   const imageHash = bytes ? computeImageHash(bytes) : null;
   if (!imageHash) {
-    // Not fatal: file-id and caption comparisons still work, so the submission
-    // proceeds with a weaker duplicate check rather than failing outright.
+    // Not fatal: file-id and caption comparisons still work, so this proceeds
+    // with a weaker check rather than failing outright.
     logger.warn({ chatId: chat.id }, "could not hash submitted photo; comparing by file id and title only");
   }
 
