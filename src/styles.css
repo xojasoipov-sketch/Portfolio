@@ -1609,3 +1609,128 @@ body {
     animation: none;
   }
 }
+
+/* --- floating music toggle ---------------------------------------------
+   A vinyl in the bottom corner of every page. The button itself is small
+   (56px), just large enough to hit on a phone; the disc inside spins only
+   while playing, so the visitor can tell at a glance whether sound is on.
+
+   Pinned above every route by rendering in __root.tsx, so no page has to
+   know it exists. Position accounts for the mobile home indicator via env(). */
+.ed-music-toggle {
+  position: fixed;
+  right: max(1.1rem, env(safe-area-inset-right, 0));
+  bottom: max(1.1rem, env(safe-area-inset-bottom, 0));
+  z-index: 60;
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  color: inherit;
+  transition: transform 0.25s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ed-music-toggle:hover {
+  transform: scale(1.05);
+}
+
+.ed-music-toggle:focus-visible {
+  outline: 2px solid var(--ed-red-br, #d43f2b);
+  outline-offset: 3px;
+}
+
+.ed-music-disc {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  background: radial-gradient(
+    circle at 50% 50%,
+    #1a1a1e 0%,
+    #0a0a0c 60%,
+    #050506 100%
+  );
+  box-shadow:
+    0 8px 22px rgba(0, 0, 0, 0.55),
+    inset 0 0 0 1px rgba(245, 242, 239, 0.08);
+  /* Wound-up motion: still by default, spins while playing. animation-play-state
+     lets a paused disc coast the last fraction of its rotation before stopping,
+     rather than snapping back to zero. */
+  animation: ed-music-spin 4s linear infinite;
+  animation-play-state: paused;
+}
+
+.ed-music-toggle[data-playing] .ed-music-disc {
+  animation-play-state: running;
+}
+
+/* Concentric grooves catch the light while the disc turns, so the motion
+   reads even at 56px where a plain circle would look static. Rings drawn as
+   inset borders instead of extra elements: cheaper, and they scale with the
+   disc when it does. */
+.ed-music-groove {
+  position: absolute;
+  border-radius: 999px;
+  border: 1px solid rgba(245, 242, 239, 0.05);
+  pointer-events: none;
+}
+
+.ed-music-groove:nth-child(1) {
+  inset: 4px;
+}
+
+.ed-music-groove:nth-child(2) {
+  inset: 9px;
+}
+
+.ed-music-groove:nth-child(3) {
+  inset: 14px;
+}
+
+/* The centre label -- where the record's paper artwork sits on a real vinyl.
+   Coloured in the site's red so the disc reads as part of the page, not a
+   generic media widget. */
+.ed-music-label {
+  position: absolute;
+  inset: 20px;
+  border-radius: 999px;
+  background: radial-gradient(
+    circle at 50% 40%,
+    var(--ed-red-br, #d43f2b),
+    #9c1d10 90%
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.3);
+}
+
+.ed-music-hole {
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: #050506;
+  box-shadow: 0 0 0 1px rgba(245, 242, 239, 0.12);
+}
+
+@keyframes ed-music-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Someone who asked for less motion still gets a working toggle -- audio
+     plays, disc doesn't spin. */
+  .ed-music-toggle[data-playing] .ed-music-disc {
+    animation-play-state: paused;
+  }
+}

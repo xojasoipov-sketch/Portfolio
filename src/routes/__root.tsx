@@ -14,6 +14,7 @@ import appCss from "../styles.css?url";
 import { useTelegramMiniApp } from "../lib/telegram-miniapp";
 import { trackPageview } from "../lib/analytics";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { MusicToggle } from "../components/editorial/MusicToggle";
 
 /**
  * Branded 404, in the site's own editorial language rather than the generic
@@ -35,7 +36,10 @@ function NotFoundComponent() {
       }}
     >
       <div style={{ maxWidth: "44rem", width: "100%" }}>
-        <p className="ed-label" style={{ color: "var(--ed-red-br)", margin: 0 }}>
+        <p
+          className="ed-label"
+          style={{ color: "var(--ed-red-br)", margin: 0 }}
+        >
           Xatolik 404
         </p>
         <h1
@@ -133,7 +137,8 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 // would point at the domain root even under GitHub Pages' /Portfolio/
 // subpath -- has to be joined with the same base Vite already resolved for
 // every bundled asset (see vite.config.ts's SITE_BASE).
-const asset = (path: string) => `${import.meta.env.BASE_URL}${path}`.replace(/\/{2,}/g, "/");
+const asset = (path: string) =>
+  `${import.meta.env.BASE_URL}${path}`.replace(/\/{2,}/g, "/");
 
 /** Absolute origin of the deployed site. og:image and og:url must be absolute
  *  URLs -- Telegram, WhatsApp and LinkedIn all refuse to resolve a relative
@@ -234,6 +239,9 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
+      {/* Fixed to the viewport corner, so it rides above every route without
+          each of them having to know about it. */}
+      <MusicToggle />
     </QueryClientProvider>
   );
 }
