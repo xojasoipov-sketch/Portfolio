@@ -39,6 +39,12 @@ export async function handleTextMessage(ctx: Context, user: UserRow) {
   const text = ctx.message?.text;
   if (!text) return;
 
+  // The AI lead flow is a one-to-one conversation. Once the bot was added to a
+  // group it answered every message posted there -- turning a working group
+  // into a chatbot that interrupts constantly, and burning model quota on
+  // conversations between other people. Groups get commands only.
+  if (ctx.chat && ctx.chat.type !== "private") return;
+
   const verdict = checkRateLimit(user.telegram_user_id);
   if (verdict === "throttle_silent") return;
   if (verdict === "throttle_notice") {

@@ -41,3 +41,39 @@ async function doLoad(): Promise<void> {
   applyRuntimeOverrides(overrides);
   logger.info({ keys: Object.keys(overrides).length }, "bot_config yuklandi");
 }
+
+/**
+ * Reads a single xbot_bot_config row live, rather than through the boot-time
+ * merge in loadBotConfig().
+ *
+ * The merged `env` is populated once per isolate, so a value written by an
+ * admin command would not be visible until the next cold start -- fine for
+ * secrets that are set once by hand, useless for something the admin binds
+ * from inside Telegram and expects to work on the very next message. Callers
+ * of this are on rare paths (a photo posted to a group), so the extra indexed
+ * read costs nothing worth caching.
+ */
+export async function getConfigValue(key: string): Promise<string | null> {
+  const { data, error } = await db
+    .from("xbot_bot_config")
+    .select("value")
+    .eq("key", key)
+    .maybeSingle();
+  if (error) {
+    logger.error({ err: error.message, key }, "bot_config qiymatini o'qib bo'lmadi");
+    return null;
+  }
+  return (data?.value as string | null) ?? null;
+}
+
+export async function setConfigValue(key: string, value: string): Promise<boolean> {
+  const { error } = await db.from("xbot_bot_config").upsert({ key, value }, { onConflict: "key" });
+  if (error) {
+    logger.error({ err: error.message, key }, "bot_config qiymatini yozib bo'lmadi");
+    return false;
+  }
+  return true;
+}
+
+/** Config key holding the chat id of the group products are submitted in. */
+export const PRODUCT_GROUP_KEY = "TELEGRAM_PRODUCT_GROUP";

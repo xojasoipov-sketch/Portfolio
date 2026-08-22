@@ -90,6 +90,24 @@ export interface LeadRow extends LeadDraft {
   updated_at: string;
 }
 
+/**
+ * One entry in the product/works base the bot compares submissions against.
+ * See the xbot_products migration for why three duplicate signals are stored.
+ */
+export interface ProductRow {
+  id: string;
+  title: string | null;
+  description: string | null;
+  normalized_title: string | null;
+  photo_file_id: string | null;
+  photo_unique_id: string | null;
+  image_hash: string | null;
+  added_by: number | null;
+  source_chat_id: number | null;
+  source_message_id: number | null;
+  created_at: string;
+}
+
 export type NotificationType = "new_lead" | "hot_lead" | "human_handoff" | "ai_error" | "system_alert" | "broadcast";
 
 export type KnowledgeCategory =

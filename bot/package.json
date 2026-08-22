@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Xojasoipov Portfolio Bot — AI Client Agent / Receptionist for @Xojasoipovbot",
+  "description": "Xojasoipov Portfolio Bot \u2014 AI Client Agent / Receptionist for @Xojasoipovbot",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
@@ -11,7 +11,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "seed:knowledge": "tsx scripts/seedKnowledge.ts"
+    "seed:knowledge": "tsx scripts/seedKnowledge.ts",
+    "test:imagehash": "rm -rf dist-test && tsc src/utils/imageHash.ts --outDir dist-test --module nodenext --target es2022 --moduleResolution nodenext --skipLibCheck && node src/utils/imageHash.test.mjs"
   },
   "engines": {
     "node": ">=20"
@@ -20,6 +21,7 @@
     "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.49.4",
     "grammy": "^1.31.0",
+    "jpeg-js": "^0.4.4",
     "zod": "^3.24.1"
   },
   "devDependencies": {

@@ -10,3 +10,6 @@ dist/
 
 # Build output (produced by scripts/build-static.sh)
 .output/
+
+# Throwaway output from bot/package.json's test:imagehash script.
+dist-test/

@@ -8,6 +8,7 @@ import { handleAdminPanel, handleBroadcastCommand, handleAdminLeadsList, handleP
 import { handleStart, resolveSource } from "./commands/start.js";
 import { handleCallbackQuery } from "./handlers/callback.js";
 import { handleTextMessage } from "./handlers/message.js";
+import { handleGroupPhoto, handleProductsCommand, handleSetGroupCommand } from "./handlers/group.js";
 
 export function createBot(): Bot<BotContext> {
   const bot = new Bot<BotContext>(requireBotToken());
@@ -40,7 +41,12 @@ export function createBot(): Bot<BotContext> {
   bot.command("stats", (ctx) => handleStatsCommand(ctx));
   bot.command("broadcast", (ctx) => handleBroadcastCommand(ctx));
   bot.command("post", (ctx) => handlePostCommand(ctx));
+  bot.command("setgroup", (ctx) => handleSetGroupCommand(ctx));
+  bot.command("mahsulotlar", (ctx) => handleProductsCommand(ctx));
 
+  // Photos are only ever meaningful in the bound product group; handleGroupPhoto
+  // itself checks that and ignores everything else.
+  bot.on("message:photo", (ctx) => handleGroupPhoto(ctx, getUser(ctx)));
   bot.on("message:text", (ctx) => handleTextMessage(ctx, getUser(ctx)));
   bot.on("callback_query:data", (ctx) => handleCallbackQuery(ctx, getUser(ctx)));
 
