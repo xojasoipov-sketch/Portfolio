@@ -7,19 +7,25 @@ import { useSpotlight } from "./useSpotlight";
 import { Arrow } from "./icons";
 
 /**
- * Twice as many slots as projects, so each project sits on the ring twice,
- * 180 degrees apart.
+ * One slot per project, so the ring has five cards and 72 degrees between
+ * neighbours.
  *
- * With one slot per project the five of them are 72 degrees apart, and once a
- * card turns past 90 it is facing away and has to be hidden -- which left only
- * two or three on screen and no sense of an arc. Doubling the slots halves the
- * spacing, so the front half of the ring holds all five at once, and a
- * project's two copies can never both be facing the viewer.
+ * The ring carried each project twice before, which halved the spacing and put
+ * all five on the front half at once -- read as one clump rather than a
+ * carousel. At full spacing the cards have air between them and arrive one at
+ * a time, which is what turning is supposed to look like.
  */
-const RING_SLOTS = PROJECTS.length * 2;
+const RING_SLOTS = PROJECTS.length;
 
 /** Degrees between neighbours on the ring. */
 const STEP = 360 / RING_SLOTS;
+
+/**
+ * Where a card starts fading as it turns away, as a cosine of its angle.
+ * cos(70deg); past that it has 20 degrees to disappear before its back would
+ * face the viewer. Without the ramp it would pop out of existence mid-turn.
+ */
+const FADE_FROM = Math.cos((70 * Math.PI) / 180);
 
 /** Degrees per second of the idle rotation — slow enough to read while it moves. */
 const SPEED = 9;
@@ -112,9 +118,17 @@ export function Projects() {
         const node = slotsRef.current[i];
         if (!node) continue;
         const angle = ((i * STEP + spin.current) * Math.PI) / 180;
+        const facing = Math.cos(angle);
         // 1 when the card faces the viewer, 0 when it is behind the figure.
-        const depth = (Math.cos(angle) + 1) / 2;
+        const depth = (facing + 1) / 2;
         node.style.setProperty("--ed-depth", depth.toFixed(3));
+        // Full strength across the whole front of the ring, then a short ramp
+        // at the edge: the card leaves by turning away, not by dimming.
+        const fade = Math.min(1, Math.max(0, facing / FADE_FROM));
+        node.style.setProperty("--ed-fade", fade.toFixed(3));
+        // A card turned away is invisible but still a hit target, and it sits
+        // over the middle of the stage where the front card is.
+        node.style.pointerEvents = fade < 0.05 ? "none" : "auto";
         // Opacity on a slot forces it out of the shared 3D context, so the
         // browser's depth sort stops being reliable and a far card could paint
         // over a near one. Stacking order says outright which is in front.
@@ -238,10 +252,7 @@ export function Projects() {
                 <img src={orbitPortrait} alt="" aria-hidden="true" />
               </div>
 
-              {Array.from({ length: RING_SLOTS }, (_, i) => {
-                const index = i % PROJECTS.length;
-                const project = PROJECTS[index]!;
-                const duplicate = i >= PROJECTS.length;
+              {PROJECTS.map((project, i) => {
                 return (
                   <button
                     key={i}
@@ -251,10 +262,8 @@ export function Projects() {
                     }}
                     className="ed-orbit-slot"
                     style={{ ["--ed-slot" as string]: `${i * STEP}deg` }}
-                    onFocus={duplicate ? undefined : () => bringToFront(i)}
-                    onClick={() => setZoomed(index)}
-                    tabIndex={duplicate ? -1 : undefined}
-                    aria-hidden={duplicate || undefined}
+                    onFocus={() => bringToFront(i)}
+                    onClick={() => setZoomed(i)}
                     aria-label={`${project.title} — loyihani ochish`}
                   >
                     <span

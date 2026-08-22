@@ -1289,10 +1289,10 @@ body {
 
    The ring is driven by one CSS custom property, --ed-spin, written by a
    single rAF loop. Everything else is static CSS reading that variable, so
-   a frame costs one property write and no React render. Each card is
-   positioned by its own angle and then counter-rotated by the same amount,
-   which keeps every face square to the viewer while its position orbits —
-   without that, half the ring would show the backs of the cards.
+   a frame costs one property write and no React render. Each card keeps the
+   angle of its place on the ring, and the ring's plane is tilted back so the
+   whole thing is seen slightly from above: the far side rides higher, the
+   near side lower, and the path reads as a circle instead of a straight row.
    ======================================================================== */
 
 .ed-orbit-stage {
@@ -1309,6 +1309,9 @@ body {
   transform-style: preserve-3d;
   --ed-spin: 0deg;
   --ed-orbit-r: clamp(230px, 30vw, 430px);
+  /* Negative tilts the far half of the ring up the screen, which is what
+     looking down on a turntable does. Positive would show it from below. */
+  --ed-orbit-tilt: -13deg;
 }
 
 /* The figure stands at the centre of the ring, so cards pass in front of and
@@ -1335,7 +1338,9 @@ body {
 
 .ed-orbit-slot {
   position: absolute;
-  top: 68%;
+  /* The tilt swings the front of the ring down the stage, so the centre sits
+     higher than it would on a flat ring to leave the near card room. */
+  top: 52%;
   left: 50%;
   width: clamp(180px, 21vw, 290px);
   margin: 0;
@@ -1346,20 +1351,26 @@ body {
   cursor: pointer;
   transform-style: preserve-3d;
   /* No counter-rotation: the card stays tangent to the ring, so it turns as it
-     travels and the arc reads as depth rather than as a flat row. */
-  transform: translate(-50%, -50%)
+     travels and the arc reads as depth rather than as a flat row.
+
+     The rotateX comes first, so it tilts the plane the whole orbit is drawn
+     in rather than just the card -- the translateZ that follows is measured
+     along an axis that has already been tipped back. */
+  transform: translate(-50%, -50%) rotateX(var(--ed-orbit-tilt))
     rotateY(calc(var(--ed-slot) + var(--ed-spin))) translateZ(var(--ed-orbit-r));
   /* Hidden here rather than on the face: opacity below flattens this element's
      3D context, so a backface rule on the child never applied and cards turned
      past 90 degrees showed their text mirrored. */
   backface-visibility: hidden;
-  /* --ed-depth is 0 at the back of the ring and 1 at the front. */
+  /* --ed-depth is 0 at the back of the ring and 1 at the front; --ed-fade is
+     1 across the whole front and only ramps down in the last few degrees
+     before a card turns its back. Both are written by the same frame. */
   --ed-depth: 1;
-  /* The floor stays high enough that every card is visible the whole way
-     round: the turning is the point, and cards fading out hides it. Ghosting
-     is handled by stacking order instead (set in the same frame as --ed-depth),
-     not by making the far ones disappear. */
-  opacity: min(1, 0.38 + 0.9 * var(--ed-depth));
+  --ed-fade: 1;
+  /* A card stays at full strength while it is facing the viewer at all -- the
+     rotation is the point, and dimming the far ones hides it. The ramp exists
+     only so the moment it turns away is a turn and not a disappearance. */
+  opacity: var(--ed-fade);
 }
 
 .ed-orbit-face {
@@ -1512,11 +1523,9 @@ body {
 }
 
 /* --- small screens ------------------------------------------------------
-   The arc survives here, but only if the ring is wide enough that neighbours
-   36 degrees apart do not sit on top of each other: at the radius that fits
-   the screen, two titles overlapped and the section read as a pile. A wider
-   ring than the viewport is fine -- the outer cards run off the edges, which
-   is what an arc continuing past the frame should look like.
+   At 72 degrees apart the cards clear each other on any radius that fits the
+   screen, so the ring can sit inside the viewport here rather than running
+   off both edges.
 
    The figure goes: at this width it sits behind every card and reads as a
    smudge, and with it gone the ring belongs in the middle of the stage
@@ -1528,7 +1537,10 @@ body {
   }
 
   .ed-orbit-world {
-    --ed-orbit-r: 250px;
+    --ed-orbit-r: 210px;
+    /* Less tilt: the stage is short here, and a steep one would push the near
+       card off its bottom edge. */
+    --ed-orbit-tilt: -10deg;
   }
 
   .ed-orbit-figure {
@@ -1536,8 +1548,8 @@ body {
   }
 
   .ed-orbit-slot {
-    top: 50%;
-    width: 150px;
+    top: 48%;
+    width: 165px;
   }
 
   .ed-orbit-title {
