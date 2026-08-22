@@ -6,8 +6,20 @@ import { useReveal } from "./useReveal";
 import { useSpotlight } from "./useSpotlight";
 import { Arrow } from "./icons";
 
+/**
+ * Twice as many slots as projects, so each project sits on the ring twice,
+ * 180 degrees apart.
+ *
+ * With one slot per project the five of them are 72 degrees apart, and once a
+ * card turns past 90 it is facing away and has to be hidden -- which left only
+ * two or three on screen and no sense of an arc. Doubling the slots halves the
+ * spacing, so the front half of the ring holds all five at once, and a
+ * project's two copies can never both be facing the viewer.
+ */
+const RING_SLOTS = PROJECTS.length * 2;
+
 /** Degrees between neighbours on the ring. */
-const STEP = 360 / PROJECTS.length;
+const STEP = 360 / RING_SLOTS;
 
 /** Degrees per second of the idle rotation — slow enough to read while it moves. */
 const SPEED = 9;
@@ -226,37 +238,47 @@ export function Projects() {
                 <img src={orbitPortrait} alt="" aria-hidden="true" />
               </div>
 
-              {PROJECTS.map((project, i) => (
-                <button
-                  key={project.id}
-                  type="button"
-                  ref={(node) => {
-                    slotsRef.current[i] = node;
-                  }}
-                  className="ed-orbit-slot"
-                  style={{ ["--ed-slot" as string]: `${i * STEP}deg` }}
-                  onFocus={() => bringToFront(i)}
-                  onClick={() => setZoomed(i)}
-                  aria-label={`${project.title} — loyihani ochish`}
-                >
-                  <span className="ed-orbit-face" style={{ display: "block" }}>
-                    <span className="ed-orbit-index">{project.index}</span>
-                    <h3 className="ed-orbit-title">
-                      {project.title}
-                      {project.titleAlt ? ` ${project.titleAlt}` : ""}
-                    </h3>
-                    <p className="ed-orbit-cat">{project.category}</p>
-                    {project.shot && (
-                      <span className="ed-orbit-shot">
-                        <img src={project.shot} alt="" aria-hidden="true" />
+              {Array.from({ length: RING_SLOTS }, (_, i) => {
+                const index = i % PROJECTS.length;
+                const project = PROJECTS[index]!;
+                const duplicate = i >= PROJECTS.length;
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    ref={(node) => {
+                      slotsRef.current[i] = node;
+                    }}
+                    className="ed-orbit-slot"
+                    style={{ ["--ed-slot" as string]: `${i * STEP}deg` }}
+                    onFocus={duplicate ? undefined : () => bringToFront(i)}
+                    onClick={() => setZoomed(index)}
+                    tabIndex={duplicate ? -1 : undefined}
+                    aria-hidden={duplicate || undefined}
+                    aria-label={`${project.title} — loyihani ochish`}
+                  >
+                    <span
+                      className="ed-orbit-face"
+                      style={{ display: "block" }}
+                    >
+                      <span className="ed-orbit-index">{project.index}</span>
+                      <h3 className="ed-orbit-title">
+                        {project.title}
+                        {project.titleAlt ? ` ${project.titleAlt}` : ""}
+                      </h3>
+                      <p className="ed-orbit-cat">{project.category}</p>
+                      {project.shot && (
+                        <span className="ed-orbit-shot">
+                          <img src={project.shot} alt="" aria-hidden="true" />
+                        </span>
+                      )}
+                      <span className="ed-orbit-open">
+                        Ochish <Arrow direction="upRight" size="0.8em" />
                       </span>
-                    )}
-                    <span className="ed-orbit-open">
-                      Ochish <Arrow direction="upRight" size="0.8em" />
                     </span>
-                  </span>
-                </button>
-              ))}
+                  </button>
+                );
+              })}
             </div>
           </div>
 

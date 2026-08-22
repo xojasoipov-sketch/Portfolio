@@ -1299,7 +1299,7 @@ body {
   position: relative;
   perspective: 2400px;
   perspective-origin: 50% 52%;
-  height: clamp(400px, 58vh, 640px);
+  height: clamp(430px, 62vh, 700px);
   margin-inline: calc(var(--ed-gutter) * -1);
 }
 
@@ -1308,7 +1308,7 @@ body {
   inset: 0;
   transform-style: preserve-3d;
   --ed-spin: 0deg;
-  --ed-orbit-r: clamp(210px, 27vw, 400px);
+  --ed-orbit-r: clamp(230px, 30vw, 430px);
 }
 
 /* The figure stands at the centre of the ring, so cards pass in front of and
@@ -1321,7 +1321,7 @@ body {
   position: absolute;
   left: 50%;
   bottom: 0;
-  width: clamp(230px, 27vw, 370px);
+  width: clamp(250px, 29vw, 400px);
   transform: translateX(-50%) translateZ(0);
   transform-style: preserve-3d;
   pointer-events: none;
@@ -1335,9 +1335,9 @@ body {
 
 .ed-orbit-slot {
   position: absolute;
-  top: 63%;
+  top: 68%;
   left: 50%;
-  width: clamp(180px, 20vw, 268px);
+  width: clamp(180px, 21vw, 290px);
   margin: 0;
   padding: 0;
   border: 0;
@@ -1345,8 +1345,14 @@ body {
   color: inherit;
   cursor: pointer;
   transform-style: preserve-3d;
+  /* No counter-rotation: the card stays tangent to the ring, so it turns as it
+     travels and the arc reads as depth rather than as a flat row. */
   transform: translate(-50%, -50%)
     rotateY(calc(var(--ed-slot) + var(--ed-spin))) translateZ(var(--ed-orbit-r));
+  /* Hidden here rather than on the face: opacity below flattens this element's
+     3D context, so a backface rule on the child never applied and cards turned
+     past 90 degrees showed their text mirrored. */
+  backface-visibility: hidden;
   /* --ed-depth is 0 at the back of the ring and 1 at the front. */
   --ed-depth: 1;
   /* The floor stays high enough that every card is visible the whole way
@@ -1357,8 +1363,7 @@ body {
 }
 
 .ed-orbit-face {
-  transform: rotateY(calc(-1 * (var(--ed-slot) + var(--ed-spin))))
-    scale(calc(0.82 + 0.18 * var(--ed-depth)));
+  display: block;
   transition: border-color 0.4s ease;
   border-radius: 1.25rem;
   border: 1px solid rgba(245, 242, 239, 0.16);
@@ -1507,16 +1512,23 @@ body {
 }
 
 /* --- small screens ------------------------------------------------------
-   The ring survives here with a shorter radius, but the figure does not:
-   at this width it sits behind every card and reads as a smudge. */
+   The arc survives here, but only if the ring is wide enough that neighbours
+   36 degrees apart do not sit on top of each other: at the radius that fits
+   the screen, two titles overlapped and the section read as a pile. A wider
+   ring than the viewport is fine -- the outer cards run off the edges, which
+   is what an arc continuing past the frame should look like.
+
+   The figure goes: at this width it sits behind every card and reads as a
+   smudge, and with it gone the ring belongs in the middle of the stage
+   rather than low in it. */
 @media (max-width: 760px) {
   .ed-orbit-stage {
-    perspective: 900px;
-    height: clamp(380px, 56vh, 460px);
+    perspective: 1100px;
+    height: clamp(360px, 52vh, 460px);
   }
 
   .ed-orbit-world {
-    --ed-orbit-r: 170px;
+    --ed-orbit-r: 250px;
   }
 
   .ed-orbit-figure {
@@ -1524,7 +1536,12 @@ body {
   }
 
   .ed-orbit-slot {
-    width: 170px;
+    top: 50%;
+    width: 150px;
+  }
+
+  .ed-orbit-title {
+    font-size: 0.9rem;
   }
 
   .ed-orbit-shot {
