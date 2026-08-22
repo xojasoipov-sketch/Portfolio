@@ -129,6 +129,10 @@ yangi kontent (yangi loyiha, yangi natija) kerak bo'ladi.
 
 1. **Kanalni ulash** — botni kanalga admin qilasiz, u o'zi ulanadi. (Yoki
    kanaldagi istalgan postni botga forward qilasiz.)
+
+   > Bot allaqachon admin bo'lsa, Telegram ulanish signalini qaytadan
+   > yubormaydi. Uni qayta chaqirish uchun: kanal → Adminlar → bot →
+   > istalgan huquqni o'chirib-yoqing → **Saqlash**.
 2. **`/kanal`** — bot navbatdagi postni sizga xuddi kanalda chiqadigan
    ko'rinishda yuboradi, ostida ikki tugma bilan.
 3. **✅ Kanalga joylash** — post kanalga chiqadi.

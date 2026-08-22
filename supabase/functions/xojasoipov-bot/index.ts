@@ -23,6 +23,14 @@ async function buildHandler() {
   // grammy compares X-Telegram-Bot-Api-Secret-Token itself, before parsing the
   // body. Omitting the secret makes it reject every real update, since
   // setWebhook was configured with one.
+  //
+  // setWebhook also carries an allowed_updates list, and Telegram silently
+  // drops anything outside it -- a handler registered here still never runs.
+  // It must stay in sync with what createBot() listens for:
+  //   ["message", "callback_query", "my_chat_member"]
+  // my_chat_member is what binds the channel when the bot is made an admin,
+  // and it was missing from the list once: promotion looked like it worked and
+  // nothing happened, with no error anywhere to explain it.
   return webhookCallback(bot, "std/http", {
     secretToken: env.TELEGRAM_WEBHOOK_SECRET,
     // A full AI turn measured ~26s, well past grammy's 10s default, and a
