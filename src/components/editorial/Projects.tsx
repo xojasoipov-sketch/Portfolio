@@ -20,13 +20,6 @@ const RING_SLOTS = PROJECTS.length;
 /** Degrees between neighbours on the ring. */
 const STEP = 360 / RING_SLOTS;
 
-/**
- * Where a card starts fading as it turns away, as a cosine of its angle.
- * cos(70deg); past that it has 20 degrees to disappear before its back would
- * face the viewer. Without the ramp it would pop out of existence mid-turn.
- */
-const FADE_FROM = Math.cos((70 * Math.PI) / 180);
-
 /** Degrees per second of the idle rotation — slow enough to read while it moves. */
 const SPEED = 9;
 
@@ -122,16 +115,12 @@ export function Projects() {
         // 1 when the card faces the viewer, 0 when it is behind the figure.
         const depth = (facing + 1) / 2;
         node.style.setProperty("--ed-depth", depth.toFixed(3));
-        // Full strength across the whole front of the ring, then a short ramp
-        // at the edge: the card leaves by turning away, not by dimming.
-        const fade = Math.min(1, Math.max(0, facing / FADE_FROM));
-        node.style.setProperty("--ed-fade", fade.toFixed(3));
-        // A card turned away is invisible but still a hit target, and it sits
-        // over the middle of the stage where the front card is.
-        node.style.pointerEvents = fade < 0.05 ? "none" : "auto";
-        // Opacity on a slot forces it out of the shared 3D context, so the
-        // browser's depth sort stops being reliable and a far card could paint
-        // over a near one. Stacking order says outright which is in front.
+        // Only the front-facing card should catch clicks: an unseen back
+        // covering the middle of the stage would eat the pointer that was
+        // aimed at the front card behind it.
+        node.style.pointerEvents = facing > 0 ? "auto" : "none";
+        // Stacking is written outright rather than left to the browser, so a
+        // card past the figure never paints over a card in front of it.
         node.style.zIndex = String(Math.round(depth * 100));
       }
       raf = requestAnimationFrame(frame);
@@ -283,6 +272,14 @@ export function Projects() {
                       )}
                       <span className="ed-orbit-open">
                         Ochish <Arrow direction="upRight" size="0.8em" />
+                      </span>
+                    </span>
+                    {/* Blank reverse: shows the number of the card that is
+                        turning away, so a card behind the figure reads as
+                        "turned around" rather than "vanished". */}
+                    <span className="ed-orbit-back" aria-hidden="true">
+                      <span className="ed-orbit-back-index">
+                        {project.index}
                       </span>
                     </span>
                   </button>

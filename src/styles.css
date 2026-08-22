@@ -1358,22 +1358,17 @@ body {
      along an axis that has already been tipped back. */
   transform: translate(-50%, -50%) rotateX(var(--ed-orbit-tilt))
     rotateY(calc(var(--ed-slot) + var(--ed-spin))) translateZ(var(--ed-orbit-r));
-  /* Hidden here rather than on the face: opacity below flattens this element's
-     3D context, so a backface rule on the child never applied and cards turned
-     past 90 degrees showed their text mirrored. */
-  backface-visibility: hidden;
-  /* --ed-depth is 0 at the back of the ring and 1 at the front; --ed-fade is
-     1 across the whole front and only ramps down in the last few degrees
-     before a card turns its back. Both are written by the same frame. */
+  /* --ed-depth is 0 at the back of the ring and 1 at the front; the two
+     faces below each carry their own backface-visibility so the slot itself
+     stays double-sided. */
   --ed-depth: 1;
-  --ed-fade: 1;
-  /* A card stays at full strength while it is facing the viewer at all -- the
-     rotation is the point, and dimming the far ones hides it. The ramp exists
-     only so the moment it turns away is a turn and not a disappearance. */
-  opacity: var(--ed-fade);
+  /* No opacity on the slot: setting it forces the browser to composite this
+     element as a flat layer, which pulls it out of the shared 3D context and
+     breaks depth-sorting for its children (front face and back face). */
 }
 
 .ed-orbit-face {
+  position: relative;
   display: block;
   transition: border-color 0.4s ease;
   border-radius: 1.25rem;
@@ -1390,6 +1385,40 @@ body {
   padding: 1rem 1rem 1.15rem;
   text-align: left;
   box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.9);
+  /* The reverse of this face is the back layer below; the browser only paints
+     whichever one is currently pointing at the viewer. */
+  backface-visibility: hidden;
+}
+
+/* The card's other side. Rotated 180 degrees around Y so it sits on the same
+   plane as the face but pointing away from it: as the slot turns, the browser
+   shows exactly one of the two at any time. Kept nearly blank on purpose --
+   only the project number sits on it -- so a card behind the figure reads as
+   turned around rather than as another content-heavy card fighting for the
+   eye. */
+.ed-orbit-back {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(245, 242, 239, 0.1);
+  background: radial-gradient(
+    circle at 50% 30%,
+    rgba(245, 242, 239, 0.05),
+    rgba(5, 5, 5, 0.6) 70%
+  );
+  transform: rotateY(180deg);
+  backface-visibility: hidden;
+  pointer-events: none;
+}
+
+.ed-orbit-back-index {
+  font-size: 2rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: rgba(245, 242, 239, 0.35);
 }
 
 .ed-orbit-slot:hover .ed-orbit-face,
@@ -1533,23 +1562,27 @@ body {
 @media (max-width: 760px) {
   .ed-orbit-stage {
     perspective: 1100px;
-    height: clamp(360px, 52vh, 460px);
+    height: clamp(460px, 68vh, 560px);
   }
 
   .ed-orbit-world {
-    --ed-orbit-r: 210px;
+    --ed-orbit-r: 200px;
     /* Less tilt: the stage is short here, and a steep one would push the near
        card off its bottom edge. */
     --ed-orbit-tilt: -10deg;
   }
 
+  /* The figure survives on mobile too, only narrower: without it the ring
+     turned around nothing and the section lost its subject. */
   .ed-orbit-figure {
-    display: none;
+    display: block;
+    width: 180px;
+    bottom: 4%;
   }
 
   .ed-orbit-slot {
-    top: 48%;
-    width: 165px;
+    top: 46%;
+    width: 155px;
   }
 
   .ed-orbit-title {
@@ -1558,6 +1591,10 @@ body {
 
   .ed-orbit-shot {
     margin-top: 0.6rem;
+  }
+
+  .ed-orbit-back-index {
+    font-size: 1.5rem;
   }
 }
 
