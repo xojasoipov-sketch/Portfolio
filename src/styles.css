@@ -1573,15 +1573,20 @@ body {
   }
 
   /* The figure survives on mobile too, only narrower: without it the ring
-     turned around nothing and the section lost its subject. */
+     turned around nothing and the section lost its subject. Raised well
+     off the stage bottom so his head sits above the ring, not behind it --
+     without that the near card covered his face and only the shoulders
+     showed. */
   .ed-orbit-figure {
     display: block;
-    width: 180px;
-    bottom: 4%;
+    width: 210px;
+    bottom: 18%;
   }
 
   .ed-orbit-slot {
-    top: 46%;
+    /* Ring sits at waist height, so cards orbit around him like an aura
+       rather than passing over his face. */
+    top: 62%;
     width: 155px;
   }
 
