@@ -11,20 +11,28 @@
 //
 // Auth: POST with ?key=<TELEGRAM_WEBHOOK_SECRET>. verify_jwt is off because a
 // one-off admin call has no Supabase JWT to present; the key is the boundary.
+// That secret lives in xbot_bot_config, not in the function environment, so it
+// is read the same way the bot reads it -- an env var of the same name still
+// wins, so promoting it to a real function secret later needs no code change.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.4";
 
 const SITE_ORIGIN = "https://xojasoipov-sketch.github.io/Portfolio";
 const AVATAR_URL = `${SITE_ORIGIN}/channel-avatar.png`;
 
+// Name first, discipline second: the name is the thing being built, and a
+// Telegram chat list truncates the tail anyway.
 const TITLE = "Saidburxon Xojasoipov | Full-stack & AI";
 
-/** Telegram caps a channel description at 255 characters. */
+// The title already carries the name, so the description spends its budget on
+// what the title cannot say: the work, the method, and where to go next.
+// Telegram caps it at 255 characters; this is 252.
 const ABOUT = [
-  "Full-stack dasturchi va AI yechimlari.",
-  "Sayt · Telegram bot va mini-app · AI integratsiya · CRM",
-  "Avval audit, keyin yechim.",
-  `Katalog va narxlar: ${SITE_ORIGIN}/xizmatlar`,
+  "Veb-saytlar, Telegram bot va mini-app, AI integratsiya, CRM va ichki tizimlar.",
+  "",
+  "Har bir loyiha auditdan boshlanadi — avval muammo aniqlanadi, keyin yechim quriladi.",
+  "",
+  `Narxlar: ${SITE_ORIGIN}/xizmatlar`,
   "Aloqa: @Xojasoipovbot",
 ].join("\n");
 
@@ -80,7 +88,8 @@ async function tg(
 
 Deno.serve(async (req: Request) => {
   const url = new URL(req.url);
-  const adminKey = Deno.env.get("TELEGRAM_WEBHOOK_SECRET");
+  const adminKey =
+    Deno.env.get("TELEGRAM_WEBHOOK_SECRET") ?? (await config("TELEGRAM_WEBHOOK_SECRET"));
   if (!adminKey || url.searchParams.get("key") !== adminKey) {
     return Response.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }

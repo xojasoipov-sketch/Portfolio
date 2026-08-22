@@ -22,12 +22,17 @@ const SITE_ORIGIN = "https://xojasoipov-sketch.github.io/Portfolio";
  */
 const FOOTER = `\n\n🔗 ${SITE_ORIGIN}/\n📋 Narxlar: ${SITE_ORIGIN}/xizmatlar\n💬 @Xojasoipovbot`;
 
-/** Telegram caps a channel description at 255 characters. */
-const CHANNEL_ABOUT =
-  "Saidburxon Xojasoipov — full-stack dasturchi va AI yechimlari. " +
-  "Sayt, Telegram bot va mini-app, AI integratsiya, CRM. " +
-  "Avval audit, keyin yechim. " +
-  `Katalog va narxlar: ${SITE_ORIGIN}/xizmatlar`;
+// The channel title carries the name, so the description spends its budget on
+// what the title cannot say: the work, the method, and where to go next.
+// Telegram caps it at 255 characters; this is 252.
+const CHANNEL_ABOUT = [
+  "Veb-saytlar, Telegram bot va mini-app, AI integratsiya, CRM va ichki tizimlar.",
+  "",
+  "Har bir loyiha auditdan boshlanadi — avval muammo aniqlanadi, keyin yechim quriladi.",
+  "",
+  `Narxlar: ${SITE_ORIGIN}/xizmatlar`,
+  "Aloqa: @Xojasoipovbot",
+].join("\n");
 
 function render(post: ChannelPostRow): string {
   return post.body + FOOTER;
