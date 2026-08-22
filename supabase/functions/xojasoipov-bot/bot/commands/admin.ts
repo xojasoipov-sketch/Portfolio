@@ -2,12 +2,11 @@ import type { Context } from "npm:grammy@1.31.0";
 import { env } from "../../config.ts";
 import { getSiteReport, getWeeklyReport } from "../../db/analytics.ts";
 import { db } from "../../db/client.ts";
-import { countLeadsByStatus, listLeads } from "../../db/leads.ts";
+import { listLeads } from "../../db/leads.ts";
 import { isAdmin } from "../../db/users.ts";
 import { escapeTelegramHtml } from "../../security/validation.ts";
 import { adminPanelKeyboard } from "../keyboards.ts";
 import { logger } from "../../utils/logger.ts";
-import { PROJECTS } from "../../ai/knowledgeData.ts";
 
 async function requireAdmin(ctx: Context): Promise<boolean> {
   const telegramUserId = ctx.from?.id;
@@ -23,21 +22,6 @@ export async function handleAdminPanel(ctx: Context) {
   await ctx.reply("⚙️ Admin panel", { reply_markup: adminPanelKeyboard() });
 }
 
-export async function handleLeadsCommand(ctx: Context) {
-  if (!(await requireAdmin(ctx))) return;
-  const counts = await countLeadsByStatus();
-  await ctx.reply(
-    [
-      "💼 <b>Leads</b>",
-      `🆕 New: ${counts.NEW ?? 0}`,
-      `🔄 Reviewing: ${counts.REVIEWING ?? 0}`,
-      `💬 Contacted: ${counts.CONTACTED ?? 0}`,
-      `✅ Qualified: ${counts.QUALIFIED ?? 0}`,
-      `❌ Rejected: ${counts.REJECTED ?? 0}`,
-    ].join("\n"),
-    { parse_mode: "HTML" },
-  );
-}
 
 export async function handleStatsCommand(ctx: Context) {
   if (!(await requireAdmin(ctx))) return;
@@ -124,95 +108,4 @@ export async function handleAdminLeadsList(ctx: Context) {
     .map((l) => `• <b>${escapeTelegramHtml(l.project_type ?? "—")}</b> — ${escapeTelegramHtml(l.first_name ?? "—")} (${l.priority}, ${l.status})`)
     .join("\n");
   await ctx.reply(text, { parse_mode: "HTML" });
-}
-
-const SITE_ORIGIN = "https://xojasoipov-sketch.github.io/Portfolio";
-
-/**
- * Publishes a project card to the public showcase channel.
- *
- * The channel is meant to be a browsable portfolio base, so each post is a
- * self-contained card: screenshot, what the project is, the stack, and a way
- * to actually try it. The channel handle lives in xbot_bot_config
- * (TELEGRAM_CHANNEL) rather than in code, so it can be pointed at a different
- * channel without a redeploy.
- *
- *   /post            -> lists what can be published
- *   /post zet        -> publishes that project
- */
-export async function handlePostCommand(ctx: Context) {
-  if (!(await requireAdmin(ctx))) return;
-
-  const channel = env.TELEGRAM_CHANNEL;
-  if (!channel) {
-    await ctx.reply(
-      [
-        "Kanal hali ulanmagan.",
-        "",
-        "Ulash uchun: kanal yarating, botni unga <b>admin</b> qiling, so'ng",
-        "<code>xbot_bot_config</code> jadvaliga qo'shing:",
-        "<code>key = TELEGRAM_CHANNEL</code>, <code>value = @kanal_nomi</code>",
-      ].join("\n"),
-      { parse_mode: "HTML" },
-    );
-    return;
-  }
-
-  const key = ctx.match?.toString().trim().toLowerCase();
-  const keys = PROJECTS.map((p) => p.key);
-
-  if (!key) {
-    await ctx.reply(
-      [
-        `📢 Kanal: <b>${escapeTelegramHtml(channel)}</b>`,
-        "",
-        "Nashr qilish uchun: <code>/post &lt;loyiha&gt;</code>",
-        ...keys.map((k) => `• <code>/post ${k}</code>`),
-      ].join("\n"),
-      { parse_mode: "HTML" },
-    );
-    return;
-  }
-
-  const project = PROJECTS.find((p) => p.key === key);
-  if (!project) {
-    await ctx.reply(`Bunday loyiha yo'q. Mavjud: ${keys.join(", ")}`);
-    return;
-  }
-
-  const caption = [
-    `<b>${escapeTelegramHtml(project.title)}</b>`,
-    `<i>${escapeTelegramHtml(project.category)}</i>`,
-    "",
-    escapeTelegramHtml(project.summary),
-    "",
-    `🛠 ${escapeTelegramHtml(project.tech.join(" · "))}`,
-    "",
-    `🔗 Portfolio: ${SITE_ORIGIN}/`,
-    `📋 Narxlar: ${SITE_ORIGIN}/xizmatlar`,
-  ].join("\n");
-
-  try {
-    await ctx.api.sendPhoto(channel, `${SITE_ORIGIN}/projects/${project.key}.jpg`, {
-      caption,
-      parse_mode: "HTML",
-    });
-    await ctx.reply(`✅ <b>${escapeTelegramHtml(project.title)}</b> kanalga joylandi.`, {
-      parse_mode: "HTML",
-    });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    logger.error({ err: message, channel, key }, "channel post failed");
-    // The overwhelmingly common cause is the bot not being an admin of the
-    // channel, so say that rather than echoing a raw API error.
-    await ctx.reply(
-      [
-        "❌ Joylashtirib bo'lmadi.",
-        "",
-        "Tekshiring: bot kanalda <b>admin</b>mi va kanal nomi to'g'rimi?",
-        `<code>${escapeTelegramHtml(message)}</code>`,
-      ].join("\n"),
-      { parse_mode: "HTML" },
-    );
-  }
 }

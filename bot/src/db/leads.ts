@@ -94,12 +94,6 @@ export async function updateLeadPriority(leadId: string, priority: LeadPriority,
   await logLeadEvent(leadId, "priority_change", actor, { priority });
 }
 
-export async function markLeadNotified(leadId: string, adminMessageId: number) {
-  await db
-    .from("xbot_leads")
-    .update({ admin_notified_at: new Date().toISOString(), admin_message_id: adminMessageId })
-    .eq("id", leadId);
-}
 
 export async function getLead(leadId: string): Promise<LeadRow | null> {
   const { data } = await db.from("xbot_leads").select("*").eq("id", leadId).maybeSingle();

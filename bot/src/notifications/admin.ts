@@ -91,10 +91,6 @@ export async function notifyAiError(context: string, error: unknown): Promise<vo
   await db.from("xbot_notifications").insert({ type: "ai_error", payload: { context } });
 }
 
-export async function notifySystemAlert(text: string): Promise<void> {
-  await sendToAllAdmins(`🔴 <b>SYSTEM ALERT</b>\n\n${escapeTelegramHtml(text)}`);
-  await db.from("xbot_notifications").insert({ type: "system_alert", payload: { text } });
-}
 
 async function sendToAllAdmins(text: string, keyboard?: ReturnType<typeof adminLeadKeyboard>): Promise<void> {
   if (!apiRef) return;

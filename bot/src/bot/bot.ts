@@ -4,11 +4,12 @@ import { requireBotToken } from "../config.js";
 import { upsertUser } from "../db/users.js";
 import { registerAdminNotifier, notifyAiError } from "../notifications/admin.js";
 import { logger } from "../utils/logger.js";
-import { handleAdminPanel, handleBroadcastCommand, handleAdminLeadsList, handlePostCommand, handleStatsCommand } from "./commands/admin.js";
+import { handleAdminPanel, handleBroadcastCommand, handleAdminLeadsList, handleStatsCommand } from "./commands/admin.js";
 import { handleStart, resolveSource } from "./commands/start.js";
 import { handleCallbackQuery } from "./handlers/callback.js";
 import { handleTextMessage } from "./handlers/message.js";
 import { handleGroupPhoto, handleProductsCommand, handleSetGroupCommand } from "./handlers/group.js";
+import { handleChannelCommand, handleForwardedChannelPost, handleMyChatMember } from "./handlers/channel.js";
 
 export function createBot(): Bot<BotContext> {
   const bot = new Bot<BotContext>(requireBotToken());
@@ -40,9 +41,20 @@ export function createBot(): Bot<BotContext> {
   bot.command("leads", (ctx) => handleAdminLeadsList(ctx));
   bot.command("stats", (ctx) => handleStatsCommand(ctx));
   bot.command("broadcast", (ctx) => handleBroadcastCommand(ctx));
-  bot.command("post", (ctx) => handlePostCommand(ctx));
   bot.command("setgroup", (ctx) => handleSetGroupCommand(ctx));
   bot.command("mahsulotlar", (ctx) => handleProductsCommand(ctx));
+  bot.command("kanal", (ctx) => handleChannelCommand(ctx));
+
+  // Promoting the bot in a channel is how the channel gets bound; nothing else
+  // reacts to this update.
+  bot.on("my_chat_member", (ctx) => handleMyChatMember(ctx));
+
+  // A post forwarded from a channel is a binding instruction, not a question
+  // for the AI -- so it is checked before the text handler and stops there.
+  bot.on("message", async (ctx, next) => {
+    if (await handleForwardedChannelPost(ctx)) return;
+    await next();
+  });
 
   // Photos are only ever meaningful in the bound product group; handleGroupPhoto
   // itself checks that and ignores everything else.

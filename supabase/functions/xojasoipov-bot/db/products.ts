@@ -151,7 +151,3 @@ export async function listProducts(limit = 10): Promise<ProductRow[]> {
   return (data ?? []) as ProductRow[];
 }
 
-export async function deleteProduct(id: string): Promise<boolean> {
-  const { error } = await db.from("xbot_products").delete().eq("id", id);
-  return !error;
-}

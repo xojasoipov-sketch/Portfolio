@@ -59,9 +59,6 @@ export function portfolioKeyboard(lang: Language): InlineKeyboard {
   return kb;
 }
 
-export function smartStartKeyboard(lang: Language): InlineKeyboard {
-  return new InlineKeyboard().text(t(lang, "startHint"), "smart_start");
-}
 
 export function leadConfirmKeyboard(lang: Language, leadDraftKey: string): InlineKeyboard {
   return new InlineKeyboard()

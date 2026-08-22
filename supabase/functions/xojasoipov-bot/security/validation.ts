@@ -11,6 +11,7 @@ export function clampMessage(text: string): string {
   return text.slice(0, MAX_MESSAGE_LENGTH);
 }
 
+
 /** Telegram usernames: 5-32 chars, alnum + underscore, per Telegram's own rules. */
 export function isValidTelegramUsername(username: string): boolean {
   return /^[a-zA-Z0-9_]{5,32}$/.test(username.replace(/^@/, ""));

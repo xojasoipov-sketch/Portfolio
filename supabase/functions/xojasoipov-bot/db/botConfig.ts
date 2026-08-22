@@ -66,3 +66,6 @@ export async function setConfigValue(key: string, value: string): Promise<boolea
 
 /** Config key holding the chat id of the group products are submitted in. */
 export const PRODUCT_GROUP_KEY = "TELEGRAM_PRODUCT_GROUP";
+
+/** Config key holding the chat id (or @username) of the showcase channel. */
+export const CHANNEL_KEY = "TELEGRAM_CHANNEL";

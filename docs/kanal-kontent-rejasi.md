@@ -47,15 +47,14 @@ sotuv posti chiqmaydi.
 
 ### A. Loyihalar (4 ta) — rasm bilan
 
-Manba: `PROJECTS`. `/post <kalit>` buyrug'i allaqachon shuni yuboradi:
-rasm + nom + kategoriya + tavsif + texnologiyalar + sayt havolasi.
+Manba: `PROJECTS`. Har biri rasm bilan chiqadi (`public/projects/*.jpg`).
 
-| # | Post | Kalit |
-|---|---|---|
-| 1 | **ZET** — shaxsiy AI operatsion tizimi | `/post zet` |
-| 5 | **SadiPrime** — o'quv markazlari uchun CRM (ishlab turibdi: sadiprime-tizim.uz) | `/post sadiprime` |
-| 9 | **Pari AI** — shaxsiy AI assistant | `/post pari` |
-| 13 | **DLI Shop** — e-commerce + Telegram do'kon | `/post dli` |
+| # | Post |
+|---|---|
+| 1 | **ZET** — shaxsiy AI operatsion tizimi |
+| 5 | **SadiPrime** — o'quv markazlari uchun CRM (ishlab turibdi: sadiprime-tizim.uz) |
+| 9 | **Pari AI** — shaxsiy AI assistant |
+| 13 | **DLI Shop** — e-commerce + Telegram do'kon |
 
 ### B. Xizmat yo'nalishlari (6 ta)
 
@@ -125,6 +124,20 @@ Aylanma tugagach, Routine to'xtaydi va sizdan so'raydi — takrorlash emas,
 yangi kontent (yangi loyiha, yangi natija) kerak bo'ladi.
 
 ---
+
+## Qanday ishlaydi
+
+1. **Kanalni ulash** — botni kanalga admin qilasiz, u o'zi ulanadi. (Yoki
+   kanaldagi istalgan postni botga forward qilasiz.)
+2. **`/kanal`** — bot navbatdagi postni sizga xuddi kanalda chiqadigan
+   ko'rinishda yuboradi, ostida ikki tugma bilan.
+3. **✅ Kanalga joylash** — post kanalga chiqadi.
+   **❌ Tashlab ket** — post o'tkazib yuboriladi, kanalga chiqmaydi.
+
+Siz tugmani bosmaguningizcha kanalga hech narsa chiqmaydi.
+
+Ulanish paytida bot kanal tavsifini ham yozib qo'yadi (buning uchun unga
+"Kanalni tahrirlash" huquqi kerak).
 
 ## Siz nazorat qilasiz
 

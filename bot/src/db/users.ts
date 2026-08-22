@@ -50,9 +50,6 @@ export async function upsertUser(input: {
   return data as UserRow;
 }
 
-export async function setUserLanguage(userId: string, language: Language) {
-  await db.from("xbot_users").update({ language }).eq("id", userId);
-}
 
 export async function isAdmin(telegramUserId: number, envAdminIds: number[]): Promise<boolean> {
   if (envAdminIds.includes(telegramUserId)) return true;

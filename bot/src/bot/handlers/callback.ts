@@ -10,6 +10,7 @@ import { adminLeadKeyboard } from "../keyboards.js";
 import { formatWeeklyReport } from "../commands/admin.js";
 import { buildLeadNotificationText } from "../../notifications/admin.js";
 import { logger } from "../../utils/logger.js";
+import { handleChannelCallback } from "./channel.js";
 import { t } from "../i18n.js";
 
 /**
@@ -25,6 +26,15 @@ export async function handleCallbackQuery(ctx: Context, user: UserRow) {
   if (data.startsWith("lead_confirm:")) return handleLeadConfirm(ctx, user, data.split(":")[1]!);
   if (data.startsWith("lead_edit:")) return handleLeadEdit(ctx, user, data.split(":")[1]!);
   if (data.startsWith("lead_cancel:")) return handleLeadCancel(ctx, user, data.split(":")[1]!);
+  if (data.startsWith("ch_pub:") || data.startsWith("ch_skip:")) {
+    // Publishing to the channel is admin-only, and the button could have been
+    // forwarded, so the check is here rather than assumed from who saw it.
+    if (!(await isAdmin(user.telegram_user_id, env.TELEGRAM_ADMIN_IDS))) {
+      await ctx.answerCallbackQuery({ text: t(user.language, "notAdmin"), show_alert: true });
+      return;
+    }
+    return handleChannelCallback(ctx, data);
+  }
   if (data === "handoff_send") return handleHandoffSend(ctx, user);
   if (data === "handoff_cancel") return handleHandoffCancel(ctx);
 
