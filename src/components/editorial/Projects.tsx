@@ -45,6 +45,13 @@ const DRAG_THRESHOLD_PX = 6;
 const ARROW_KICK = 260;
 
 /**
+ * Ceiling on detent clicks per second. A hard flick crosses a slot every few
+ * frames, and firing one click each would be a machine-gun rattle rather than
+ * the tick of a mechanism; past this rate the extra crossings pass silently.
+ */
+const MAX_TICKS_PER_SEC = 22;
+
+/**
  * The work section: the projects turn around the portrait, and clicking one
  * opens it full size.
  *
@@ -55,7 +62,9 @@ const ARROW_KICK = 260;
  * than either stopping dead or spinning forever. The sound is the air the
  * ring moves: filtered noise whose band and level follow the speed, so a
  * flick is a soft whoosh that thins out as the ring coasts down -- silent
- * at rest.
+ * at rest. Every time a card passes the front the ring also clicks, the way
+ * a detent does: that tick is what tells the ear where the cards are, which
+ * the whoosh alone never could.
  *
  * The audio graph is built lazily on the first pointer press: browsers reject
  * an AudioContext.resume() that has not seen a user gesture, so constructing
@@ -105,7 +114,16 @@ export function Projects() {
     tone: OscillatorNode;
     toneGain: GainNode;
     gain: GainNode;
+    /** One noise buffer, reused by every detent click. */
+    clickBuffer: AudioBuffer;
+    /** The ticks bypass the whoosh's gain so they stay audible at low speed. */
+    tickBus: GainNode;
   } | null>(null);
+
+  /** Timestamp of the last detent click, so the rate cap can be enforced. */
+  const lastTickAt = useRef(0);
+  /** Which detent the ring was sitting in last frame. */
+  const lastDetent = useRef<number | null>(null);
 
   const ensureAudio = () => {
     if (audio.current) {
@@ -149,15 +167,86 @@ export function Projects() {
       const gain = ctx.createGain();
       gain.gain.value = 0;
 
+      // Short noise burst the detent clicks are cut from. 80 ms is longer
+      // than any click needs; the envelope decides the actual length.
+      const clickFrames = Math.floor(ctx.sampleRate * 0.08);
+      const clickBuffer = ctx.createBuffer(1, clickFrames, ctx.sampleRate);
+      const cd = clickBuffer.getChannelData(0);
+      for (let i = 0; i < clickFrames; i++) cd[i] = Math.random() * 2 - 1;
+
+      const tickBus = ctx.createGain();
+      tickBus.gain.value = 1;
+
       noise.connect(band).connect(gain);
       tone.connect(toneGain).connect(gain);
       gain.connect(ctx.destination);
+      tickBus.connect(ctx.destination);
       noise.start();
       tone.start();
-      audio.current = { ctx, noise, band, tone, toneGain, gain };
+      audio.current = {
+        ctx,
+        noise,
+        band,
+        tone,
+        toneGain,
+        gain,
+        clickBuffer,
+        tickBus,
+      };
     } catch {
       // No Web Audio -- the ring still turns, just without the whoosh.
     }
+  };
+
+  /**
+   * One detent click: a very short, high, band-limited noise burst plus a
+   * brief sine ping an octave above it.
+   *
+   * The noise is the mechanism -- a click has no pitch, so noise through a
+   * narrow high band is what reads as "something seated into place". The sine
+   * on top is the resonance that click leaves behind; without it the burst
+   * sounds like a static pop rather than a machined part. Both are 30-45 ms,
+   * which is short enough that a fast spin turns them into a run of ticks
+   * instead of a smear.
+   *
+   * `strength` (0..1) scales level and brightness with how fast the ring is
+   * turning, so a slow drift ticks softly and a flick ticks hard.
+   */
+  const tick = (strength: number) => {
+    const a = audio.current;
+    if (!a) return;
+    const { ctx, clickBuffer, tickBus } = a;
+    const t = ctx.currentTime;
+
+    const src = ctx.createBufferSource();
+    src.buffer = clickBuffer;
+
+    // High and narrow: this is the part the ear hears as the click's "tk".
+    const bp = ctx.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.frequency.value = 2100 + strength * 1500;
+    bp.Q.value = 5.5;
+
+    const env = ctx.createGain();
+    env.gain.setValueAtTime(0, t);
+    env.gain.linearRampToValueAtTime(0.16 + strength * 0.2, t + 0.002);
+    env.gain.exponentialRampToValueAtTime(0.0001, t + 0.045);
+
+    src.connect(bp).connect(env).connect(tickBus);
+    src.start(t);
+    src.stop(t + 0.08);
+
+    // The ring the click leaves behind.
+    const ping = ctx.createOscillator();
+    ping.type = "sine";
+    ping.frequency.value = 3200 + strength * 900;
+    const pingEnv = ctx.createGain();
+    pingEnv.gain.setValueAtTime(0, t);
+    pingEnv.gain.linearRampToValueAtTime(0.05 + strength * 0.06, t + 0.002);
+    pingEnv.gain.exponentialRampToValueAtTime(0.0001, t + 0.03);
+    ping.connect(pingEnv).connect(tickBus);
+    ping.start(t);
+    ping.stop(t + 0.05);
   };
 
   const step = useCallback((dir: 1 | -1) => {
@@ -243,6 +332,24 @@ export function Projects() {
         // reads as weight rather than as a note.
         tone.frequency.setTargetAtTime(62 + curve * 38, t, 0.12);
         toneGain.gain.setTargetAtTime(0.22 + curve * 0.2, t, 0.12);
+
+        // Detents. A card faces front every STEP degrees, so the number of
+        // slots the ring has passed is just floor(spin / STEP); each time
+        // that integer changes, one card has come round to the front.
+        const detent = Math.floor(spin.current / STEP);
+        if (lastDetent.current === null) {
+          lastDetent.current = detent;
+        } else if (detent !== lastDetent.current && !reduced.matches) {
+          lastDetent.current = detent;
+          // The cap is what keeps a hard flick a run of ticks rather than a
+          // rattle: crossings past the rate simply do not sound.
+          if (now - lastTickAt.current > 1000 / MAX_TICKS_PER_SEC) {
+            lastTickAt.current = now;
+            // Idle drift ticks quietly; a flick ticks hard. Never silent,
+            // because a card reaching the front is worth hearing either way.
+            tick(Math.min(1, 0.18 + curve * 0.9));
+          }
+        }
       }
 
       world.style.setProperty("--ed-spin", `${spin.current}deg`);

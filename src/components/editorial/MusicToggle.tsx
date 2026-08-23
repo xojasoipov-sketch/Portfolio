@@ -1,27 +1,32 @@
 import { useEffect, useRef, useState } from "react";
 
+/** Where the element's volume lands once it has faded in. */
+const VOLUME = 0.85;
+
+/** How long the fade at play/pause takes, in ms. */
+const FADE_MS = 700;
+
 /**
- * A spinning vinyl in the corner of every page. First tap starts the ambient
- * track and the disc turns; a second tap pauses it and the disc coasts to a
- * stop.
+ * A turntable in the corner of every page. First tap lowers the arm and the
+ * record turns; a second tap lifts it and the record coasts to a stop.
  *
- * The audio element is kept out of the DOM tree entirely and constructed
- * lazily on the first tap: browsers block autoplay of anything with sound
- * until a user gesture has been observed, and creating the element early
- * would just log a rejected `play()` promise on load.
+ * The audio element is constructed lazily on the first tap: browsers block
+ * autoplay of anything with sound until a user gesture has been observed, so
+ * creating it at mount would only log a rejected `play()` on every page load.
  *
- * The label deliberately shows the track, not the state -- a visitor who saw
- * "Play" would expect the button to open a player. Here the disc's motion is
- * the state: turning means it is playing.
+ * The fade lives here rather than in the file. Baking a long fade into the
+ * mp3 meant the first seconds after a tap were near-silence, which reads as
+ * a broken button; a ramp on `volume` gives the same ease-in while the first
+ * audible moment lands immediately.
  */
 export function MusicToggle() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const fadeRef = useRef<number | null>(null);
   const [playing, setPlaying] = useState(false);
 
   useEffect(() => {
     return () => {
-      // Leaving the page is a stop; a paused element still holds the file
-      // buffered, which the browser will only free once nothing references it.
+      if (fadeRef.current) cancelAnimationFrame(fadeRef.current);
       const el = audioRef.current;
       if (el) {
         el.pause();
@@ -30,31 +35,50 @@ export function MusicToggle() {
     };
   }, []);
 
+  /** Ramp the element's volume, then optionally pause once it reaches zero. */
+  const fadeTo = (target: number, thenPause: boolean) => {
+    const el = audioRef.current;
+    if (!el) return;
+    if (fadeRef.current) cancelAnimationFrame(fadeRef.current);
+    const from = el.volume;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / FADE_MS);
+      el.volume = from + (target - from) * t;
+      if (t < 1) {
+        fadeRef.current = requestAnimationFrame(tick);
+      } else {
+        fadeRef.current = null;
+        if (thenPause) el.pause();
+      }
+    };
+    fadeRef.current = requestAnimationFrame(tick);
+  };
+
   const toggle = async () => {
     let el = audioRef.current;
     if (!el) {
       el = new Audio("/audio/ambient.mp3");
       el.loop = true;
       el.preload = "none";
-      // Softer than the site's other sounds so it sits under whatever the
-      // visitor is looking at rather than over it.
-      el.volume = 0.4;
+      el.volume = 0;
       audioRef.current = el;
     }
 
     if (playing) {
-      el.pause();
       setPlaying(false);
+      fadeTo(0, true);
       return;
     }
 
     try {
+      el.volume = 0;
       await el.play();
       setPlaying(true);
+      fadeTo(VOLUME, false);
     } catch {
-      // The first tap counts as the user gesture, so a rejected play() here
-      // is unusual -- an offline network or a missing file. Leave the disc
-      // still and the label unchanged; a second tap will retry.
+      // The tap is the user gesture, so a rejected play() here means the file
+      // could not be fetched. Leave the record still; a second tap retries.
     }
   };
 
@@ -68,12 +92,32 @@ export function MusicToggle() {
       aria-label={playing ? "Musiqani to'xtatish" : "Fon musiqasini yoqish"}
       title={playing ? "Musiqani to'xtatish" : "Fon musiqasini yoqish"}
     >
-      <span className="ed-music-disc" aria-hidden="true">
-        <span className="ed-music-groove" />
-        <span className="ed-music-groove" />
-        <span className="ed-music-groove" />
-        <span className="ed-music-label">
-          <span className="ed-music-hole" />
+      <span className="ed-music-deck" aria-hidden="true">
+        {/* Rings that ripple outward while the record plays -- the one cue
+            that reads even at a glance, from the far side of the page. */}
+        <span className="ed-music-pulse" />
+        <span className="ed-music-pulse" />
+
+        <span className="ed-music-disc">
+          <span className="ed-music-groove" />
+          <span className="ed-music-groove" />
+          <span className="ed-music-groove" />
+          {/* A rotationally symmetric disc looks identical at every angle, so
+              spinning it changed nothing on screen. This sheen is the
+              asymmetry that makes the rotation visible: a bright wedge that
+              sweeps past as the record turns. */}
+          <span className="ed-music-sheen" />
+          <span className="ed-music-label">
+            {/* Off-centre so it traces a visible circle, the way the paper
+                label's print does on a real record. */}
+            <span className="ed-music-mark" />
+            <span className="ed-music-hole" />
+          </span>
+        </span>
+
+        {/* Tone arm: rests off the record, swings down onto it on play. */}
+        <span className="ed-music-arm">
+          <span className="ed-music-arm-head" />
         </span>
       </span>
     </button>
