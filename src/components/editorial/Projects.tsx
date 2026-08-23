@@ -60,12 +60,11 @@ const MAX_TICKS_PER_SEC = 22;
  * (BASE_SPEED) and an extra angular velocity the visitor can add by dragging
  * or by pressing an arrow. The extra decays exponentially back to zero, so
  * after a hard flick the ring slows on its own to its normal rhythm rather
- * than either stopping dead or spinning forever. The sound is the air the
- * ring moves: filtered noise whose band and level follow the speed, so a
- * flick is a soft whoosh that thins out as the ring coasts down -- silent
- * at rest. Every time a card passes the front the ring also clicks, the way
- * a detent does: that tick is what tells the ear where the cards are, which
- * the whoosh alone never could.
+ * than either stopping dead or spinning forever. The only sound is a detent
+ * click each time a card reaches the front -- silent at rest and between
+ * cards. The physics carries the rest of it: the gaps between ticks widen
+ * on their own as the ring slows, so the deceleration is audible without
+ * anything having to hum underneath it.
  *
  * The audio graph is built lazily on the first pointer press: browsers reject
  * an AudioContext.resume() that has not seen a user gesture, so constructing
@@ -93,28 +92,17 @@ export function Projects() {
   const draggedFar = useRef(false);
 
   /**
-   * The audio graph, running from the first press until unmount. The gain is
-   * what turns the sound on and off; the source never stops.
+   * The audio graph, built on the first press and torn down at unmount.
    *
-   * A sawtooth through a lowpass was the obvious choice and the wrong one:
-   * its harmonics are evenly spaced, which the ear hears as a pitched buzz --
-   * a power tool, not a moving object. What a spinning thing actually makes
-   * is broadband air noise, so the source here is white noise through a
-   * bandpass. Sweeping the band with speed gives the rising-and-falling
-   * whoosh of something passing you, and because noise has no fundamental
-   * there is no note to clash with the ambient track.
-   *
-   * The quiet triangle underneath is body, not pitch -- one soft partial so
-   * the whoosh has some weight behind it. Triangle rather than saw: only odd
-   * harmonics, and they fall off fast.
+   * The ring used to hum as well as tick -- filtered noise swept with speed,
+   * meant to read as the air a turning object moves. It didn't earn its
+   * place: against the ambient track it was just a layer of hiss, and the
+   * detent already carries the motion on its own, since the gaps between
+   * ticks widen as the ring slows. Ticks only now, so the ring is silent
+   * except at the moment a card actually reaches the front.
    */
   const audio = useRef<{
     ctx: AudioContext;
-    noise: AudioBufferSourceNode;
-    band: BiquadFilterNode;
-    tone: OscillatorNode;
-    toneGain: GainNode;
-    gain: GainNode;
     /**
      * The detent click, decoded from a real recording rather than
      * synthesized -- null until the fetch below resolves, so the first tick
@@ -122,7 +110,7 @@ export function Projects() {
      * a placeholder sound.
      */
     clickBuffer: AudioBuffer | null;
-    /** The ticks bypass the whoosh's gain so they stay audible at low speed. */
+    /** Every tick plays through here, so one node sets the ring's level. */
     tickBus: GainNode;
   } | null>(null);
 
@@ -147,51 +135,11 @@ export function Projects() {
           .webkitAudioContext;
       const ctx = new Ctx();
 
-      // Two seconds of white noise, looped. Long enough that the loop point
-      // is inaudible; short enough to be cheap to generate.
-      const frames = ctx.sampleRate * 2;
-      const buffer = ctx.createBuffer(1, frames, ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < frames; i++) data[i] = Math.random() * 2 - 1;
-      const noise = ctx.createBufferSource();
-      noise.buffer = buffer;
-      noise.loop = true;
-
-      // The band the whoosh lives in. A gentle Q: sharper would whistle,
-      // flatter would just be hiss.
-      const band = ctx.createBiquadFilter();
-      band.type = "bandpass";
-      band.frequency.value = 320;
-      band.Q.value = 1.1;
-
-      const tone = ctx.createOscillator();
-      tone.type = "triangle";
-      tone.frequency.value = 70;
-      const toneGain = ctx.createGain();
-      toneGain.gain.value = 0.35;
-
-      const gain = ctx.createGain();
-      gain.gain.value = 0;
-
       const tickBus = ctx.createGain();
       tickBus.gain.value = 1;
-
-      noise.connect(band).connect(gain);
-      tone.connect(toneGain).connect(gain);
-      gain.connect(ctx.destination);
       tickBus.connect(ctx.destination);
-      noise.start();
-      tone.start();
-      audio.current = {
-        ctx,
-        noise,
-        band,
-        tone,
-        toneGain,
-        gain,
-        clickBuffer: null,
-        tickBus,
-      };
+
+      audio.current = { ctx, clickBuffer: null, tickBus };
 
       // A real recorded tick, not a synthesized one -- fetched and decoded
       // once and reused for every detent for the rest of the session. Fire
@@ -205,7 +153,7 @@ export function Projects() {
         })
         .catch(() => {});
     } catch {
-      // No Web Audio -- the ring still turns, just without the whoosh.
+      // No Web Audio -- the ring still turns, just without the ticks.
     }
   };
 
@@ -292,40 +240,17 @@ export function Projects() {
       extraVel.current *= Math.exp(-VELOCITY_DECAY * dt);
       if (Math.abs(extraVel.current) < 0.5) extraVel.current = 0;
 
-      // Drive the audio from the same |extraVel|. Below a small floor the
-      // sound is off entirely -- otherwise the idle drift would hiss at rest.
+      // Detents. A card faces front every STEP degrees, so the number of
+      // slots the ring has passed is just floor(spin / STEP); each time that
+      // integer changes, one card has come round to the front.
       if (audio.current) {
-        const { ctx, band, tone, toneGain, gain } = audio.current;
-        const t = ctx.currentTime;
         const excess = Math.abs(extraVel.current);
-        const audible = Math.max(0, excess - 30); // deadzone
         // How hard the ring is going, 0..1, curved so the loud end arrives
-        // gradually instead of pinning the moment you flick it.
-        const drive = Math.min(1, audible / 520);
+        // gradually instead of pinning the moment you flick it. The deadzone
+        // keeps the idle drift from counting as "fast".
+        const drive = Math.min(1, Math.max(0, excess - 30) / 520);
         const curve = Math.pow(drive, 0.7);
 
-        // Quiet on purpose: this plays under the ambient track, and a whoosh
-        // that competes with the music is the same mistake as the buzz.
-        const targetGain = reduced.matches ? 0 : curve * 0.085;
-        // Slower ramp than the old 0.04 -- air builds and falls away, it does
-        // not switch on.
-        gain.gain.setTargetAtTime(targetGain, t, 0.12);
-
-        // The band sweeps up as the ring speeds up: that rise and fall is
-        // what makes it read as something passing rather than as static.
-        band.frequency.setTargetAtTime(240 + curve * 900, t, 0.09);
-        // Opening the Q slightly at speed narrows the band, which sharpens
-        // the whoosh right when the motion is most obvious.
-        band.Q.setTargetAtTime(1.1 + curve * 1.4, t, 0.09);
-
-        // Body underneath, held well below the noise and moving less, so it
-        // reads as weight rather than as a note.
-        tone.frequency.setTargetAtTime(62 + curve * 38, t, 0.12);
-        toneGain.gain.setTargetAtTime(0.22 + curve * 0.2, t, 0.12);
-
-        // Detents. A card faces front every STEP degrees, so the number of
-        // slots the ring has passed is just floor(spin / STEP); each time
-        // that integer changes, one card has come round to the front.
         const detent = Math.floor(spin.current / STEP);
         if (lastDetent.current === null) {
           lastDetent.current = detent;
@@ -452,17 +377,13 @@ export function Projects() {
     return () => window.removeEventListener("keydown", onKey);
   }, [zoomed, step]);
 
-  // Cleanup the audio graph on unmount so we do not leak an oscillator.
+  // Close the context on unmount. Nothing runs continuously any more -- each
+  // tick is its own short-lived source node that stops on its own -- so there
+  // is no oscillator left to stop first.
   useEffect(() => {
     return () => {
       const a = audio.current;
       if (!a) return;
-      try {
-        a.noise.stop();
-        a.tone.stop();
-      } catch {
-        // already stopped
-      }
       void a.ctx.close();
       audio.current = null;
     };
