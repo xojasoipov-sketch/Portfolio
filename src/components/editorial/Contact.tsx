@@ -167,22 +167,26 @@ export function Contact() {
                   )}
                 </button>
 
-                {status === "sent" && (
-                  <span
-                    className="ed-label"
-                    style={{ color: "var(--ed-red-br)" }}
-                  >
-                    Xabar yuborildi ✓
-                  </span>
-                )}
-                {status === "error" && error && (
-                  <span
-                    className="ed-label"
-                    style={{ color: "var(--ed-red-br)" }}
-                  >
-                    {error}
-                  </span>
-                )}
+                {/* One live region, rendered unconditionally rather than
+                    mounted when the status changes: a node that appears at
+                    the same moment its text does is often missed by screen
+                    readers, which watch an existing region for changes. A
+                    visitor who submitted used to get silence either way --
+                    no confirmation, and no word that it had failed. */}
+                <span
+                  className="ed-label"
+                  role="status"
+                  aria-live="polite"
+                  style={{ color: "var(--ed-red-tx)" }}
+                >
+                  {status === "sending"
+                    ? "Yuborilmoqda…"
+                    : status === "sent"
+                      ? "Xabar yuborildi ✓"
+                      : status === "error" && error
+                        ? error
+                        : ""}
+                </span>
               </div>
             </div>
           </form>

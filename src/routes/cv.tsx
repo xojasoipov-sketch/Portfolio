@@ -96,7 +96,6 @@ function Header() {
             {CV_PROFILE.telegram}
           </a>
         </li>
-        <li className="cv-site">{CV_PROFILE.site}</li>
       </ul>
     </header>
   );
@@ -199,7 +198,7 @@ function Foot() {
     <footer className="cv-foot">
       <span className="ed-label">Saidburxon Xojasoipov</span>
       <span className="ed-label cv-foot-dim">
-        To'liq narxlar katalogi: {CV_PROFILE.site}/xizmatlar
+        To'liq narxlar katalogi: portfolio saytining "Xizmatlar" bo'limida
       </span>
     </footer>
   );

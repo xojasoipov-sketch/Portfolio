@@ -21,8 +21,20 @@ async function buildHandler() {
   const bot = createBot();
   await bot.init(); // resolves getMe once, so webhookCallback doesn't per request
   // grammy compares X-Telegram-Bot-Api-Secret-Token itself, before parsing the
-  // body. Omitting the secret makes it reject every real update, since
-  // setWebhook was configured with one.
+  // body -- but only when a secret is actually configured. Its check reads
+  // `if (token === undefined) return true`, so a missing or blank value means
+  // every POST is accepted, not rejected. (The comment here used to claim the
+  // opposite, which is exactly why it would have gone unnoticed.)
+  //
+  // verify_jwt is off for this function, so this is the entire auth boundary:
+  // without the secret, anyone who knows the URL can POST a hand-written
+  // Update with message.from.id set to an admin's, and reach /broadcast,
+  // /leads and /stats. Fail closed instead.
+  if (!env.TELEGRAM_WEBHOOK_SECRET) {
+    throw new Error(
+      "TELEGRAM_WEBHOOK_SECRET yo'q: webhook autentifikatsiyasiz ishga tushmaydi",
+    );
+  }
   //
   // setWebhook also carries an allowed_updates list, and Telegram silently
   // drops anything outside it -- a handler registered here still never runs.

@@ -35,8 +35,22 @@ jobs:
         with:
           node-version: "22"
 
-      # No lockfile is committed, so `npm ci` is not an option.
-      - run: npm install
+      # package-lock.json IS committed, so `npm ci` applies: it installs
+      # exactly what the lock pins instead of re-resolving, which makes the
+      # deployed build reproducible. (The old comment here claimed no lockfile
+      # existed; it was stale.)
+      - run: npm ci
+
+      # Quality gate. Deploying is automatic on every push to this branch, so
+      # without this a type error or a lint failure ships straight to the
+      # live site.
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Lint
+        # Scoped to the app: linting the whole tree takes minutes and would
+        # add that to every deploy. src + scripts is where the code lives.
+        run: npx eslint src scripts --max-warnings 20
 
       - name: Build static site
         env:

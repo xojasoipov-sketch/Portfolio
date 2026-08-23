@@ -105,7 +105,7 @@ function CatalogHero() {
             style={{ transitionDelay: "0.08s" }}
           >
             <span
-              style={{ color: "var(--ed-red-br)", transitionDelay: "0.08s" }}
+              style={{ color: "var(--ed-red-tx)", transitionDelay: "0.08s" }}
             >
               aniq narx bilan.
             </span>
@@ -210,7 +210,7 @@ function PackagesSection() {
         <p
           className="ed-label ed-rise"
           data-shown={shown}
-          style={{ margin: 0, color: "var(--ed-red-br)" }}
+          style={{ margin: 0, color: "var(--ed-red-tx)" }}
         >
           5 — Tayyor paketlar
         </p>

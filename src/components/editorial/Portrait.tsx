@@ -22,11 +22,20 @@ export function Portrait({
   treatment = "natural",
   fit = "contain",
   variant = "seated",
+  priority = false,
   className,
   style,
 }: {
   treatment?: Treatment;
   fit?: "contain" | "cover";
+  /**
+   * True only for the hero, which is the LCP element. Everything else sits
+   * several sections down the page. React's SSR emits a high-priority
+   * `<link rel=preload as=image>` for every <img> *unless* it is lazy, so
+   * without this the About and Contact portraits were racing the hero for
+   * bandwidth before a visitor had scrolled anywhere near them.
+   */
+  priority?: boolean;
   /**
    * Which photo to render. Two are shipped so no page has to open on the
    * same face it opened on above -- variety across sections without the
@@ -61,6 +70,9 @@ export function Portrait({
       <img
         src={src}
         alt="Saidburxon Xojasoipov"
+        loading={priority ? "eager" : "lazy"}
+        decoding={priority ? "sync" : "async"}
+        fetchPriority={priority ? "high" : "auto"}
         className={className}
         style={{
           display: "block",

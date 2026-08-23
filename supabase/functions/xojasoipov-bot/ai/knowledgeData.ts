@@ -18,7 +18,7 @@ export const PROFILE = {
   bio:
     "Men — to'liq stack (frontend, backend, mobil) dasturchiman. So'nggi yillarda asosiy yo'nalishim — " +
     "sun'iy intellekt bilan integratsiya qilingan tizimlar: AI mijozlarga xizmat botlari, ko'p-provayderli AI " +
-    "infratuzilma (OmniRoute — 251 ta AI provayderni boshqaruvchi router), avtomatlashtirilgan SMM tizimlari " +
+    "infratuzilma, avtomatlashtirilgan SMM tizimlari " +
     "va CRM'lar. Zamonaviy AI-yordamchi vositalar bilan ishlaganim uchun loyihalarni an'anaviy agentliklarga " +
     "nisbatan sezilarli tezroq yetkazib bera olaman.",
   principle: "Ishimning yadrosi — avval chuqur audit, keyin aniq yechim. Har bir taklif taxmin emas, real tekshiruv natijasiga asoslanadi.",

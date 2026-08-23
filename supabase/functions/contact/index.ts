@@ -8,8 +8,11 @@
 // service-role key the edge runtime injects, and never reaches the client.
 //
 // Deployed with verify_jwt disabled because a public contact form cannot carry
-// a Supabase JWT. The abuse surface is limited by the origin allowlist, the
-// honeypot, and hard length caps rather than by auth.
+// a Supabase JWT. Abuse is bounded by three things instead: an origin check
+// that actually rejects (emitting no CORS header only stops a browser -- curl
+// does not care, so the header alone was never a control), a per-visitor daily
+// cap claimed before anything is sent, and hard length caps. The honeypot only
+// catches naive form-scrapers; a direct poster simply omits the field.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 /** Only these origins may call this endpoint from a browser. */
@@ -32,6 +35,67 @@ function corsHeaders(origin: string | null): Record<string, string> {
     "Access-Control-Max-Age": "86400",
     Vary: "Origin",
   };
+}
+
+/**
+ * How many messages one visitor may send in a day. Generous for a real
+ * person -- nobody legitimately fills this form six times -- and low enough
+ * that a script cannot turn the owner's Telegram into a firehose.
+ */
+const DAILY_LIMIT = 5;
+
+/**
+ * Same daily-rotating hash the pageview table uses: it counts one person for
+ * one day without storing an IP and without following anyone across days.
+ *
+ * The user-agent is deliberately NOT mixed in. It is attacker-controlled, so
+ * including it would let one caller mint a fresh quota bucket per string --
+ * it buys no privacy and costs the whole control.
+ */
+async function visitorHash(ip: string): Promise<string> {
+  const pepper =
+    Deno.env.get("ANALYTICS_PEPPER") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  const day = new Date().toISOString().slice(0, 10);
+  const bytes = new TextEncoder().encode(`contact|${ip}|${day}|${pepper}`);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return (
+    "contact|" +
+    Array.from(new Uint8Array(digest))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("")
+      .slice(0, 32)
+  );
+}
+
+/**
+ * Claims one slot for today, returning false when the caller is over the cap.
+ *
+ * Reuses xbot_demo_ai_take, which is a generic atomic "increment this counter
+ * unless it is already at the limit" keyed on (hash, day) -- the hash is
+ * namespaced above so contact traffic and the /demo quota never share a
+ * bucket. Atomic in one statement, so two simultaneous requests cannot both
+ * see room for the last slot.
+ */
+async function claimSlot(hash: string): Promise<boolean> {
+  const url = Deno.env.get("SUPABASE_URL");
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!url || !key) return true; // never let a config gap block a real message
+  try {
+    const res = await fetch(`${url}/rest/v1/rpc/xbot_demo_ai_take`, {
+      method: "POST",
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ p_hash: hash, p_limit: DAILY_LIMIT }),
+    });
+    if (!res.ok) return true; // counter unavailable: fail open, do not lose mail
+    const count = await res.json();
+    return count !== null;
+  } catch {
+    return true;
+  }
 }
 
 function escapeHtml(value: string): string {
@@ -63,6 +127,12 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") {
     return Response.json({ ok: false, error: "Method not allowed" }, { status: 405, headers: cors });
   }
+  // Without this the allowlist decided only whether to *emit* a CORS header,
+  // and nothing ever rejected: a shell loop could send unbounded Telegram DMs
+  // to every admin id. Same check demo-ai already had.
+  if (!cors["Access-Control-Allow-Origin"]) {
+    return Response.json({ ok: false, error: "origin" }, { status: 403, headers: cors });
+  }
 
   let body: Record<string, unknown>;
   try {
@@ -84,6 +154,23 @@ Deno.serve(async (req: Request) => {
     return Response.json(
       { ok: false, error: "Iltimos, ism, aloqa ma'lumoti va xabarni to'liq yozing." },
       { status: 400, headers: cors },
+    );
+  }
+
+  // Claimed before anything is sent: a request that fails afterwards still
+  // spends its slot, which is the safer way to be wrong for an abuse ceiling.
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    req.headers.get("cf-connecting-ip") ??
+    "0.0.0.0";
+  if (!(await claimSlot(await visitorHash(ip)))) {
+    return Response.json(
+      {
+        ok: false,
+        error:
+          "Bugun juda ko'p xabar yuborildi. Ertaga urinib ko'ring yoki Telegram orqali yozing: @xojasoipov",
+      },
+      { status: 429, headers: cors },
     );
   }
 

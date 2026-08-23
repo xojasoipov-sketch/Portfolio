@@ -39,7 +39,7 @@ function NotFoundComponent() {
       <div style={{ maxWidth: "44rem", width: "100%" }}>
         <p
           className="ed-label"
-          style={{ color: "var(--ed-red-br)", margin: 0 }}
+          style={{ color: "var(--ed-red-tx)", margin: 0 }}
         >
           Xatolik 404
         </p>
@@ -53,7 +53,7 @@ function NotFoundComponent() {
         >
           Sahifa
           <br />
-          <span style={{ color: "var(--ed-red-br)" }}>topilmadi.</span>
+          <span style={{ color: "var(--ed-red-tx)" }}>topilmadi.</span>
         </h1>
         <p
           style={{
@@ -106,11 +106,11 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
+          Sahifa yuklanmadi.
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back
-          home.
+          Texnik nosozlik yuz berdi. Sahifani yangilab ko'ring yoki bosh
+          sahifaga qayting.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
@@ -120,14 +120,16 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
             }}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Try again
+            Qayta urinish
           </button>
-          <a
-            href="/"
+          {/* A raw href="/" left the base path off and sent the visitor to the
+              host root, which is a different site entirely. */}
+          <Link
+            to="/"
             className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
           >
-            Go home
-          </a>
+            Bosh sahifa
+          </Link>
         </div>
       </div>
     </div>
@@ -160,7 +162,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         { property: "og:url", content: absolute("") },
         // twitter:card promised a large image long before there was one to
         // show, so every share rendered as a bare text card.
-        { property: "og:image", content: absolute("og.png") },
+        { property: "og:image", content: absolute("og.jpg") },
         { property: "og:image:width", content: "1200" },
         { property: "og:image:height", content: "630" },
         {
@@ -170,29 +172,79 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         { name: "twitter:card", content: "summary_large_image" },
         { name: "twitter:title", content: SITE_TITLE },
         { name: "twitter:description", content: SITE_DESCRIPTION },
-        { name: "twitter:image", content: absolute("og.png") },
+        { name: "twitter:image", content: absolute("og.jpg") },
         { name: "theme-color", content: "#050505" },
+      ],
+      scripts: [
+        // Telegram Mini App SDK. Defines window.Telegram.WebApp only when the
+        // page is opened from a Telegram client; in a normal browser it loads
+        // and does nothing, so the public site is unaffected.
+        //
+        // Deferred: it was a bare blocking <script> at the end of <head>, so
+        // parsing stopped while a brand-new third-party origin was resolved,
+        // connected and TLS-negotiated. Nothing reads window.Telegram before
+        // hydration, so there is nothing to gain from blocking on it.
+        { src: "https://telegram.org/js/telegram-web-app.js", defer: true },
+        // Structured data. Only facts that already appear on the site: name,
+        // role, city, and the two contact channels the contact section
+        // publishes. Deliberately no aggregateRating, no review and no client
+        // count -- there is no evidence base for any of those, and a rating
+        // with no reviews behind it is exactly the fabrication this project
+        // refuses to ship.
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@graph": [
+              {
+                "@type": "Person",
+                "@id": `${SITE_ORIGIN}${asset("")}#person`,
+                name: "Saidburxon Xojasoipov",
+                jobTitle: "Full-stack Developer & AI Solutions Developer",
+                url: absolute(""),
+                image: absolute("og.jpg"),
+                email: "mailto:xojasoipov@gmail.com",
+                address: {
+                  "@type": "PostalAddress",
+                  addressLocality: "Toshkent",
+                  addressCountry: "UZ",
+                },
+                sameAs: ["https://t.me/xojasoipov"],
+              },
+              {
+                "@type": "WebSite",
+                "@id": `${SITE_ORIGIN}${asset("")}#website`,
+                url: absolute(""),
+                name: "Saidburxon Xojasoipov",
+                inLanguage: "uz-Latn",
+                publisher: { "@id": `${SITE_ORIGIN}${asset("")}#person` },
+              },
+            ],
+          }),
+        },
       ],
       links: [
         { rel: "icon", type: "image/svg+xml", href: asset("favicon.svg") },
         { rel: "apple-touch-icon", href: asset("apple-touch-icon.png") },
-        { rel: "stylesheet", href: appCss },
+        // Both preconnects come before any stylesheet link. They were after,
+        // which made the googleapis one dead weight -- the browser had
+        // already started that fetch several tags earlier, when it parsed the
+        // stylesheet the hint was supposed to be warming.
         { rel: "preconnect", href: "https://fonts.googleapis.com" },
         {
           rel: "preconnect",
           href: "https://fonts.gstatic.com",
           crossOrigin: "anonymous",
         },
+        { rel: "stylesheet", href: appCss },
         {
           rel: "stylesheet",
+          // 900 is requested but never used anywhere in the codebase. Left in
+          // because Google serves one variable file per subset -- all six
+          // weights resolve to the same URL, so dropping it saves ~200 bytes
+          // of CSS and no font bytes at all.
           href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap",
         },
-      ],
-      scripts: [
-        // Telegram Mini App SDK. Defines window.Telegram.WebApp only when the
-        // page is opened from a Telegram client; in a normal browser it loads
-        // and does nothing, so the public site is unaffected.
-        { src: "https://telegram.org/js/telegram-web-app.js" },
       ],
     }),
     shellComponent: RootShell,

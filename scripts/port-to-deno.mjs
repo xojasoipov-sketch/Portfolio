@@ -16,7 +16,14 @@
 //
 // Usage: node scripts/port-to-deno.mjs [--check]
 //   --check  report drift and exit non-zero instead of writing.
-import { readFileSync, writeFileSync, mkdirSync, readdirSync, statSync, existsSync } from "node:fs";
+import {
+  readFileSync,
+  writeFileSync,
+  mkdirSync,
+  readdirSync,
+  statSync,
+  existsSync,
+} from "node:fs";
 import { join, dirname, relative } from "node:path";
 
 const ROOT = new URL("..", import.meta.url).pathname.replace(/\/$/, "");
@@ -43,7 +50,8 @@ const EXCLUDED = new Set([
   "ai/knowledgeSeed.ts",
 ]);
 
-const IMPORT_RE = /(\bfrom\s*|\bimport\s*|\bexport\s*\*\s*from\s*)(["'])([^"']+)\2/g;
+const IMPORT_RE =
+  /(\bfrom\s*|\bimport\s*|\bexport\s*\*\s*from\s*)(["'])([^"']+)\2/g;
 
 function port(source) {
   return source.replace(IMPORT_RE, (whole, keyword, quote, spec) => {
@@ -52,8 +60,14 @@ function port(source) {
       ported = spec.replace(/\.js$/, ".ts");
     } else if (Object.hasOwn(NPM_PINS, spec)) {
       ported = NPM_PINS[spec];
-    } else if (!spec.startsWith("npm:") && !spec.startsWith("jsr:") && !spec.startsWith("node:")) {
-      throw new Error(`unpinned bare import "${spec}" -- add it to NPM_PINS in scripts/port-to-deno.mjs`);
+    } else if (
+      !spec.startsWith("npm:") &&
+      !spec.startsWith("jsr:") &&
+      !spec.startsWith("node:")
+    ) {
+      throw new Error(
+        `unpinned bare import "${spec}" -- add it to NPM_PINS in scripts/port-to-deno.mjs`,
+      );
     }
     return `${keyword}${quote}${ported}${quote}`;
   });
@@ -63,7 +77,8 @@ function walk(dir, files = []) {
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry);
     if (statSync(full).isDirectory()) walk(full, files);
-    else if (entry.endsWith(".ts") && !entry.endsWith(".test.ts")) files.push(full);
+    else if (entry.endsWith(".ts") && !entry.endsWith(".test.ts"))
+      files.push(full);
   }
   return files;
 }
@@ -90,7 +105,9 @@ for (const file of walk(SRC)) {
 
 if (check) {
   if (drift.length > 0) {
-    console.error(`Deno tree is out of date with bot/src:\n${drift.map((f) => `  - ${f}`).join("\n")}`);
+    console.error(
+      `Deno tree is out of date with bot/src:\n${drift.map((f) => `  - ${f}`).join("\n")}`,
+    );
     console.error("Run: node scripts/port-to-deno.mjs");
     process.exit(1);
   }

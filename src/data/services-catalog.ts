@@ -231,17 +231,37 @@ export const PACKAGES: Package[] = [
 ];
 
 export const PROCESS: { step: string; title: string; desc: string }[] = [
-  { step: "01", title: "Bepul dastlabki suhbat", desc: "Muammo va maqsadni aniqlaymiz (30–40 daqiqa)." },
-  { step: "02", title: "Audit / taklif", desc: "Aniq topilmalar va narx-muddat bilan yozma hujjat." },
-  { step: "03", title: "Ishlab chiqish", desc: "Muntazam oraliq demolar bilan, har bosqichda ko'rib-tasdiqlanadi." },
-  { step: "04", title: "Sifat tekshiruvi", desc: "Har bir yechim xavfsizlik va ishonchlilik nuqtai nazaridan tekshiriladi." },
-  { step: "05", title: "Topshirish va kuzatuv", desc: "Birinchi 1–2 hafta bepul monitoring va tez tuzatish." },
+  {
+    step: "01",
+    title: "Bepul dastlabki suhbat",
+    desc: "Muammo va maqsadni aniqlaymiz (30–40 daqiqa).",
+  },
+  {
+    step: "02",
+    title: "Audit / taklif",
+    desc: "Aniq topilmalar va narx-muddat bilan yozma hujjat.",
+  },
+  {
+    step: "03",
+    title: "Ishlab chiqish",
+    desc: "Muntazam oraliq demolar bilan, har bosqichda ko'rib-tasdiqlanadi.",
+  },
+  {
+    step: "04",
+    title: "Sifat tekshiruvi",
+    desc: "Har bir yechim xavfsizlik va ishonchlilik nuqtai nazaridan tekshiriladi.",
+  },
+  {
+    step: "05",
+    title: "Topshirish va kuzatuv",
+    desc: "Birinchi 1–2 hafta bepul monitoring va tez tuzatish.",
+  },
 ];
 
 export const TERMS: string[] = [
   "Loyihaviy ishlar: 50% oldindan avans, 50% yetkazib berilgandan keyin.",
   "Oylik xizmatlar: oy boshida oldindan to'lov, 30 kun oldin ogohlantirib istalgan vaqtda bekor qilish huquqi.",
-  "Yetkazilgan har bir ish uchun 14 kunlik bepul tuzatish kafolati.",
+  "Yetkazilgan har bir ish uchun bepul tuzatish kafolati (paketga qarab 7–14 kun).",
   "Yakuniy to'lovdan so'ng barcha kod va material to'liq mijoz mulki bo'ladi.",
   "Xohlasa, ishni boshlashdan oldin maxfiylik shartnomasi (NDA) imzolanadi.",
 ];

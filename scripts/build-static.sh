@@ -92,4 +92,32 @@ else
   echo "404 harvest was too small; fell back to the index shell" >&2
 fi
 
+# 5. Sitemap, generated from the same ROUTES array the harvest uses.
+#
+#    It used to be a hand-maintained file in public/, which had already
+#    drifted: /demo was missing entirely and the two sub-routes were listed
+#    without their trailing slash, so every entry pointed at a URL GitHub
+#    Pages 301s away from. Deriving it here means it cannot go stale again.
+SITE_URL="${SITE_URL:-https://xojasoipov-sketch.github.io/Portfolio/}"
+TODAY="$(date -u +%Y-%m-%d)"
+{
+  echo '<?xml version="1.0" encoding="UTF-8"?>'
+  echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+  for route in "${ROUTES[@]}"; do
+    # Trailing slash on every entry: that is the URL Pages actually serves,
+    # and a sitemap should list the destination, not the redirect.
+    path="${route#/}"
+    [ -n "$path" ] && path="$path/"
+    case "$route" in
+      "/") priority="1.0" ;;
+      "/xizmatlar") priority="0.9" ;;
+      *) priority="0.7" ;;
+    esac
+    printf '  <url>\n    <loc>%s%s</loc>\n    <lastmod>%s</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>%s</priority>\n  </url>\n' \
+      "$SITE_URL" "$path" "$TODAY" "$priority"
+  done
+  echo '</urlset>'
+} > .output/public/sitemap.xml
+echo "generated sitemap.xml (${#ROUTES[@]} routes, lastmod $TODAY)"
+
 echo "static site ready: $ROOT/.output/public"

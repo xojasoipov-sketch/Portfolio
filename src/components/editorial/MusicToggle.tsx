@@ -2,8 +2,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { asset } from "@/lib/asset";
 
-/** Where the gain lands once the fade-in finishes. */
-const VOLUME = 0.85;
+/**
+ * Where the gain lands once the fade-in finishes. Deliberately well under 1:
+ * this starts without being asked for, so it has to sit under whatever the
+ * visitor is doing rather than announce itself.
+ */
+const VOLUME = 0.55;
 
 /** How long the fade at play/pause takes, in ms. */
 const FADE_MS = 700;
@@ -69,6 +73,8 @@ function rememberChoice(off: boolean) {
 export function MusicToggle() {
   const elRef = useRef<HTMLAudioElement | null>(null);
   const fadeRef = useRef<number | null>(null);
+  /** Lets the off switch take down the first-gesture fallback the effect armed. */
+  const disarmRef = useRef<(() => void) | null>(null);
   const [playing, setPlaying] = useState(false);
 
   const graph = useRef<{
@@ -115,11 +121,14 @@ export function MusicToggle() {
           new Promise((resolve) => setTimeout(resolve, 300)),
         ]);
       } catch {
-        // Resume can also reject outright on some engines; the play() call
-        // right after this will fail the same way and the caller handles it.
+        // Resume can also reject outright on some engines.
       }
     }
-    return g;
+    // If it is still not running, the timeout won the race and the element
+    // would play into a context that passes nothing to the speakers -- which
+    // is silence wearing every symptom of success. Report it as a failure so
+    // the caller can leave the fallback armed instead.
+    return g.ctx.state === "running" ? g : null;
   }, []);
 
   /** Ramp the gain, then optionally pause the element once it reaches zero. */
@@ -151,6 +160,10 @@ export function MusicToggle() {
     // itself is happily playing, which is silence with every other symptom
     // of success -- currentTime advancing, no error, `playing` state true.
     const g = await ensureGraph();
+    // No graph means the element's own output is what reaches the speakers,
+    // and it defaults to 1. Setting volume here is the only thing standing
+    // between a browser without Web Audio and full-blast playback.
+    if (!g) el.volume = VOLUME;
     try {
       await el.play();
       setPlaying(true);
@@ -163,7 +176,11 @@ export function MusicToggle() {
 
   const stop = useCallback(() => {
     setPlaying(false);
-    fadeTo(0, true);
+    // Pause unconditionally. The graph path pauses at the end of the fade;
+    // without a graph fadeTo returns immediately and would never reach it,
+    // which left the music playing forever with the button showing "off".
+    if (graph.current) fadeTo(0, true);
+    else elRef.current?.pause();
   }, [fadeTo]);
 
   useEffect(() => {
@@ -172,42 +189,65 @@ export function MusicToggle() {
       if (fadeRef.current) cancelAnimationFrame(fadeRef.current);
       el?.pause();
       void graph.current?.ctx.close();
+      // A closed context and a source node bound to the old element are worse
+      // than none: a remount would find them, fail to resume, and play
+      // unrouted at full volume with a fade that no longer reaches anything.
+      graph.current = null;
     };
   }, []);
 
   /**
-   * Start on arrival: try outright, and fall back to the first gesture.
+   * Start on arrival: try outright, and fall back to the visitor's first
+   * interaction when the browser refuses.
    *
-   * The listeners deliberately skip gestures that land on the deck itself.
-   * Without that, a visitor whose first act is to press the button would see
-   * pointerdown start the music and the click that follows immediately stop
-   * it again -- they pressed play and got silence.
+   * Three things this has to get right, each of which was wrong at some
+   * point and produced a different silent failure:
+   *
+   * - Only events that actually grant user activation are listened for.
+   *   `wheel` and `touchstart` do not (`pointerup`, `click` and `touchend`
+   *   do), so firing on those spent the one attempt while `play()` was still
+   *   guaranteed to be refused. `keydown` is excluded on purpose and not for
+   *   that reason: arrow keys and Tab are how someone reads the page with a
+   *   screen reader, and navigating is not asking for music.
+   * - The listeners are disarmed only once a start has actually succeeded.
+   *   Disarming first meant one refused attempt killed the fallback for the
+   *   rest of the visit.
+   * - Gestures landing on the deck itself are skipped, or a visitor whose
+   *   first act is pressing the button would have pointerdown start the music
+   *   and the click that follows stop it again: pressed play, got silence.
    */
   useEffect(() => {
     if (mutedByChoice()) return;
 
     let cancelled = false;
-    const events = ["pointerdown", "keydown", "touchstart", "wheel"] as const;
-
-    const onGesture = (e: Event) => {
-      const target = e.target as Element | null;
-      if (target?.closest?.(".ed-music-toggle")) return;
-      disarm();
-      void start();
-    };
+    const events = ["pointerup", "click", "touchend"] as const;
 
     const disarm = () => {
       for (const name of events) {
         window.removeEventListener(name, onGesture, true);
       }
     };
+    disarmRef.current = disarm;
 
-    // Armed first, before the autoplay attempt is even made. Arming only
-    // after that attempt resolved was a real bug: the attempt can take
-    // hundreds of milliseconds, and a visitor who taps during that window
-    // would land on no listener at all and never hear anything.
-    // Capture phase, so a gesture is seen even when something downstream
-    // stops propagation.
+    function onGesture(e: Event) {
+      const target = e.target as Element | null;
+      if (target?.closest?.(".ed-music-toggle")) return;
+      // Re-checked here, not just at mount: the visitor may have switched the
+      // music off since. Without this, turning it off and then scrolling
+      // turned it straight back on.
+      if (mutedByChoice()) {
+        disarm();
+        return;
+      }
+      void start().then((ok) => {
+        if (ok) disarm();
+      });
+    }
+
+    // Armed before the autoplay attempt is made, not after it resolves: that
+    // attempt takes hundreds of milliseconds, and a visitor who tapped inside
+    // that window would land on no listener at all. Capture phase, so a
+    // gesture is seen even when something downstream stops propagation.
     for (const name of events) {
       window.addEventListener(name, onGesture, true);
     }
@@ -220,17 +260,25 @@ export function MusicToggle() {
     return () => {
       cancelled = true;
       disarm();
+      disarmRef.current = null;
     };
   }, [start]);
 
   const toggle = async () => {
     if (playing) {
       rememberChoice(true);
+      // Switching it off has to also take down the first-gesture fallback, or
+      // the next scroll or tap starts it again -- with localStorage saying
+      // "off" while the audio plays.
+      disarmRef.current?.();
       stop();
       return;
     }
-    rememberChoice(false);
-    await start();
+    // Cleared only once something actually plays: a refused start that had
+    // already cleared the flag would leave a visitor who opted out with
+    // neither music nor their preference.
+    const ok = await start();
+    if (ok) rememberChoice(false);
   };
 
   return (
@@ -244,12 +292,26 @@ export function MusicToggle() {
           would have nothing to fade in. */}
       <audio
         ref={elRef}
-        src={asset("audio/ambient.mp3")}
         loop
         playsInline
-        preload="auto"
+        // "none", not "auto". This element is baked into the static HTML of
+        // every route, so preloading meant the browser began pulling the
+        // whole track while still parsing <head>, competing with the hero
+        // image for bandwidth on every page load whether or not anyone ever
+        // pressed play. Nothing here depends on it being preloaded --
+        // start() calls play(), which loads it then.
+        preload="none"
         style={{ display: "none" }}
-      />
+      >
+        {/* Two sources, one download: the browser takes the first it can
+            decode and never requests the other. AAC is smaller and is what
+            almost everything picks, but it is a licensed codec that
+            Chromium builds without proprietary codecs genuinely cannot play
+            -- shipping it alone made play() reject with
+            NotSupportedError. mp3 is the floor that every engine supports. */}
+        <source src={asset("audio/ambient.m4a")} type="audio/mp4" />
+        <source src={asset("audio/ambient.mp3")} type="audio/mpeg" />
+      </audio>
       <button
         type="button"
         className="ed-music-toggle"

@@ -1,4 +1,4 @@
-import portrait from "@/assets/portrait.png";
+import portrait from "@/assets/portrait.webp";
 import portraitStanding from "@/assets/portrait-standing.webp";
 
 /**

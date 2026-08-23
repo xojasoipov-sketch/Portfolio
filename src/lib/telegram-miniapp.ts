@@ -25,7 +25,8 @@ interface TelegramWebApp {
 const CANVAS = "#f5f2ef";
 
 export function getTelegramWebApp(): TelegramWebApp | null {
-  const tg = (globalThis as { Telegram?: { WebApp?: TelegramWebApp } }).Telegram?.WebApp;
+  const tg = (globalThis as { Telegram?: { WebApp?: TelegramWebApp } }).Telegram
+    ?.WebApp;
   return tg ?? null;
 }
 
@@ -65,7 +66,10 @@ export function useTelegramMiniApp(): boolean {
     // it lets full-height sections size correctly instead of overflowing.
     const applyViewport = () => {
       if (typeof tg.viewportStableHeight === "number") {
-        document.documentElement.style.setProperty("--tg-viewport", `${tg.viewportStableHeight}px`);
+        document.documentElement.style.setProperty(
+          "--tg-viewport",
+          `${tg.viewportStableHeight}px`,
+        );
       }
     };
     applyViewport();

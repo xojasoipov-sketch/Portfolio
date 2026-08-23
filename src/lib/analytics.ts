@@ -21,8 +21,8 @@ function optedOut(): boolean {
 
 function insideTelegram(): boolean {
   return Boolean(
-    (window as { Telegram?: { WebApp?: { initData?: string } } }).Telegram?.WebApp
-      ?.initData,
+    (window as { Telegram?: { WebApp?: { initData?: string } } }).Telegram
+      ?.WebApp?.initData,
   );
 }
 
@@ -30,7 +30,10 @@ export function trackPageview(path: string): void {
   if (typeof window === "undefined") return;
   if (optedOut()) return;
   // Local dev noise would otherwise pollute the real numbers.
-  if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+  if (
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1"
+  ) {
     return;
   }
 

@@ -173,6 +173,11 @@
   --ed-deep: #000000;
   --ed-red: #8e0710;
   --ed-red-br: #b20d18;
+  /* The brand red as TEXT. Separate from --ed-red-br because that one is also
+     a button background carrying off-white text, so the two roles pull the
+     hue in opposite directions: light enough to read on near-black is too
+     light to sit behind off-white. Overridden per surface below. */
+  --ed-red-tx: #8e0710;
   --ed-red-mut: #6e0a10;
   --ed-gray-sf: #d9d6d2;
   --ed-gray-tx: #696969;
@@ -184,6 +189,21 @@
   --ed-gutter: clamp(1.25rem, 5vw, 5rem);
   --ed-section: clamp(5rem, 12vw, 11rem);
   --ed-max: 1600px;
+}
+
+/* Dark surfaces need lighter values of the two text roles. Measured against
+   --ed-black (#050505), the light-surface values fail WCAG AA for body text:
+   #8e0710 is 2.12:1 and #696969 is 3.71:1, both well under the 4.5:1 floor,
+   and every affected string is 9-13px. The replacements measure 5.11:1 and
+   7.24:1. Redefining the tokens here rather than editing call sites means
+   every existing use picks the right one up from its surface.
+
+   --ed-red-br is deliberately NOT redefined: it is a button background on
+   these same surfaces, and lightening it would drop off-white text on those
+   buttons from 6.35:1 to 3.58:1 -- fixing one failure by creating another. */
+[data-surface="black"] {
+  --ed-red-tx: #e8404a;
+  --ed-gray-tx: #9a9a9a;
 }
 
 html {
@@ -335,8 +355,18 @@ body {
   background: var(--ed-red);
   color: var(--ed-offwhite);
 }
+/* The focus ring colour follows the surface. --ed-red on near-black measures
+   2.12:1, under the 3:1 WCAG floor for a non-text indicator, which made the
+   ring effectively invisible on every dark section -- the contact form, the
+   projects controls, the whole packages block and all of /demo. */
+:root {
+  --ed-focus: var(--ed-red);
+}
+[data-surface="black"] {
+  --ed-focus: var(--ed-offwhite);
+}
 :focus-visible {
-  outline: 2px solid var(--ed-red);
+  outline: 2px solid var(--ed-focus);
   outline-offset: 3px;
 }
 
@@ -453,7 +483,7 @@ body {
   color: var(--ed-offwhite);
 }
 .ed-service:hover .ed-service-num {
-  color: var(--ed-red-br);
+  color: var(--ed-red-tx);
 }
 .ed-service-num {
   font-weight: 500;
@@ -609,7 +639,7 @@ body {
 }
 .ed-proj-index {
   font-size: clamp(0.85rem, 1.2vw, 1rem);
-  color: var(--ed-red-br);
+  color: var(--ed-red-tx);
   padding-top: 0.6em;
   flex-shrink: 0;
 }
@@ -843,7 +873,7 @@ body {
 .ed-pkg-features svg {
   flex-shrink: 0;
   margin-top: 0.15rem;
-  color: var(--ed-red-br);
+  color: var(--ed-red-tx);
 }
 
 /* Process strip */
@@ -996,11 +1026,6 @@ body {
   text-decoration: none;
   border-bottom: 1px solid rgba(5, 5, 5, 0.25);
 }
-.cv-site {
-  color: var(--ed-gray-tx);
-  font-size: 0.82rem;
-}
-
 .cv-section {
   display: grid;
   grid-template-columns: 9rem 1fr;
@@ -1426,11 +1451,17 @@ body {
 
 .ed-orbit-slot:hover .ed-orbit-face,
 .ed-orbit-slot:focus-visible .ed-orbit-face {
-  border-color: var(--ed-red-br);
+  border-color: var(--ed-red-tx);
 }
 
+/* The outline used to be removed here outright, leaving a 1px border colour
+   change as the only cue -- 1.73:1 between the two states, on a card that is
+   rotating while you look at it. For practical purposes the five project
+   cards had no visible focus. */
 .ed-orbit-slot:focus-visible {
-  outline: none;
+  outline: 2px solid var(--ed-offwhite);
+  outline-offset: 4px;
+  border-radius: 1.4rem;
 }
 
 .ed-orbit-world:active {
@@ -1440,7 +1471,7 @@ body {
 .ed-orbit-index {
   font-size: 0.62rem;
   letter-spacing: 0.22em;
-  color: var(--ed-red-br);
+  color: var(--ed-red-tx);
 }
 
 .ed-orbit-title {
@@ -1897,7 +1928,7 @@ body {
 }
 
 .ed-orbit-dot:focus-visible {
-  outline: 2px solid var(--ed-red-br);
+  outline: 2px solid var(--ed-offwhite);
   outline-offset: -2px;
   border-radius: 999px;
 }

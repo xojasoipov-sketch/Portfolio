@@ -48,16 +48,67 @@ function useMagnetic(strength = 10) {
     y.set(0);
   };
 
-  return { ref, style: { x: springX, y: springY }, onPointerMove, onPointerLeave };
+  return {
+    ref,
+    style: { x: springX, y: springY },
+    onPointerMove,
+    onPointerLeave,
+  };
 }
 
 export function Nav() {
   const [open, setOpen] = useState(false);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const closeRef = useRef<HTMLButtonElement | null>(null);
+  const toggleRef = useRef<HTMLButtonElement | null>(null);
   const [onDark, setOnDark] = useState(false);
   const magnet = useMagnetic();
 
   // The nav sits over both light and dark sections; sample what is behind it
   // so the type stays legible without painting a card behind the bar.
+  /**
+   * The menu declares aria-modal="true" and, below 860px, is the only route
+   * to every section of the site -- so it has to behave like a modal rather
+   * than just claim to be one. Before this: focus stayed on the page behind
+   * it, Tab walked out into the header links still rendered underneath,
+   * Escape did nothing, and closing dropped focus to <body>.
+   */
+  useEffect(() => {
+    if (!open) return;
+    const panel = panelRef.current;
+    const returnTo = toggleRef.current;
+    closeRef.current?.focus();
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        return;
+      }
+      if (e.key !== "Tab" || !panel) return;
+      const focusable = panel.querySelectorAll<HTMLElement>(
+        "a[href], button:not([disabled])",
+      );
+      if (!focusable.length) return;
+      const first = focusable[0]!;
+      const last = focusable[focusable.length - 1]!;
+      const active = document.activeElement;
+      if (e.shiftKey && (active === first || active === panel)) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      // Returned to the control that opened it, not left on a removed node.
+      returnTo?.focus();
+    };
+  }, [open]);
+
   useEffect(() => {
     const sections = () =>
       Array.from(document.querySelectorAll<HTMLElement>("[data-surface]"));
@@ -145,7 +196,11 @@ export function Nav() {
             <Link
               to="/cv"
               className="ed-label ed-navcv"
-              style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.4rem",
+              }}
             >
               CV <Arrow size="0.85em" />
             </Link>
@@ -167,9 +222,11 @@ export function Nav() {
           </MotionLink>
 
           <button
+            ref={toggleRef}
             type="button"
             onClick={() => setOpen(true)}
             aria-label="Menyuni ochish"
+            aria-expanded={open}
             data-mobile-toggle
             style={{
               display: "none",
@@ -189,8 +246,13 @@ export function Nav() {
 
       {open && (
         <div
+          ref={panelRef}
           role="dialog"
           aria-modal="true"
+          // Was unnamed, which is a straight axe-core `aria-dialog-name`
+          // failure -- a screen reader announced "dialog" with nothing else.
+          aria-label="Menyu"
+          tabIndex={-1}
           style={{
             position: "fixed",
             inset: 0,
@@ -205,6 +267,7 @@ export function Nav() {
           }}
         >
           <button
+            ref={closeRef}
             type="button"
             onClick={() => setOpen(false)}
             aria-label="Menyuni yopish"
@@ -226,7 +289,10 @@ export function Nav() {
             to="/xizmatlar"
             onClick={() => setOpen(false)}
             className="ed-display"
-            style={{ fontSize: "clamp(2.25rem, 11vw, 4rem)", color: "var(--ed-red-br)" }}
+            style={{
+              fontSize: "clamp(2.25rem, 11vw, 4rem)",
+              color: "var(--ed-red-tx)",
+            }}
           >
             XIZMATLAR
           </Link>

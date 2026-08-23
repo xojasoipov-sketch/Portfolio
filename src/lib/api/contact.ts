@@ -20,7 +20,9 @@ export interface ContactInput {
 
 export type ContactResult = { ok: true } | { ok: false; error: string };
 
-export async function sendContactMessage(input: ContactInput): Promise<ContactResult> {
+export async function sendContactMessage(
+  input: ContactInput,
+): Promise<ContactResult> {
   const res = await fetch(ENDPOINT, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

@@ -155,11 +155,17 @@ async function config(key: string): Promise<string | null> {
 /**
  * Same daily-rotating hash the pageview table uses: it counts one person for
  * one day without storing an IP and without following anyone across days.
+ *
+ * The user-agent used to be mixed in and no longer is. It is caller-supplied,
+ * so it minted a fresh quota bucket per string -- `curl -H 'User-Agent: 1'`,
+ * `-H 'User-Agent: 2'` and so on gave unlimited model calls, which is the
+ * whole spend ceiling this file exists to enforce. It bought no extra privacy
+ * to pay for that.
  */
-async function visitorHash(ip: string, ua: string): Promise<string> {
+async function visitorHash(ip: string): Promise<string> {
   const pepper = Deno.env.get("ANALYTICS_PEPPER") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
   const day = new Date().toISOString().slice(0, 10);
-  const bytes = new TextEncoder().encode(`demo-ai|${ip}|${ua}|${day}|${pepper}`);
+  const bytes = new TextEncoder().encode(`demo-ai|${ip}|${day}|${pepper}`);
   const digest = await crypto.subtle.digest("SHA-256", bytes);
   return Array.from(new Uint8Array(digest))
     .map((b) => b.toString(16).padStart(2, "0"))
@@ -265,9 +271,16 @@ Deno.serve(async (req: Request) => {
     return Response.json({ ok: false, error: "vertical" }, { status: 400, headers: cors });
   }
 
+  // Only the visitor's own turns are taken from the request. Accepting
+  // client-supplied `assistant` turns and forwarding them as `model` turns
+  // let a caller author both halves of the conversation -- the standard
+  // prefill jailbreak, against a system prompt whose only defence is a
+  // sentence of natural language. The cost is that the model sees the
+  // questions without its own previous answers, which for a five-business
+  // demo bot is a fair trade for not being steerable.
   const turns: Turn[] = (Array.isArray(body.messages) ? body.messages : [])
-    .filter((m) => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string")
-    .map((m) => ({ role: m.role, content: m.content.slice(0, MAX_MESSAGE) }))
+    .filter((m) => m && m.role === "user" && typeof m.content === "string")
+    .map((m) => ({ role: "user" as const, content: m.content.slice(0, MAX_MESSAGE) }))
     .slice(-MAX_HISTORY);
 
   // Gemini rejects a conversation that does not end on a user turn, and an
@@ -280,7 +293,7 @@ Deno.serve(async (req: Request) => {
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
     req.headers.get("cf-connecting-ip") ??
     "0.0.0.0";
-  const hash = await visitorHash(ip, req.headers.get("user-agent") ?? "");
+  const hash = await visitorHash(ip);
 
   // Claimed before the model is called: a request that fails afterwards still
   // spends its slot, which is the safer way to be wrong for a spend ceiling.

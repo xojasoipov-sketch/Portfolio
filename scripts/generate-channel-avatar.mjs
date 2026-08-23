@@ -49,7 +49,10 @@ const browser = await chromium.launch({
   executablePath: "/opt/pw-browsers/chromium-1194/chrome-linux/chrome",
   args: ["--no-sandbox"],
 });
-const page = await browser.newPage({ viewport: { width: SIZE, height: SIZE }, deviceScaleFactor: 1 });
+const page = await browser.newPage({
+  viewport: { width: SIZE, height: SIZE },
+  deviceScaleFactor: 1,
+});
 await page.setContent(HTML, { waitUntil: "load" });
 // Give the webfont a moment; the fallback stack is close but not identical.
 await page.evaluate(() => document.fonts.ready);

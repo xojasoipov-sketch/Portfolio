@@ -40,9 +40,12 @@ export function Skills() {
             gap: "1rem",
           }}
         >
-          <p className="ed-label" style={{ margin: 0, color: "var(--ed-red)" }}>
+          <h2
+            className="ed-label"
+            style={{ margin: 0, color: "var(--ed-red)" }}
+          >
             02 — Texnologiyalar
-          </p>
+          </h2>
           <p
             className="ed-label"
             style={{ margin: 0, color: "var(--ed-gray-tx)" }}

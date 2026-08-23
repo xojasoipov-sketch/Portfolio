@@ -16,7 +16,12 @@ export const CV_PROFILE = {
   location: "Toshkent, O'zbekiston",
   email: "xojasoipov@gmail.com",
   telegram: "@xojasoipov",
-  site: "xojasoipov-sketch.github.io/Portfolio",
+  // No web address on purpose. The only host this site currently has is the
+  // code-hosting URL, which carries the owner's account name -- that name is
+  // closed information the bot is explicitly instructed never to reveal
+  // (bot/src/ai/systemPrompt.ts), so printing it on the CV would be the site
+  // leaking what the bot guards. Same reasoning as the Business Hub entry
+  // below. Restore a `site` field once a neutral domain exists.
   summary:
     "To'liq stack dasturchi — frontend, backend va mobil. Asosiy yo'nalish: sun'iy intellekt bilan integratsiya qilingan tizimlar — AI mijozlarga xizmat botlari, ko'p-provayderli AI infratuzilma, avtomatlashtirilgan SMM tizimlari va CRM'lar. Ishning yadrosi — avval chuqur audit, keyin aniq yechim.",
 } as const;

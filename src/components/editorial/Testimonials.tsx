@@ -24,9 +24,12 @@ export function Testimonials() {
         <p
           className="ed-label ed-rise"
           data-shown={shown}
-          style={{ margin: "0 0 clamp(2rem, 5vw, 3.5rem)", color: "var(--ed-red)" }}
+          style={{
+            margin: "0 0 clamp(2rem, 5vw, 3.5rem)",
+            color: "var(--ed-red)",
+          }}
         >
-          06 — Mijozlar fikri
+          05 — Mijozlar fikri
         </p>
 
         <ul className="ed-quotes">

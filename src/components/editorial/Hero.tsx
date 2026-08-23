@@ -33,9 +33,15 @@ function TiltPortrait() {
     <motion.div
       onPointerMove={onPointerMove}
       onPointerLeave={onPointerLeave}
-      style={{ x: springX, y: springY, rotateX, rotateY, transformPerspective: 900 }}
+      style={{
+        x: springX,
+        y: springY,
+        rotateX,
+        rotateY,
+        transformPerspective: 900,
+      }}
     >
-      <Portrait treatment="natural" />
+      <Portrait treatment="natural" priority />
     </motion.div>
   );
 }

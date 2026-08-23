@@ -42,13 +42,13 @@ export function Services() {
         className="ed-shell"
         style={{ marginBottom: "clamp(2rem, 5vw, 3.5rem)" }}
       >
-        <p
+        <h2
           className="ed-label ed-rise"
           data-shown={shown}
           style={{ margin: 0, color: "var(--ed-red)" }}
         >
           03 — Xizmatlar
-        </p>
+        </h2>
       </div>
 
       <div>

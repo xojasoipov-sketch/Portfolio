@@ -18,9 +18,13 @@ import { chromium } from "playwright-core";
 const URL = process.env.CV_URL ?? "http://127.0.0.1:3179/cv";
 const OUT = "public/Saidburxon-Xojasoipov-CV.pdf";
 const CHROME =
-  process.env.CHROME_PATH ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
+  process.env.CHROME_PATH ??
+  "/opt/pw-browsers/chromium-1194/chrome-linux/chrome";
 
-const browser = await chromium.launch({ executablePath: CHROME, args: ["--no-sandbox"] });
+const browser = await chromium.launch({
+  executablePath: CHROME,
+  args: ["--no-sandbox"],
+});
 const page = await browser.newPage();
 await page.goto(URL, { waitUntil: "networkidle" });
 await page.waitForTimeout(800);

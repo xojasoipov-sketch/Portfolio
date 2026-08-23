@@ -73,6 +73,7 @@ export function Projects() {
   const spotlightRef = useSpotlight<HTMLElement>();
   const worldRef = useRef<HTMLDivElement | null>(null);
   const slotsRef = useRef<(HTMLButtonElement | null)[]>([]);
+  const panelRef = useRef<HTMLDivElement | null>(null);
 
   const [zoomed, setZoomed] = useState<number | null>(null);
   const [focused, setFocused] = useState(false);
@@ -163,12 +164,20 @@ export function Projects() {
       // and forget: a slow network just means the ring stays quiet on
       // detents until this resolves, same as a browser with no Web Audio.
       void fetch(asset("audio/tick.wav"))
-        .then((res) => res.arrayBuffer())
+        .then((res) => {
+          // Without this a 404 feeds an HTML error page into decodeAudioData,
+          // which rejects into a silent catch -- exactly the shape of the
+          // base-path bug that took a while to find last time.
+          if (!res.ok) throw new Error(`tick.wav ${res.status}`);
+          return res.arrayBuffer();
+        })
         .then((buf) => ctx.decodeAudioData(buf))
         .then((decoded) => {
           if (audio.current) audio.current.clickBuffer = decoded;
         })
-        .catch(() => {});
+        .catch((err: unknown) => {
+          console.warn("[orbit] detent click unavailable:", err);
+        });
     } catch {
       // No Web Audio -- the ring still turns, just without the ticks.
     }
@@ -225,6 +234,8 @@ export function Projects() {
   const bringToFront = useCallback((index: number) => {
     holdUntil.current = performance.now() + HOLD_MS;
     extraVel.current = 0;
+    // Same as the arrows: a dot is a deliberate press and should tick.
+    ensureAudio();
     // Card i faces the viewer when i * STEP + spin is a multiple of 360, so
     // the angle that fronts it is -i * STEP plus any whole number of turns.
     // Picking the nearest turn is what stops the ring taking the long way.
@@ -328,10 +339,12 @@ export function Projects() {
         if (!node) continue;
         const angle = ((i * STEP + spin.current) * Math.PI) / 180;
         const facing = Math.cos(angle);
-        const depth = (facing + 1) / 2;
-        node.style.setProperty("--ed-depth", depth.toFixed(3));
+        // The only per-frame write left. --ed-depth and z-index were written
+        // here too; nothing reads --ed-depth since the opacity fade was
+        // removed, and z-index does not order children inside a preserve-3d
+        // context -- the 3D sort does. Both were no-op style writes on five
+        // nodes, sixty times a second.
         node.style.pointerEvents = facing > 0 ? "auto" : "none";
-        node.style.zIndex = String(Math.round(depth * 100));
       }
       raf = requestAnimationFrame(frame);
     };
@@ -339,6 +352,46 @@ export function Projects() {
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
   }, [zoomed, focused, onScreen]);
+
+  /**
+   * Focus management for the zoom dialog.
+   *
+   * aria-modal="true" is a promise to a screen reader that the rest of the
+   * page is unreachable. It was a promise nothing kept: focus stayed on the
+   * card behind the scrim, and Tab walked straight out into the arrows, the
+   * dots and the contact form -- content the visitor could not see through an
+   * opaque backdrop. This moves focus in and keeps Tab inside.
+   */
+  useEffect(() => {
+    if (zoomed === null) return;
+    const panel = panelRef.current;
+    if (!panel) return;
+    panel.focus();
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      const focusable = panel.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input, textarea, select, [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusable.length) return;
+      const first = focusable[0]!;
+      const last = focusable[focusable.length - 1]!;
+      const active = document.activeElement;
+      // Wrapping by hand rather than trusting the browser: the panel itself is
+      // focusable (tabIndex -1) and is not in this list, so without the
+      // explicit wrap the first Tab from the panel would escape it.
+      if (e.shiftKey && (active === first || active === panel)) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    panel.addEventListener("keydown", onKeyDown);
+    return () => panel.removeEventListener("keydown", onKeyDown);
+  }, [zoomed]);
 
   // Only turn while the section is actually on screen.
   useEffect(() => {
@@ -389,6 +442,13 @@ export function Projects() {
 
     const onUp = () => {
       dragging = false;
+      // Cleared on the next macrotask, after the synthetic click that follows
+      // this pointerup has had its chance to be suppressed. Leaving it set
+      // meant a drag ending on empty stage swallowed the next Enter on a
+      // focused card -- keyboard users get no pointerdown to reset it.
+      setTimeout(() => {
+        draggedFar.current = false;
+      }, 0);
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onUp);
@@ -418,21 +478,45 @@ export function Projects() {
     };
   }, []);
 
+  /**
+   * The single close path. Every route out of the dialog goes through here so
+   * focus lands back on the card that opened it -- Escape used to restore it
+   * while the close button and the scrim dropped focus to <body>, sending the
+   * visitor back to the top of the document.
+   */
+  const closeZoom = useCallback(() => {
+    const i = zoomed;
+    setZoomed(null);
+    if (i !== null) slotsRef.current[i]?.focus();
+  }, [zoomed]);
+
   // Escape closes the open card; arrows turn the ring.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape" && zoomed !== null) {
-        setZoomed(null);
-        slotsRef.current[zoomed]?.focus();
+        closeZoom();
         return;
       }
       if (zoomed !== null) return;
+      // Arrows belong to whatever the visitor is typing in. Without this the
+      // ring snapped a card -- and fired a detent click -- on every caret
+      // move in the contact form, which is on the same page.
+      const el = document.activeElement as HTMLElement | null;
+      if (
+        el &&
+        (el.tagName === "INPUT" ||
+          el.tagName === "TEXTAREA" ||
+          el.tagName === "SELECT" ||
+          el.isContentEditable)
+      ) {
+        return;
+      }
       if (e.key === "ArrowRight") step(1);
       if (e.key === "ArrowLeft") step(-1);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [zoomed, step]);
+  }, [zoomed, step, closeZoom]);
 
   // Close the context on unmount. Nothing runs continuously any more -- each
   // tick is its own short-lived source node that stops on its own -- so there
@@ -487,12 +571,12 @@ export function Projects() {
             flexWrap: "wrap",
           }}
         >
-          <p
+          <h2
             className="ed-label"
-            style={{ margin: 0, color: "var(--ed-red-br)" }}
+            style={{ margin: 0, color: "var(--ed-red-tx)" }}
           >
             04 — Tanlangan loyihalar
-          </p>
+          </h2>
           <p
             style={{
               margin: 0,
@@ -500,7 +584,7 @@ export function Projects() {
               color: "var(--ed-gray-tx)",
             }}
           >
-            Sudrab aylantiring — bosgansangiz ochiladi
+            Sudrab aylantiring — bossangiz ochiladi
           </p>
         </div>
 
@@ -518,7 +602,13 @@ export function Projects() {
                   one puts the head exactly where the front card passes.
                   Decorative — the about section names and describes him. */}
               <div className="ed-orbit-figure">
-                <img src={orbitPortrait} alt="" aria-hidden="true" />
+                <img
+                  src={orbitPortrait}
+                  alt=""
+                  aria-hidden="true"
+                  loading="lazy"
+                  decoding="async"
+                />
               </div>
 
               {PROJECTS.map((project, i) => {
@@ -547,7 +637,13 @@ export function Projects() {
                       <p className="ed-orbit-cat">{project.category}</p>
                       {project.shot && (
                         <span className="ed-orbit-shot">
-                          <img src={project.shot} alt="" aria-hidden="true" />
+                          <img
+                            src={project.shot}
+                            alt=""
+                            aria-hidden="true"
+                            loading="lazy"
+                            decoding="async"
+                          />
                         </span>
                       )}
                       <span className="ed-orbit-open">
@@ -616,18 +712,24 @@ export function Projects() {
       </div>
 
       {open && (
-        <div
-          className="ed-zoom"
-          role="dialog"
-          aria-modal="true"
-          aria-label={open.title}
-          onClick={() => setZoomed(null)}
-        >
-          <div className="ed-zoom-panel" onClick={(e) => e.stopPropagation()}>
+        <div className="ed-zoom" onClick={closeZoom}>
+          {/* The dialog role lives on the panel, not on the full-viewport
+              scrim it used to sit on -- the scrim is the click-to-dismiss
+              backdrop, and giving it the role made the dialog's bounding box
+              the whole window. tabIndex lets the effect below focus it. */}
+          <div
+            ref={panelRef}
+            className="ed-zoom-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label={open.title}
+            tabIndex={-1}
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               type="button"
               className="ed-zoom-close"
-              onClick={() => setZoomed(null)}
+              onClick={closeZoom}
               aria-label="Yopish"
             >
               ✕
@@ -635,13 +737,18 @@ export function Projects() {
 
             {open.shot && (
               <div className="ed-zoom-shot">
-                <img src={open.shot} alt={`${open.title} ekrani`} />
+                <img
+                  src={open.shot}
+                  alt={`${open.title} ekrani`}
+                  loading="lazy"
+                  decoding="async"
+                />
               </div>
             )}
 
             <p
               className="ed-label"
-              style={{ margin: 0, color: "var(--ed-red-br)" }}
+              style={{ margin: 0, color: "var(--ed-red-tx)" }}
             >
               {open.index} — {open.category}
             </p>
