@@ -24,6 +24,15 @@ const FADE_MS = 700;
  * The AudioContext is built lazily on the first tap: browsers reject
  * `resume()` on a context that has not seen a user gesture, so constructing
  * it at mount would leave a suspended context sitting around on every load.
+ *
+ * A context is `suspended` the moment it is constructed, and it takes an
+ * explicit `resume()` to start it -- Chromium is lenient about this when the
+ * constructor itself ran inside a gesture handler and will often start the
+ * context running on its own, but WebKit (which is what Telegram's in-app
+ * browser uses on iOS) does not extend that courtesy: it stays suspended
+ * until `resume()` is called and awaited, gesture or not. Testing only in
+ * Chromium hid this for a while -- the fix is to always resume and await it
+ * before doing anything that depends on the context actually running.
  */
 export function MusicToggle() {
   const elRef = useRef<HTMLAudioElement | null>(null);
@@ -36,32 +45,42 @@ export function MusicToggle() {
     gain: GainNode;
   } | null>(null);
 
-  const ensureGraph = () => {
-    if (graph.current) {
-      if (graph.current.ctx.state === "suspended") {
-        void graph.current.ctx.resume();
+  const ensureGraph = async () => {
+    let g = graph.current;
+    if (!g) {
+      const el = elRef.current;
+      if (!el) return null;
+      try {
+        const Ctx =
+          window.AudioContext ||
+          (window as unknown as { webkitAudioContext: typeof AudioContext })
+            .webkitAudioContext;
+        const ctx = new Ctx();
+        const source = ctx.createMediaElementSource(el);
+        const gain = ctx.createGain();
+        gain.gain.value = 0;
+        source.connect(gain).connect(ctx.destination);
+        g = { ctx, source, gain };
+        graph.current = g;
+      } catch {
+        // No Web Audio -- fall through to a silent no-op; the button still
+        // toggles and the disc still turns, just without sound.
+        return null;
       }
-      return graph.current;
     }
-    const el = elRef.current;
-    if (!el) return null;
-    try {
-      const Ctx =
-        window.AudioContext ||
-        (window as unknown as { webkitAudioContext: typeof AudioContext })
-          .webkitAudioContext;
-      const ctx = new Ctx();
-      const source = ctx.createMediaElementSource(el);
-      const gain = ctx.createGain();
-      gain.gain.value = 0;
-      source.connect(gain).connect(ctx.destination);
-      graph.current = { ctx, source, gain };
-      return graph.current;
-    } catch {
-      // No Web Audio -- fall through to a silent no-op; the button still
-      // toggles and the disc still turns, just without sound.
-      return null;
+    // Always resume and wait for it, every tap -- not only the first. A
+    // context left idle can drift back to suspended on its own on some
+    // engines, and this is the call WebKit will not do for us.
+    if (g.ctx.state !== "running") {
+      try {
+        await g.ctx.resume();
+      } catch {
+        // Resume can reject if the gesture was somehow lost between the
+        // click and here; the play() call right after this will fail the
+        // same way and the existing catch there handles it.
+      }
     }
+    return g;
   };
 
   useEffect(() => {
@@ -96,13 +115,18 @@ export function MusicToggle() {
   const toggle = async () => {
     const el = elRef.current;
     if (!el) return;
-    const g = ensureGraph();
 
     if (playing) {
       setPlaying(false);
       fadeTo(0, true);
       return;
     }
+
+    // Build (or resume) the graph before play(): on WebKit, a suspended
+    // context passes no audio to its destination even while the element
+    // itself is happily playing, which is silence with every other symptom
+    // of success -- currentTime advancing, no error, `playing` state true.
+    const g = await ensureGraph();
 
     try {
       await el.play();
@@ -129,7 +153,7 @@ export function MusicToggle() {
         src="/audio/ambient.mp3"
         loop
         playsInline
-        preload="none"
+        preload="auto"
         style={{ display: "none" }}
       />
       <button
