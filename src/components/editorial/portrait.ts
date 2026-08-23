@@ -22,4 +22,10 @@ export const PORTRAIT_STANDING: string | null = portraitStanding;
  * gets cut off.
  */
 export const FACE_FOCUS = "76% 16%";
-export const FACE_FOCUS_STANDING = "40% 22%";
+/**
+ * The standing frame is already composed at 4:5 -- the aspect both boxes
+ * that use it are set to -- so `cover` shows all of it and this value only
+ * matters if a future section picks a different shape. Centred horizontally,
+ * biased up so the face survives a wider crop.
+ */
+export const FACE_FOCUS_STANDING = "50% 38%";

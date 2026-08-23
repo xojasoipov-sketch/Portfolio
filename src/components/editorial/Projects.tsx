@@ -52,9 +52,10 @@ const ARROW_KICK = 260;
  * (BASE_SPEED) and an extra angular velocity the visitor can add by dragging
  * or by pressing an arrow. The extra decays exponentially back to zero, so
  * after a hard flick the ring slows on its own to its normal rhythm rather
- * than either stopping dead or spinning forever. A grinding sawtooth plays
- * only while the extra velocity is well above the base, with its gain and
- * pitch tied to how fast the ring is actually going -- silent at rest.
+ * than either stopping dead or spinning forever. The sound is the air the
+ * ring moves: filtered noise whose band and level follow the speed, so a
+ * flick is a soft whoosh that thins out as the ring coasts down -- silent
+ * at rest.
  *
  * The audio graph is built lazily on the first pointer press: browsers reject
  * an AudioContext.resume() that has not seen a user gesture, so constructing
@@ -82,14 +83,27 @@ export function Projects() {
   const draggedFar = useRef(false);
 
   /**
-   * The audio graph: a sawtooth oscillator through a lowpass into a gain,
-   * kept running from first press until unmount. The gain is what turns the
-   * sound on and off; the oscillator itself never stops.
+   * The audio graph, running from the first press until unmount. The gain is
+   * what turns the sound on and off; the source never stops.
+   *
+   * A sawtooth through a lowpass was the obvious choice and the wrong one:
+   * its harmonics are evenly spaced, which the ear hears as a pitched buzz --
+   * a power tool, not a moving object. What a spinning thing actually makes
+   * is broadband air noise, so the source here is white noise through a
+   * bandpass. Sweeping the band with speed gives the rising-and-falling
+   * whoosh of something passing you, and because noise has no fundamental
+   * there is no note to clash with the ambient track.
+   *
+   * The quiet triangle underneath is body, not pitch -- one soft partial so
+   * the whoosh has some weight behind it. Triangle rather than saw: only odd
+   * harmonics, and they fall off fast.
    */
   const audio = useRef<{
     ctx: AudioContext;
-    osc: OscillatorNode;
-    lp: BiquadFilterNode;
+    noise: AudioBufferSourceNode;
+    band: BiquadFilterNode;
+    tone: OscillatorNode;
+    toneGain: GainNode;
     gain: GainNode;
   } | null>(null);
 
@@ -108,20 +122,41 @@ export function Projects() {
         (window as unknown as { webkitAudioContext: typeof AudioContext })
           .webkitAudioContext;
       const ctx = new Ctx();
-      const osc = ctx.createOscillator();
-      osc.type = "sawtooth";
-      osc.frequency.value = 55;
-      const lp = ctx.createBiquadFilter();
-      lp.type = "lowpass";
-      lp.frequency.value = 350;
-      lp.Q.value = 0.6;
+
+      // Two seconds of white noise, looped. Long enough that the loop point
+      // is inaudible; short enough to be cheap to generate.
+      const frames = ctx.sampleRate * 2;
+      const buffer = ctx.createBuffer(1, frames, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < frames; i++) data[i] = Math.random() * 2 - 1;
+      const noise = ctx.createBufferSource();
+      noise.buffer = buffer;
+      noise.loop = true;
+
+      // The band the whoosh lives in. A gentle Q: sharper would whistle,
+      // flatter would just be hiss.
+      const band = ctx.createBiquadFilter();
+      band.type = "bandpass";
+      band.frequency.value = 320;
+      band.Q.value = 1.1;
+
+      const tone = ctx.createOscillator();
+      tone.type = "triangle";
+      tone.frequency.value = 70;
+      const toneGain = ctx.createGain();
+      toneGain.gain.value = 0.35;
+
       const gain = ctx.createGain();
       gain.gain.value = 0;
-      osc.connect(lp).connect(gain).connect(ctx.destination);
-      osc.start();
-      audio.current = { ctx, osc, lp, gain };
+
+      noise.connect(band).connect(gain);
+      tone.connect(toneGain).connect(gain);
+      gain.connect(ctx.destination);
+      noise.start();
+      tone.start();
+      audio.current = { ctx, noise, band, tone, toneGain, gain };
     } catch {
-      // No Web Audio -- the ring still turns, just without the grinding.
+      // No Web Audio -- the ring still turns, just without the whoosh.
     }
   };
 
@@ -179,28 +214,35 @@ export function Projects() {
       if (Math.abs(extraVel.current) < 0.5) extraVel.current = 0;
 
       // Drive the audio from the same |extraVel|. Below a small floor the
-      // sound is off entirely -- otherwise the idle drift would hum at rest.
+      // sound is off entirely -- otherwise the idle drift would hiss at rest.
       if (audio.current) {
-        const { ctx, osc, lp, gain } = audio.current;
+        const { ctx, band, tone, toneGain, gain } = audio.current;
         const t = ctx.currentTime;
         const excess = Math.abs(extraVel.current);
-        const audible = Math.max(0, excess - 25); // deadzone
-        // Gain ramps up quickly and down slowly, so a hard flick lands
-        // instantly but the tail fades naturally.
-        const targetGain = reduced.matches ? 0 : Math.min(0.14, audible / 900);
-        gain.gain.setTargetAtTime(targetGain, t, 0.04);
-        // Pitch and lowpass cutoff both track speed, so the sound feels
-        // heavier when the ring is moving fast and thinner as it slows.
-        osc.frequency.setTargetAtTime(
-          45 + Math.min(160, audible * 0.35),
-          t,
-          0.05,
-        );
-        lp.frequency.setTargetAtTime(
-          300 + Math.min(900, audible * 1.6),
-          t,
-          0.05,
-        );
+        const audible = Math.max(0, excess - 30); // deadzone
+        // How hard the ring is going, 0..1, curved so the loud end arrives
+        // gradually instead of pinning the moment you flick it.
+        const drive = Math.min(1, audible / 520);
+        const curve = Math.pow(drive, 0.7);
+
+        // Quiet on purpose: this plays under the ambient track, and a whoosh
+        // that competes with the music is the same mistake as the buzz.
+        const targetGain = reduced.matches ? 0 : curve * 0.085;
+        // Slower ramp than the old 0.04 -- air builds and falls away, it does
+        // not switch on.
+        gain.gain.setTargetAtTime(targetGain, t, 0.12);
+
+        // The band sweeps up as the ring speeds up: that rise and fall is
+        // what makes it read as something passing rather than as static.
+        band.frequency.setTargetAtTime(240 + curve * 900, t, 0.09);
+        // Opening the Q slightly at speed narrows the band, which sharpens
+        // the whoosh right when the motion is most obvious.
+        band.Q.setTargetAtTime(1.1 + curve * 1.4, t, 0.09);
+
+        // Body underneath, held well below the noise and moving less, so it
+        // reads as weight rather than as a note.
+        tone.frequency.setTargetAtTime(62 + curve * 38, t, 0.12);
+        toneGain.gain.setTargetAtTime(0.22 + curve * 0.2, t, 0.12);
       }
 
       world.style.setProperty("--ed-spin", `${spin.current}deg`);
@@ -319,7 +361,8 @@ export function Projects() {
       const a = audio.current;
       if (!a) return;
       try {
-        a.osc.stop();
+        a.noise.stop();
+        a.tone.stop();
       } catch {
         // already stopped
       }
