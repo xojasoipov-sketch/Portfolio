@@ -1851,3 +1851,59 @@ body {
     animation: none;
   }
 }
+
+/* --- carousel position dots ---------------------------------------------
+   Replaces the "05 ta loyiha" caption that used to sit between the arrows.
+   A count is not something a visitor can act on; these say which card is in
+   front and are a shortcut to any other one. */
+.ed-orbit-dots {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.ed-orbit-dot {
+  /* The hit area is the padding, not the dot -- a 7px target is unusable on
+     a phone, but a 7px dot inside a 25px button is both. */
+  width: 25px;
+  height: 25px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ed-orbit-dot::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(245, 242, 239, 0.28);
+  transition:
+    background-color 0.3s ease,
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ed-orbit-dot:hover::before {
+  background: rgba(245, 242, 239, 0.55);
+}
+
+.ed-orbit-dot[data-active]::before {
+  background: var(--ed-red-br);
+  transform: scale(1.5);
+}
+
+.ed-orbit-dot:focus-visible {
+  outline: 2px solid var(--ed-red-br);
+  outline-offset: -2px;
+  border-radius: 999px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ed-orbit-dot::before {
+    transition: none;
+  }
+}

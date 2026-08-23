@@ -42,9 +42,6 @@ const DRAG_SENSITIVITY = 0.5;
 /** Movement further than this counts as a drag rather than a click. */
 const DRAG_THRESHOLD_PX = 6;
 
-/** Extra velocity an arrow button injects, in deg/s. Felt like a real shove. */
-const ARROW_KICK = 260;
-
 /**
  * Ceiling on detent clicks per second. A hard flick crosses a slot every few
  * frames, and firing one click each would be a machine-gun rattle rather than
@@ -80,6 +77,13 @@ export function Projects() {
   const [zoomed, setZoomed] = useState<number | null>(null);
   const [focused, setFocused] = useState(false);
   const [onScreen, setOnScreen] = useState(true);
+  /**
+   * Which project is currently facing the viewer. Written from the rAF loop,
+   * but only when it actually changes -- the ring moves every frame and the
+   * front card does not, so setting this unconditionally would re-render the
+   * whole section sixty times a second to redraw five dots.
+   */
+  const [frontIndex, setFrontIndex] = useState(0);
 
   /** Current angle (deg), lives outside React. */
   const spin = useRef(0);
@@ -87,6 +91,19 @@ export function Projects() {
   const extraVel = useRef(0);
   /** Timestamp until which the idle drift stays out of the way. */
   const holdUntil = useRef(0);
+  /**
+   * Angle the ring is being driven to land on exactly, or null when it is
+   * free-running. The arrows and a focus jump set this; drag clears it.
+   *
+   * The arrows used to inject a velocity kick and let the decay carry the
+   * ring wherever it ended up, which is not what an arrow means: one press
+   * should advance exactly one card, and pressing three times should land
+   * three cards along, not somewhere between the third and fourth. A target
+   * the frame eases toward is the only way to make that exact.
+   */
+  const snapTo = useRef<number | null>(null);
+  /** Mirror of frontIndex outside React, so the loop can compare without a read. */
+  const frontRef = useRef(0);
 
   /** Was the pointer moved far enough during the press to count as a drag? */
   const draggedFar = useRef(false);
@@ -187,25 +204,33 @@ export function Projects() {
     src.start(t);
   };
 
+  /**
+   * Advance exactly one card. `dir` is +1 for the right arrow, which turns
+   * the ring so the cards travel to the right.
+   *
+   * The target is measured from the pending target when there is one, not
+   * from the live angle, so three quick presses queue into three cards
+   * rather than three attempts to leave from wherever the animation happens
+   * to be at that instant.
+   */
   const step = useCallback((dir: 1 | -1) => {
     holdUntil.current = performance.now() + HOLD_MS;
-    extraVel.current += dir * ARROW_KICK;
+    extraVel.current = 0;
+    const from = snapTo.current ?? spin.current;
+    snapTo.current = Math.round(from / STEP) * STEP + dir * STEP;
     ensureAudio();
   }, []);
 
+  /** Turn a specific card to the front, by the shortest way round. */
   const bringToFront = useCallback((index: number) => {
     holdUntil.current = performance.now() + HOLD_MS;
-    // Nudge the ring so the target card ends up near the front, but as a
-    // one-off velocity kick rather than a target lock -- the drift takes it
-    // from there.
-    const slotAngle = index * STEP;
-    const wanted = -slotAngle;
-    const current = (((spin.current % 360) + 540) % 360) - 180;
-    let delta = wanted - current;
-    // Choose the short way around.
-    while (delta > 180) delta -= 360;
-    while (delta < -180) delta += 360;
-    extraVel.current += delta * 1.5;
+    extraVel.current = 0;
+    // Card i faces the viewer when i * STEP + spin is a multiple of 360, so
+    // the angle that fronts it is -i * STEP plus any whole number of turns.
+    // Picking the nearest turn is what stops the ring taking the long way.
+    const wanted = -index * STEP;
+    const from = snapTo.current ?? spin.current;
+    snapTo.current = wanted + Math.round((from - wanted) / 360) * 360;
   }, []);
 
   /**
@@ -227,18 +252,34 @@ export function Projects() {
 
       const paused = zoomed !== null || focused || !onScreen || document.hidden;
 
-      // Base drift only when idle and past the hold. The visitor's extra
-      // velocity is honoured regardless -- a paused page should still finish
-      // whatever flick was in flight when they hovered away.
-      if (!paused && now > holdUntil.current && !reduced.matches) {
-        spin.current += BASE_SPEED * dt;
-      }
-      spin.current += extraVel.current * dt;
+      // Two modes. Snapping wins: while a target is set the ring is being
+      // driven to an exact angle, and neither the drift nor any leftover
+      // flick may push it off that mark.
+      const snapping = snapTo.current !== null;
+      if (snapping) {
+        const diff = snapTo.current! - spin.current;
+        if (Math.abs(diff) < 0.05) {
+          // Land on the number rather than asymptotically near it, or the
+          // rounding in the next press would drift a fraction each time.
+          spin.current = snapTo.current!;
+          snapTo.current = null;
+        } else {
+          spin.current += diff * Math.min(dt * 9, 1);
+        }
+      } else {
+        // Base drift only when idle and past the hold. The visitor's extra
+        // velocity is honoured regardless -- a paused page should still
+        // finish whatever flick was in flight when they hovered away.
+        if (!paused && now > holdUntil.current && !reduced.matches) {
+          spin.current += BASE_SPEED * dt;
+        }
+        spin.current += extraVel.current * dt;
 
-      // Exponential decay of the extra: fast at first, slowing as it nears
-      // zero. Half-life is VELOCITY_HALF_LIFE seconds by construction.
-      extraVel.current *= Math.exp(-VELOCITY_DECAY * dt);
-      if (Math.abs(extraVel.current) < 0.5) extraVel.current = 0;
+        // Exponential decay of the extra: fast at first, slowing as it nears
+        // zero. Half-life is VELOCITY_HALF_LIFE seconds by construction.
+        extraVel.current *= Math.exp(-VELOCITY_DECAY * dt);
+        if (Math.abs(extraVel.current) < 0.5) extraVel.current = 0;
+      }
 
       // Detents. A card faces front every STEP degrees, so the number of
       // slots the ring has passed is just floor(spin / STEP); each time that
@@ -249,7 +290,10 @@ export function Projects() {
         // gradually instead of pinning the moment you flick it. The deadzone
         // keeps the idle drift from counting as "fast".
         const drive = Math.min(1, Math.max(0, excess - 30) / 520);
-        const curve = Math.pow(drive, 0.7);
+        // A snap carries no velocity to read, so it gets a fixed strength --
+        // an arrow press is a deliberate act and should land a firm tick,
+        // not the near-silent one that zero velocity would produce.
+        const curve = snapping ? 0.45 : Math.pow(drive, 0.7);
 
         const detent = Math.floor(spin.current / STEP);
         if (lastDetent.current === null) {
@@ -265,6 +309,17 @@ export function Projects() {
             tick(Math.min(1, 0.18 + curve * 0.9));
           }
         }
+      }
+
+      // Card i fronts at spin = -i * STEP, so the nearest front card is
+      // -spin/STEP rounded, wrapped into range.
+      const front =
+        ((Math.round(-spin.current / STEP) % PROJECTS.length) +
+          PROJECTS.length) %
+        PROJECTS.length;
+      if (front !== frontRef.current) {
+        frontRef.current = front;
+        setFrontIndex(front);
       }
 
       world.style.setProperty("--ed-spin", `${spin.current}deg`);
@@ -315,6 +370,8 @@ export function Projects() {
 
     const onMove = (e: PointerEvent) => {
       if (!dragging) return;
+      // A hand on the ring outranks a pending arrow press.
+      snapTo.current = null;
       const now = performance.now();
       const dt = Math.max(0.001, (now - lastT) / 1000);
       const dx = e.clientX - lastX;
@@ -529,15 +586,22 @@ export function Projects() {
             >
               <Arrow direction="left" size="0.85em" />
             </button>
-            <span
-              style={{
-                fontSize: "0.72rem",
-                letterSpacing: "0.18em",
-                color: "var(--ed-gray-tx)",
-              }}
-            >
-              {String(PROJECTS.length).padStart(2, "0")} ta loyiha
-            </span>
+            {/* Dots instead of a count. "05 ta loyiha" told a visitor
+                nothing they could act on; these say which card is in front
+                and take them straight to any other one. */}
+            <div className="ed-orbit-dots">
+              {PROJECTS.map((project, i) => (
+                <button
+                  key={project.index}
+                  type="button"
+                  className="ed-orbit-dot"
+                  data-active={i === frontIndex || undefined}
+                  onClick={() => bringToFront(i)}
+                  aria-label={`${project.title} loyihasiga o'tish`}
+                  aria-current={i === frontIndex ? "true" : undefined}
+                />
+              ))}
+            </div>
             <button
               type="button"
               className="ed-btn"
