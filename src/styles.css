@@ -1307,6 +1307,9 @@ body {
   position: absolute;
   inset: 0;
   transform-style: preserve-3d;
+  /* A grab cursor tells the visitor the ring is theirs to spin; ':active'
+     flips to grabbing so the press feels like a hold. */
+  cursor: grab;
   --ed-spin: 0deg;
   --ed-orbit-r: clamp(230px, 30vw, 430px);
   /* Negative tilts the far half of the ring up the screen, which is what
@@ -1428,6 +1431,10 @@ body {
 
 .ed-orbit-slot:focus-visible {
   outline: none;
+}
+
+.ed-orbit-world:active {
+  cursor: grabbing;
 }
 
 .ed-orbit-index {

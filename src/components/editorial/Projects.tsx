@@ -20,30 +20,46 @@ const RING_SLOTS = PROJECTS.length;
 /** Degrees between neighbours on the ring. */
 const STEP = 360 / RING_SLOTS;
 
-/** Degrees per second of the idle rotation — slow enough to read while it moves. */
-const SPEED = 9;
+/** Base drift, degrees per second — the rhythm the ring returns to. */
+const BASE_SPEED = 9;
+
+/** How long an arrow press or a focus holds the drift off before it resumes. */
+const HOLD_MS = 6000;
 
 /**
- * How long an arrow press or a focus holds the ring still before it drifts on
- * again. Stopping for good would have been simpler, but the turning is the
- * point of the section: one arrow press should not end it permanently.
+ * Exponential-decay half-life for a drag's leftover angular velocity, in
+ * seconds. Shorter = the ring snaps back to its rhythm sooner; longer = it
+ * keeps coasting. 0.9 gives a couple of solid revolutions after a hard flick
+ * before it settles.
  */
-const HOLD_MS = 6000;
+const VELOCITY_HALF_LIFE = 0.9;
+const VELOCITY_DECAY = Math.log(2) / VELOCITY_HALF_LIFE;
+
+/** How many degrees per second a single pixel of horizontal drag imparts. */
+const DRAG_SENSITIVITY = 0.5;
+
+/** Movement further than this counts as a drag rather than a click. */
+const DRAG_THRESHOLD_PX = 6;
+
+/** Extra velocity an arrow button injects, in deg/s. Felt like a real shove. */
+const ARROW_KICK = 260;
 
 /**
  * The work section: the projects turn around the portrait, and clicking one
  * opens it full size.
  *
- * The rotation is not React state. A single rAF loop writes one custom
- * property, --ed-spin, on the stage and a depth value on each card; the
- * transforms are static CSS reading those. Re-rendering five cards sixty
- * times a second to move a ring would be the same picture at a much worse
- * price.
+ * The rotation is a small physics model. There is a base angular velocity
+ * (BASE_SPEED) and an extra angular velocity the visitor can add by dragging
+ * or by pressing an arrow. The extra decays exponentially back to zero, so
+ * after a hard flick the ring slows on its own to its normal rhythm rather
+ * than either stopping dead or spinning forever. A grinding sawtooth plays
+ * only while the extra velocity is well above the base, with its gain and
+ * pitch tied to how fast the ring is actually going -- silent at rest.
  *
- * It stops turning whenever turning would be wrong: pointer over it, keyboard
- * focus inside it, a card open, the tab in the background, the section off
- * screen, or the visitor asking for reduced motion. The arrows then take over,
- * which is also what makes every card reachable without motion at all.
+ * The audio graph is built lazily on the first pointer press: browsers reject
+ * an AudioContext.resume() that has not seen a user gesture, so constructing
+ * it at mount would leave a suspended context sitting around on every page
+ * load. The pointer press IS the gesture, so first drag = first sound.
  */
 export function Projects() {
   const { ref, shown } = useReveal<HTMLElement>(0.06);
@@ -52,37 +68,89 @@ export function Projects() {
   const slotsRef = useRef<(HTMLButtonElement | null)[]>([]);
 
   const [zoomed, setZoomed] = useState<number | null>(null);
-  const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
   const [onScreen, setOnScreen] = useState(true);
 
-  /** Where the ring is now and where it is heading; both live outside React. */
+  /** Current angle (deg), lives outside React. */
   const spin = useRef(0);
-  const target = useRef(0);
+  /** Excess angular velocity above the base drift (deg/s), lives outside React. */
+  const extraVel = useRef(0);
   /** Timestamp until which the idle drift stays out of the way. */
   const holdUntil = useRef(0);
 
-  const paused = zoomed !== null || hovered || focused || !onScreen;
+  /** Was the pointer moved far enough during the press to count as a drag? */
+  const draggedFar = useRef(false);
+
+  /**
+   * The audio graph: a sawtooth oscillator through a lowpass into a gain,
+   * kept running from first press until unmount. The gain is what turns the
+   * sound on and off; the oscillator itself never stops.
+   */
+  const audio = useRef<{
+    ctx: AudioContext;
+    osc: OscillatorNode;
+    lp: BiquadFilterNode;
+    gain: GainNode;
+  } | null>(null);
+
+  const ensureAudio = () => {
+    if (audio.current) {
+      // A context created before a gesture starts suspended; a real press
+      // is the gesture that lets it resume.
+      if (audio.current.ctx.state === "suspended") {
+        void audio.current.ctx.resume();
+      }
+      return;
+    }
+    try {
+      const Ctx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext })
+          .webkitAudioContext;
+      const ctx = new Ctx();
+      const osc = ctx.createOscillator();
+      osc.type = "sawtooth";
+      osc.frequency.value = 55;
+      const lp = ctx.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.value = 350;
+      lp.Q.value = 0.6;
+      const gain = ctx.createGain();
+      gain.gain.value = 0;
+      osc.connect(lp).connect(gain).connect(ctx.destination);
+      osc.start();
+      audio.current = { ctx, osc, lp, gain };
+    } catch {
+      // No Web Audio -- the ring still turns, just without the grinding.
+    }
+  };
 
   const step = useCallback((dir: 1 | -1) => {
     holdUntil.current = performance.now() + HOLD_MS;
-    // Snap to the nearest slot first, so an arrow press from mid-rotation
-    // lands a card square to the viewer instead of somewhere between two.
-    const nearest = Math.round(target.current / STEP) * STEP;
-    target.current = nearest + dir * STEP;
+    extraVel.current += dir * ARROW_KICK;
+    ensureAudio();
   }, []);
 
-  /** Bring one card to the front without opening it — used by focus. */
   const bringToFront = useCallback((index: number) => {
     holdUntil.current = performance.now() + HOLD_MS;
+    // Nudge the ring so the target card ends up near the front, but as a
+    // one-off velocity kick rather than a target lock -- the drift takes it
+    // from there.
     const slotAngle = index * STEP;
-    // The ring turns the other way from the slot's own angle, and the result
-    // has to stay near the current position or the ring spins the long way.
-    const want = -slotAngle;
-    const turns = Math.round((target.current - want) / 360);
-    target.current = want + turns * 360;
+    const wanted = -slotAngle;
+    const current = (((spin.current % 360) + 540) % 360) - 180;
+    let delta = wanted - current;
+    // Choose the short way around.
+    while (delta > 180) delta -= 360;
+    while (delta < -180) delta += 360;
+    extraVel.current += delta * 1.5;
   }, []);
 
+  /**
+   * The main rAF loop. Drives both the ring and the audio from the same
+   * physics numbers, so what you hear tracks what you see with no separate
+   * bookkeeping.
+   */
   useEffect(() => {
     const world = worldRef.current;
     if (!world) return;
@@ -95,16 +163,45 @@ export function Projects() {
       const dt = Math.min((now - last) / 1000, 0.05);
       last = now;
 
-      if (
-        !paused &&
-        now > holdUntil.current &&
-        !reduced.matches &&
-        !document.hidden
-      ) {
-        target.current += SPEED * dt;
+      const paused = zoomed !== null || focused || !onScreen || document.hidden;
+
+      // Base drift only when idle and past the hold. The visitor's extra
+      // velocity is honoured regardless -- a paused page should still finish
+      // whatever flick was in flight when they hovered away.
+      if (!paused && now > holdUntil.current && !reduced.matches) {
+        spin.current += BASE_SPEED * dt;
       }
-      // Critically damped enough to feel weighty without overshooting.
-      spin.current += (target.current - spin.current) * Math.min(dt * 6, 1);
+      spin.current += extraVel.current * dt;
+
+      // Exponential decay of the extra: fast at first, slowing as it nears
+      // zero. Half-life is VELOCITY_HALF_LIFE seconds by construction.
+      extraVel.current *= Math.exp(-VELOCITY_DECAY * dt);
+      if (Math.abs(extraVel.current) < 0.5) extraVel.current = 0;
+
+      // Drive the audio from the same |extraVel|. Below a small floor the
+      // sound is off entirely -- otherwise the idle drift would hum at rest.
+      if (audio.current) {
+        const { ctx, osc, lp, gain } = audio.current;
+        const t = ctx.currentTime;
+        const excess = Math.abs(extraVel.current);
+        const audible = Math.max(0, excess - 25); // deadzone
+        // Gain ramps up quickly and down slowly, so a hard flick lands
+        // instantly but the tail fades naturally.
+        const targetGain = reduced.matches ? 0 : Math.min(0.14, audible / 900);
+        gain.gain.setTargetAtTime(targetGain, t, 0.04);
+        // Pitch and lowpass cutoff both track speed, so the sound feels
+        // heavier when the ring is moving fast and thinner as it slows.
+        osc.frequency.setTargetAtTime(
+          45 + Math.min(160, audible * 0.35),
+          t,
+          0.05,
+        );
+        lp.frequency.setTargetAtTime(
+          300 + Math.min(900, audible * 1.6),
+          t,
+          0.05,
+        );
+      }
 
       world.style.setProperty("--ed-spin", `${spin.current}deg`);
       for (let i = 0; i < slotsRef.current.length; i++) {
@@ -112,15 +209,9 @@ export function Projects() {
         if (!node) continue;
         const angle = ((i * STEP + spin.current) * Math.PI) / 180;
         const facing = Math.cos(angle);
-        // 1 when the card faces the viewer, 0 when it is behind the figure.
         const depth = (facing + 1) / 2;
         node.style.setProperty("--ed-depth", depth.toFixed(3));
-        // Only the front-facing card should catch clicks: an unseen back
-        // covering the middle of the stage would eat the pointer that was
-        // aimed at the front card behind it.
         node.style.pointerEvents = facing > 0 ? "auto" : "none";
-        // Stacking is written outright rather than left to the browser, so a
-        // card past the figure never paints over a card in front of it.
         node.style.zIndex = String(Math.round(depth * 100));
       }
       raf = requestAnimationFrame(frame);
@@ -128,7 +219,7 @@ export function Projects() {
 
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
-  }, [paused]);
+  }, [zoomed, focused, onScreen]);
 
   // Only turn while the section is actually on screen.
   useEffect(() => {
@@ -141,6 +232,70 @@ export function Projects() {
     io.observe(node);
     return () => io.disconnect();
   }, [ref]);
+
+  /**
+   * Pointer drag. Listeners are attached to WINDOW during a drag rather than
+   * via setPointerCapture, because capture routes pointerup off the card and
+   * a card's click event -- which is what opens the zoom -- would never fire.
+   * Window listeners preserve native click while still tracking a drag that
+   * runs off the edge of the stage.
+   */
+  useEffect(() => {
+    const world = worldRef.current;
+    if (!world) return;
+
+    let dragging = false;
+    let lastT = 0;
+    let lastX = 0;
+    let totalDx = 0;
+
+    const onMove = (e: PointerEvent) => {
+      if (!dragging) return;
+      const now = performance.now();
+      const dt = Math.max(0.001, (now - lastT) / 1000);
+      const dx = e.clientX - lastX;
+      lastT = now;
+      lastX = e.clientX;
+      totalDx += Math.abs(dx);
+      if (totalDx > DRAG_THRESHOLD_PX) draggedFar.current = true;
+      // Blend the new drag velocity with what is already there, so a quick
+      // series of small moves builds up smoothly rather than snapping to
+      // whichever frame's dx was largest.
+      const dragVel = (dx / dt) * DRAG_SENSITIVITY;
+      extraVel.current = extraVel.current * 0.55 + dragVel * 0.45;
+      holdUntil.current = now + HOLD_MS;
+    };
+
+    const onUp = () => {
+      dragging = false;
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+    };
+
+    const onDown = (e: PointerEvent) => {
+      // Ignore right-click / middle-click -- they should not shove the ring.
+      if (e.button !== 0 && e.pointerType === "mouse") return;
+      ensureAudio();
+      dragging = true;
+      draggedFar.current = false;
+      lastT = performance.now();
+      lastX = e.clientX;
+      totalDx = 0;
+      holdUntil.current = performance.now() + HOLD_MS;
+      window.addEventListener("pointermove", onMove);
+      window.addEventListener("pointerup", onUp);
+      window.addEventListener("pointercancel", onUp);
+    };
+
+    world.addEventListener("pointerdown", onDown);
+    return () => {
+      world.removeEventListener("pointerdown", onDown);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+    };
+  }, []);
 
   // Escape closes the open card; arrows turn the ring.
   useEffect(() => {
@@ -158,16 +313,29 @@ export function Projects() {
     return () => window.removeEventListener("keydown", onKey);
   }, [zoomed, step]);
 
-  // Swipe turns the ring on touch.
-  const touch = useRef<number | null>(null);
-  const onTouchStart = (e: React.TouchEvent) => {
-    touch.current = e.touches[0]?.clientX ?? null;
-  };
-  const onTouchEnd = (e: React.TouchEvent) => {
-    if (touch.current === null) return;
-    const dx = (e.changedTouches[0]?.clientX ?? 0) - touch.current;
-    if (Math.abs(dx) > 55) step(dx < 0 ? 1 : -1);
-    touch.current = null;
+  // Cleanup the audio graph on unmount so we do not leak an oscillator.
+  useEffect(() => {
+    return () => {
+      const a = audio.current;
+      if (!a) return;
+      try {
+        a.osc.stop();
+      } catch {
+        // already stopped
+      }
+      void a.ctx.close();
+      audio.current = null;
+    };
+  }, []);
+
+  const openCard = (i: number) => {
+    // A press that turned into a drag should not also open the card the
+    // pointer happened to be on when it went down.
+    if (draggedFar.current) {
+      draggedFar.current = false;
+      return;
+    }
+    setZoomed(i);
   };
 
   const open = zoomed === null ? null : PROJECTS[zoomed];
@@ -214,24 +382,18 @@ export function Projects() {
               color: "var(--ed-gray-tx)",
             }}
           >
-            Kartochkani bosing — to‘liq ochiladi
+            Sudrab aylantiring — bosgansangiz ochiladi
           </p>
         </div>
 
-        <div
-          className="ed-rise"
-          data-shown={shown}
-          onTouchStart={onTouchStart}
-          onTouchEnd={onTouchEnd}
-        >
+        <div className="ed-rise" data-shown={shown}>
           <div className="ed-orbit-stage">
             <div
               className="ed-orbit-world"
               ref={worldRef}
-              onPointerEnter={() => setHovered(true)}
-              onPointerLeave={() => setHovered(false)}
               onFocusCapture={() => setFocused(true)}
               onBlurCapture={() => setFocused(false)}
+              style={{ touchAction: "pan-y" }}
             >
               {/* A standing pose, unlike the seated cutout the rest of the
                   site uses: the ring has to turn around a figure, and a seated
@@ -252,7 +414,7 @@ export function Projects() {
                     className="ed-orbit-slot"
                     style={{ ["--ed-slot" as string]: `${i * STEP}deg` }}
                     onFocus={() => bringToFront(i)}
-                    onClick={() => setZoomed(i)}
+                    onClick={() => openCard(i)}
                     aria-label={`${project.title} — loyihani ochish`}
                   >
                     <span
