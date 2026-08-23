@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { asset } from "@/lib/asset";
 
@@ -9,8 +9,44 @@ const VOLUME = 0.85;
 const FADE_MS = 700;
 
 /**
- * A turntable in the corner of every page. First tap lowers the arm and the
- * record turns; a second tap lifts it and the record coasts to a stop.
+ * Remembers a visitor who switched the music off, so a reload does not force
+ * it back on them. Only the "off" choice is stored: leaving it on is the
+ * default, so there is nothing to remember about it.
+ */
+const OFF_KEY = "sx-music:v1:off";
+
+function mutedByChoice(): boolean {
+  try {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(OFF_KEY) === "1";
+  } catch {
+    // Private mode or site data blocked -- treat as "no stored choice".
+    return false;
+  }
+}
+
+function rememberChoice(off: boolean) {
+  try {
+    if (off) window.localStorage.setItem(OFF_KEY, "1");
+    else window.localStorage.removeItem(OFF_KEY);
+  } catch {
+    /* nothing to do: the choice just will not survive this reload */
+  }
+}
+
+/**
+ * A turntable in the corner of every page. The record starts on its own when
+ * a visitor arrives; anyone who would rather not hear it taps the deck once
+ * and it lifts the arm and stays off, on this visit and on the next.
+ *
+ * Autoplay cannot simply be called and trusted. Every current browser refuses
+ * to start audible media before the page has seen a user gesture, and the
+ * rejection is a promise rejection rather than an error you can feature-test
+ * for in advance. So this tries to play immediately, and when that is refused
+ * it arms a one-shot listener and starts on the visitor's very first
+ * interaction instead -- a tap, a scroll, a key. In practice that is the same
+ * moment for anyone who actually engages with the page, and it is the closest
+ * to "plays on arrival" that is achievable without fighting the platform.
  *
  * Playback runs through the Web Audio API rather than a bare
  * `HTMLMediaElement.volume` ramp. Two problems pushed it there: some mobile
@@ -23,18 +59,12 @@ const FADE_MS = 700;
  * GainNode: the element is real markup in the tree, and the fade lives on
  * the node graph instead of on the element.
  *
- * The AudioContext is built lazily on the first tap: browsers reject
- * `resume()` on a context that has not seen a user gesture, so constructing
- * it at mount would leave a suspended context sitting around on every load.
- *
  * A context is `suspended` the moment it is constructed, and it takes an
  * explicit `resume()` to start it -- Chromium is lenient about this when the
  * constructor itself ran inside a gesture handler and will often start the
  * context running on its own, but WebKit (which is what Telegram's in-app
  * browser uses on iOS) does not extend that courtesy: it stays suspended
- * until `resume()` is called and awaited, gesture or not. Testing only in
- * Chromium hid this for a while -- the fix is to always resume and await it
- * before doing anything that depends on the context actually running.
+ * until `resume()` is called and awaited, gesture or not.
  */
 export function MusicToggle() {
   const elRef = useRef<HTMLAudioElement | null>(null);
@@ -47,7 +77,7 @@ export function MusicToggle() {
     gain: GainNode;
   } | null>(null);
 
-  const ensureGraph = async () => {
+  const ensureGraph = useCallback(async () => {
     let g = graph.current;
     if (!g) {
       const el = elRef.current;
@@ -70,32 +100,30 @@ export function MusicToggle() {
         return null;
       }
     }
-    // Always resume and wait for it, every tap -- not only the first. A
+    // Always resume and wait for it, every time -- not only the first. A
     // context left idle can drift back to suspended on its own on some
     // engines, and this is the call WebKit will not do for us.
+    //
+    // Raced against a timeout because resume() on a context that has not
+    // seen a user gesture does not reject -- it returns a promise that
+    // simply never settles until an activation arrives. Awaiting it bare
+    // meant the whole start() call hung, and the code after it never ran.
     if (g.ctx.state !== "running") {
       try {
-        await g.ctx.resume();
+        await Promise.race([
+          g.ctx.resume(),
+          new Promise((resolve) => setTimeout(resolve, 300)),
+        ]);
       } catch {
-        // Resume can reject if the gesture was somehow lost between the
-        // click and here; the play() call right after this will fail the
-        // same way and the existing catch there handles it.
+        // Resume can also reject outright on some engines; the play() call
+        // right after this will fail the same way and the caller handles it.
       }
     }
     return g;
-  };
-
-  useEffect(() => {
-    const el = elRef.current;
-    return () => {
-      if (fadeRef.current) cancelAnimationFrame(fadeRef.current);
-      el?.pause();
-      void graph.current?.ctx.close();
-    };
   }, []);
 
   /** Ramp the gain, then optionally pause the element once it reaches zero. */
-  const fadeTo = (target: number, thenPause: boolean) => {
+  const fadeTo = useCallback((target: number, thenPause: boolean) => {
     const g = graph.current;
     if (!g) return;
     if (fadeRef.current) cancelAnimationFrame(fadeRef.current);
@@ -112,33 +140,97 @@ export function MusicToggle() {
       }
     };
     fadeRef.current = requestAnimationFrame(tick);
-  };
+  }, []);
 
-  const toggle = async () => {
+  /** Start playing. Resolves false when the browser refused. */
+  const start = useCallback(async () => {
     const el = elRef.current;
-    if (!el) return;
-
-    if (playing) {
-      setPlaying(false);
-      fadeTo(0, true);
-      return;
-    }
-
+    if (!el) return false;
     // Build (or resume) the graph before play(): on WebKit, a suspended
     // context passes no audio to its destination even while the element
     // itself is happily playing, which is silence with every other symptom
     // of success -- currentTime advancing, no error, `playing` state true.
     const g = await ensureGraph();
-
     try {
       await el.play();
       setPlaying(true);
       if (g) fadeTo(VOLUME, false);
+      return true;
     } catch {
-      // The tap is the user gesture, so a rejected play() here means the
-      // file could not be fetched. Leave the record still; a second tap
-      // retries.
+      return false;
     }
+  }, [ensureGraph, fadeTo]);
+
+  const stop = useCallback(() => {
+    setPlaying(false);
+    fadeTo(0, true);
+  }, [fadeTo]);
+
+  useEffect(() => {
+    const el = elRef.current;
+    return () => {
+      if (fadeRef.current) cancelAnimationFrame(fadeRef.current);
+      el?.pause();
+      void graph.current?.ctx.close();
+    };
+  }, []);
+
+  /**
+   * Start on arrival: try outright, and fall back to the first gesture.
+   *
+   * The listeners deliberately skip gestures that land on the deck itself.
+   * Without that, a visitor whose first act is to press the button would see
+   * pointerdown start the music and the click that follows immediately stop
+   * it again -- they pressed play and got silence.
+   */
+  useEffect(() => {
+    if (mutedByChoice()) return;
+
+    let cancelled = false;
+    const events = ["pointerdown", "keydown", "touchstart", "wheel"] as const;
+
+    const onGesture = (e: Event) => {
+      const target = e.target as Element | null;
+      if (target?.closest?.(".ed-music-toggle")) return;
+      disarm();
+      void start();
+    };
+
+    const disarm = () => {
+      for (const name of events) {
+        window.removeEventListener(name, onGesture, true);
+      }
+    };
+
+    // Armed first, before the autoplay attempt is even made. Arming only
+    // after that attempt resolved was a real bug: the attempt can take
+    // hundreds of milliseconds, and a visitor who taps during that window
+    // would land on no listener at all and never hear anything.
+    // Capture phase, so a gesture is seen even when something downstream
+    // stops propagation.
+    for (const name of events) {
+      window.addEventListener(name, onGesture, true);
+    }
+
+    void start().then((ok) => {
+      // Autoplay went through on its own, so the fallback is not needed.
+      if (ok && !cancelled) disarm();
+    });
+
+    return () => {
+      cancelled = true;
+      disarm();
+    };
+  }, [start]);
+
+  const toggle = async () => {
+    if (playing) {
+      rememberChoice(true);
+      stop();
+      return;
+    }
+    rememberChoice(false);
+    await start();
   };
 
   return (
