@@ -7,6 +7,7 @@ import {
   CV_SKILLS,
 } from "@/data/cv";
 import { Arrow } from "@/components/editorial/icons";
+import { asset } from "@/lib/asset";
 
 const TITLE = "CV — Saidburxon Xojasoipov";
 const DESCRIPTION =
@@ -41,11 +42,7 @@ function Cv() {
   );
 }
 
-/** public/ files are not bundled, so the href has to carry the deploy base. */
-const CV_PDF = `${import.meta.env.BASE_URL}Saidburxon-Xojasoipov-CV.pdf`.replace(
-  /\/{2,}/g,
-  "/",
-);
+const CV_PDF = asset("Saidburxon-Xojasoipov-CV.pdf");
 
 /** Screen-only controls; hidden when printing or saving to PDF. */
 function TopBar() {
@@ -82,7 +79,8 @@ function Header() {
   return (
     <header className="cv-head">
       <div>
-        <h1 className="ed-display cv-name">Saidburxon
+        <h1 className="ed-display cv-name">
+          Saidburxon
           <br />
           <span style={{ color: "var(--ed-red)" }}>Xojasoipov</span>
         </h1>

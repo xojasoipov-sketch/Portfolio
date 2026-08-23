@@ -14,6 +14,7 @@ import appCss from "../styles.css?url";
 import { useTelegramMiniApp } from "../lib/telegram-miniapp";
 import { trackPageview } from "../lib/analytics";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { asset } from "../lib/asset";
 import { MusicToggle } from "../components/editorial/MusicToggle";
 
 /**
@@ -132,13 +133,6 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     </div>
   );
 }
-
-// Files in public/ aren't run through the bundler, so a hardcoded "/x" href
-// would point at the domain root even under GitHub Pages' /Portfolio/
-// subpath -- has to be joined with the same base Vite already resolved for
-// every bundled asset (see vite.config.ts's SITE_BASE).
-const asset = (path: string) =>
-  `${import.meta.env.BASE_URL}${path}`.replace(/\/{2,}/g, "/");
 
 /** Absolute origin of the deployed site. og:image and og:url must be absolute
  *  URLs -- Telegram, WhatsApp and LinkedIn all refuse to resolve a relative

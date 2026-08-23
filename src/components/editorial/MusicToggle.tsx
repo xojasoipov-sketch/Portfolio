@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
+import { asset } from "@/lib/asset";
+
 /** Where the gain lands once the fade-in finishes. */
 const VOLUME = 0.85;
 
@@ -150,7 +152,7 @@ export function MusicToggle() {
           would have nothing to fade in. */}
       <audio
         ref={elRef}
-        src="/audio/ambient.mp3"
+        src={asset("audio/ambient.mp3")}
         loop
         playsInline
         preload="auto"

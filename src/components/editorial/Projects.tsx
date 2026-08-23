@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { PROJECTS } from "@/data/projects";
+import { asset } from "@/lib/asset";
 import orbitPortrait from "@/assets/orbit-portrait.webp";
 import { useReveal } from "./useReveal";
 import { useSpotlight } from "./useSpotlight";
@@ -196,7 +197,7 @@ export function Projects() {
       // once and reused for every detent for the rest of the session. Fire
       // and forget: a slow network just means the ring stays quiet on
       // detents until this resolves, same as a browser with no Web Audio.
-      void fetch("/audio/tick.wav")
+      void fetch(asset("audio/tick.wav"))
         .then((res) => res.arrayBuffer())
         .then((buf) => ctx.decodeAudioData(buf))
         .then((decoded) => {
