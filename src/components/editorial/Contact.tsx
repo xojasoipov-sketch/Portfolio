@@ -206,7 +206,7 @@ export function Contact() {
                 background: "#141414",
               }}
             >
-              <Portrait treatment="duotone" fit="cover" />
+              <Portrait treatment="duotone" fit="cover" variant="standing" />
             </div>
 
             <div>
@@ -244,7 +244,11 @@ export function Contact() {
                   target="_blank"
                   rel="noreferrer"
                   className="ed-navlink ed-label"
-                  style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem" }}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "0.35rem",
+                  }}
                 >
                   {s.label} <Arrow direction="upRight" size="0.8em" />
                 </a>

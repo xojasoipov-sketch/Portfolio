@@ -1,6 +1,12 @@
-import { FACE_FOCUS, PORTRAIT } from "./portrait";
+import {
+  FACE_FOCUS,
+  FACE_FOCUS_STANDING,
+  PORTRAIT,
+  PORTRAIT_STANDING,
+} from "./portrait";
 
 type Treatment = "natural" | "mono" | "duotone";
+type Variant = "seated" | "standing";
 
 /** Unique ids so the SVG filter can be referenced from CSS. */
 const DUOTONE_ID = "ed-duotone-red";
@@ -15,15 +21,24 @@ const DUOTONE_ID = "ed-duotone-red";
 export function Portrait({
   treatment = "natural",
   fit = "contain",
+  variant = "seated",
   className,
   style,
 }: {
   treatment?: Treatment;
   fit?: "contain" | "cover";
+  /**
+   * Which photo to render. Two are shipped so no page has to open on the
+   * same face it opened on above -- variety across sections without the
+   * cost of a per-section image.
+   */
+  variant?: Variant;
   className?: string;
   style?: React.CSSProperties;
 }) {
-  if (!PORTRAIT) {
+  const src = variant === "standing" ? PORTRAIT_STANDING : PORTRAIT;
+  const face = variant === "standing" ? FACE_FOCUS_STANDING : FACE_FOCUS;
+  if (!src) {
     return (
       <PortraitPlaceholder
         treatment={treatment}
@@ -44,7 +59,7 @@ export function Portrait({
     <>
       {treatment === "duotone" && <DuotoneFilter />}
       <img
-        src={PORTRAIT}
+        src={src}
         alt="Saidburxon Xojasoipov"
         className={className}
         style={{
@@ -52,7 +67,7 @@ export function Portrait({
           width: "100%",
           height: "100%",
           objectFit: fit,
-          objectPosition: fit === "cover" ? FACE_FOCUS : "bottom center",
+          objectPosition: fit === "cover" ? face : "bottom center",
           filter,
           ...style,
         }}
