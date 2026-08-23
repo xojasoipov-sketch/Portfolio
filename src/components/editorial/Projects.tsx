@@ -114,8 +114,13 @@ export function Projects() {
     tone: OscillatorNode;
     toneGain: GainNode;
     gain: GainNode;
-    /** One noise buffer, reused by every detent click. */
-    clickBuffer: AudioBuffer;
+    /**
+     * The detent click, decoded from a real recording rather than
+     * synthesized -- null until the fetch below resolves, so the first tick
+     * or two of a very fast first flick can silently no-op rather than play
+     * a placeholder sound.
+     */
+    clickBuffer: AudioBuffer | null;
     /** The ticks bypass the whoosh's gain so they stay audible at low speed. */
     tickBus: GainNode;
   } | null>(null);
@@ -167,13 +172,6 @@ export function Projects() {
       const gain = ctx.createGain();
       gain.gain.value = 0;
 
-      // Short noise burst the detent clicks are cut from. 80 ms is longer
-      // than any click needs; the envelope decides the actual length.
-      const clickFrames = Math.floor(ctx.sampleRate * 0.08);
-      const clickBuffer = ctx.createBuffer(1, clickFrames, ctx.sampleRate);
-      const cd = clickBuffer.getChannelData(0);
-      for (let i = 0; i < clickFrames; i++) cd[i] = Math.random() * 2 - 1;
-
       const tickBus = ctx.createGain();
       tickBus.gain.value = 1;
 
@@ -190,63 +188,54 @@ export function Projects() {
         tone,
         toneGain,
         gain,
-        clickBuffer,
+        clickBuffer: null,
         tickBus,
       };
+
+      // A real recorded tick, not a synthesized one -- fetched and decoded
+      // once and reused for every detent for the rest of the session. Fire
+      // and forget: a slow network just means the ring stays quiet on
+      // detents until this resolves, same as a browser with no Web Audio.
+      void fetch("/audio/tick.wav")
+        .then((res) => res.arrayBuffer())
+        .then((buf) => ctx.decodeAudioData(buf))
+        .then((decoded) => {
+          if (audio.current) audio.current.clickBuffer = decoded;
+        })
+        .catch(() => {});
     } catch {
       // No Web Audio -- the ring still turns, just without the whoosh.
     }
   };
 
   /**
-   * One detent click: a very short, high, band-limited noise burst plus a
-   * brief sine ping an octave above it.
+   * One detent click, played from a 22 ms recording rather than
+   * synthesized -- a synthesized noise burst read as a buzz or a pop no
+   * matter how it was filtered; an actual mechanical click sample is what a
+   * real detent sounds like. Short enough on its own that a fast spin turns
+   * repeated plays into a run of ticks rather than a smear.
    *
-   * The noise is the mechanism -- a click has no pitch, so noise through a
-   * narrow high band is what reads as "something seated into place". The sine
-   * on top is the resonance that click leaves behind; without it the burst
-   * sounds like a static pop rather than a machined part. Both are 30-45 ms,
-   * which is short enough that a fast spin turns them into a run of ticks
-   * instead of a smear.
-   *
-   * `strength` (0..1) scales level and brightness with how fast the ring is
-   * turning, so a slow drift ticks softly and a flick ticks hard.
+   * `strength` (0..1) scales loudness and pitch with how fast the ring is
+   * turning, so a slow drift ticks softly and a flick ticks harder and a
+   * touch higher. A small random detune on top keeps a run of identical
+   * samples from reading as one sound looping instead of many small events.
    */
   const tick = (strength: number) => {
     const a = audio.current;
-    if (!a) return;
+    if (!a || !a.clickBuffer) return;
     const { ctx, clickBuffer, tickBus } = a;
     const t = ctx.currentTime;
 
     const src = ctx.createBufferSource();
     src.buffer = clickBuffer;
+    const jitter = 0.97 + Math.random() * 0.06;
+    src.playbackRate.value = (0.94 + strength * 0.22) * jitter;
 
-    // High and narrow: this is the part the ear hears as the click's "tk".
-    const bp = ctx.createBiquadFilter();
-    bp.type = "bandpass";
-    bp.frequency.value = 2100 + strength * 1500;
-    bp.Q.value = 5.5;
+    const g = ctx.createGain();
+    g.gain.value = 0.55 + strength * 0.7;
 
-    const env = ctx.createGain();
-    env.gain.setValueAtTime(0, t);
-    env.gain.linearRampToValueAtTime(0.16 + strength * 0.2, t + 0.002);
-    env.gain.exponentialRampToValueAtTime(0.0001, t + 0.045);
-
-    src.connect(bp).connect(env).connect(tickBus);
+    src.connect(g).connect(tickBus);
     src.start(t);
-    src.stop(t + 0.08);
-
-    // The ring the click leaves behind.
-    const ping = ctx.createOscillator();
-    ping.type = "sine";
-    ping.frequency.value = 3200 + strength * 900;
-    const pingEnv = ctx.createGain();
-    pingEnv.gain.setValueAtTime(0, t);
-    pingEnv.gain.linearRampToValueAtTime(0.05 + strength * 0.06, t + 0.002);
-    pingEnv.gain.exponentialRampToValueAtTime(0.0001, t + 0.03);
-    ping.connect(pingEnv).connect(tickBus);
-    ping.start(t);
-    ping.stop(t + 0.05);
   };
 
   const step = useCallback((dir: 1 | -1) => {
