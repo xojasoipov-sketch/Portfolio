@@ -16,6 +16,7 @@ import { trackPageview } from "../lib/analytics";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { asset } from "../lib/asset";
 import { MusicToggle } from "../components/editorial/MusicToggle";
+import { CursorGlow } from "../components/editorial/CursorGlow";
 
 /**
  * Branded 404, in the site's own editorial language rather than the generic
@@ -288,6 +289,8 @@ function RootComponent() {
       {/* Fixed to the viewport corner, so it rides above every route without
           each of them having to know about it. */}
       <MusicToggle />
+      {/* Renders nothing on a touch screen or under reduced motion. */}
+      <CursorGlow />
     </QueryClientProvider>
   );
 }

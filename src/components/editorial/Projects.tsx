@@ -50,6 +50,12 @@ const DRAG_THRESHOLD_PX = 6;
 const MAX_TICKS_PER_SEC = 22;
 
 /**
+ * Gap between one card leaving the stack and the next. Small enough that the
+ * five cards read as one gesture rather than five separate arrivals.
+ */
+const ENTRY_STAGGER_MS = 90;
+
+/**
  * The work section: the projects turn around the portrait, and clicking one
  * opens it full size.
  *
@@ -72,6 +78,39 @@ export function Projects() {
   const { ref, shown } = useReveal<HTMLElement>(0.06);
   const spotlightRef = useSpotlight<HTMLElement>();
   const worldRef = useRef<HTMLDivElement | null>(null);
+  /**
+   * "pending" is the initial state so the collapsed deck is what the markup
+   * renders -- flipping to it from JS after the ring had already painted at
+   * full radius would show the cards snapping inwards before they expanded.
+   */
+  const [entry, setEntry] = useState<"pending" | "done">("pending");
+  /**
+   * Watched separately from the section's own reveal, and at a much higher
+   * threshold: `shown` above fires at 6% of the section, which is the heading
+   * alone -- the cards would have finished blooming before the ring itself
+   * scrolled onto the screen.
+   */
+  const { ref: stageRef, shown: stageShown } = useReveal<HTMLDivElement>(0.3);
+
+  useEffect(() => {
+    // No timer guarding this. An earlier version released the deck 2.5s after
+    // mount as a safety net, which released it while the section was still
+    // thousands of pixels below the fold -- by the time anyone scrolled down,
+    // the animation had already been spent and the ring was simply there.
+    //
+    // The net was not needed anyway: useReveal sets shown immediately when
+    // IntersectionObserver is missing, and it is the same hook every reveal on
+    // the site already depends on, so a failure here could not be silent.
+    //
+    // Reduced motion still releases the deck -- it just arrives settled, with
+    // the CSS above dropping the easing.
+    if (
+      stageShown ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      setEntry("done");
+    }
+  }, [stageShown]);
   const slotsRef = useRef<(HTMLButtonElement | null)[]>([]);
   const panelRef = useRef<HTMLDivElement | null>(null);
 
@@ -589,10 +628,11 @@ export function Projects() {
         </div>
 
         <div className="ed-rise" data-shown={shown}>
-          <div className="ed-orbit-stage">
+          <div className="ed-orbit-stage" ref={stageRef}>
             <div
               className="ed-orbit-world"
               ref={worldRef}
+              data-entry={entry}
               onFocusCapture={() => setFocused(true)}
               onBlurCapture={() => setFocused(false)}
               style={{ touchAction: "pan-y" }}
@@ -620,7 +660,10 @@ export function Projects() {
                       slotsRef.current[i] = node;
                     }}
                     className="ed-orbit-slot"
-                    style={{ ["--ed-slot" as string]: `${i * STEP}deg` }}
+                    style={{
+                      ["--ed-slot" as string]: `${i * STEP}deg`,
+                      ["--ed-enter-delay" as string]: `${i * ENTRY_STAGGER_MS}ms`,
+                    }}
                     onFocus={() => bringToFront(i)}
                     onClick={() => openCard(i)}
                     aria-label={`${project.title} — loyihani ochish`}

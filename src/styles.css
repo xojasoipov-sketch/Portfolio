@@ -1364,6 +1364,59 @@ body {
   height: auto;
 }
 
+/* ---------------------------------------------------------------------------
+   Ring entry: the cards bloom out of the centre the first time the section
+   is scrolled into view, then the ring behaves exactly as it always has.
+
+   The whole animation is one number, --ed-enter, scaling the radius the slot
+   transform already used. Nothing about the ring's resting geometry, its
+   spacing, its tilt or its physics is expressed here -- at --ed-enter: 1 the
+   transform computes to the identical matrix it did before this block
+   existed, so "settled" is not an approximation of the old layout, it is the
+   old layout.
+
+   Two details are load-bearing:
+
+   - The transition is on the custom property, never on `transform`. The frame
+     loop rewrites --ed-spin every frame, and a transition on the transform
+     itself would try to ease each of those rewrites -- the ring would stop
+     tracking the drag and lag behind its own velocity.
+
+   - Every read is `var(--ed-enter, 1)` and the registration below carries
+     initial-value: 1. On a browser without @property support the property
+     stays unregistered and cannot animate; the fallback then keeps the cards
+     at full radius, so the entry is skipped rather than the transform going
+     invalid and the ring collapsing to a point.
+--------------------------------------------------------------------------- */
+@property --ed-enter {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+
+/* Set from the component before the first paint of the section, so the deck
+   is never seen expanded and then yanked back in. */
+.ed-orbit-world[data-entry="pending"] .ed-orbit-slot {
+  --ed-enter: 0.1;
+}
+
+.ed-orbit-world[data-entry="done"] .ed-orbit-slot {
+  --ed-enter: 1;
+  transition: --ed-enter 1.15s cubic-bezier(0.22, 1, 0.36, 1);
+  /* Written per slot by the component, so the cards leave the stack one after
+     another instead of expanding as a single disc. */
+  transition-delay: var(--ed-enter-delay, 0ms);
+}
+
+/* Reduced motion gets the settled ring immediately -- the component skips
+   straight to "done" and this drops the easing that would otherwise still
+   play out over a second. */
+@media (prefers-reduced-motion: reduce) {
+  .ed-orbit-world[data-entry="done"] .ed-orbit-slot {
+    transition: none;
+  }
+}
+
 .ed-orbit-slot {
   position: absolute;
   /* The tilt swings the front of the ring down the stage, so the centre sits
@@ -1385,7 +1438,8 @@ body {
      in rather than just the card -- the translateZ that follows is measured
      along an axis that has already been tipped back. */
   transform: translate(-50%, -50%) rotateX(var(--ed-orbit-tilt))
-    rotateY(calc(var(--ed-slot) + var(--ed-spin))) translateZ(var(--ed-orbit-r));
+    rotateY(calc(var(--ed-slot) + var(--ed-spin)))
+    translateZ(calc(var(--ed-orbit-r) * var(--ed-enter, 1)));
   /* --ed-depth is 0 at the back of the ring and 1 at the front; the two
      faces below each carry their own backface-visibility so the slot itself
      stays double-sided. */
@@ -1398,7 +1452,11 @@ body {
 .ed-orbit-face {
   position: relative;
   display: block;
-  transition: border-color 0.4s ease;
+  transition:
+    border-color 0.4s ease,
+    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.45s ease,
+    background 0.45s ease;
   border-radius: 1.25rem;
   border: 1px solid rgba(245, 242, 239, 0.16);
   background:
@@ -1449,9 +1507,46 @@ body {
   color: rgba(245, 242, 239, 0.35);
 }
 
+/* Hover was a 1px border-colour change and nothing else, which on a card that
+   is already rotating past you barely registered as a response at all. The
+   lift is done with translateZ rather than translateY on purpose: the slot is
+   inside a preserve-3d context tilted by --ed-orbit-tilt, so Z moves the card
+   toward the viewer *along the ring's own axis* and the highlight reads as
+   the card stepping out of the orbit. A Y translate would slide it across the
+   tilted plane and look like it had come loose.
+
+   Nothing here touches the slot's own transform, so the ring's geometry,
+   spacing and physics are exactly as before. */
 .ed-orbit-slot:hover .ed-orbit-face,
 .ed-orbit-slot:focus-visible .ed-orbit-face {
   border-color: var(--ed-red-tx);
+  transform: translateZ(18px);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(245, 242, 239, 0.12),
+      rgba(245, 242, 239, 0.03)
+    ),
+    rgba(5, 5, 5, 0.55);
+  box-shadow:
+    0 30px 60px -30px rgba(0, 0, 0, 0.9),
+    0 0 34px -8px rgba(232, 64, 74, 0.45);
+}
+
+/* The corner tally lights up with it -- a small second cue, so the state is
+   still legible for someone who cannot pick a red border out of a dark card. */
+.ed-orbit-slot:hover .ed-orbit-index,
+.ed-orbit-slot:focus-visible .ed-orbit-index {
+  color: var(--ed-offwhite);
+}
+
+/* No transform transition under reduced motion: the colour cues alone carry
+   the state. */
+@media (prefers-reduced-motion: reduce) {
+  .ed-orbit-slot:hover .ed-orbit-face,
+  .ed-orbit-slot:focus-visible .ed-orbit-face {
+    transform: none;
+  }
 }
 
 /* The outline used to be removed here outright, leaving a 1px border colour
@@ -1937,4 +2032,86 @@ body {
   .ed-orbit-dot::before {
     transition: none;
   }
+}
+
+/* ---------------------------------------------------------------------------
+   Dot-and-ring cursor (CursorGlow.tsx)
+
+   The native cursor is hidden from <html data-cursor="custom">, an attribute
+   the component sets only once its effect has run -- so a browser that never
+   executes the script keeps its real cursor rather than being left with none.
+
+   Both layers are translated in device pixels by the component and centred
+   here with a margin, which keeps the JS writing one plain translate3d and
+   nothing else per frame.
+--------------------------------------------------------------------------- */
+html[data-cursor="custom"],
+html[data-cursor="custom"] * {
+  cursor: none !important;
+}
+
+.ed-cursor-dot,
+.ed-cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  pointer-events: none;
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  /* Own layer: these move every frame and must never make the page repaint. */
+  will-change: transform;
+}
+
+.ed-cursor-dot {
+  width: 7px;
+  height: 7px;
+  margin: -3.5px 0 0 -3.5px;
+  background: var(--ed-offwhite);
+  /* Punches through a photograph or a light card, where a plain offwhite dot
+     would disappear. */
+  mix-blend-mode: difference;
+}
+
+.ed-cursor-ring {
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  /* Colours are literal rather than var(--ed-*): this element is fixed to
+     <html>, outside every section, so the surface-aware tokens would always
+     resolve to the light theme's values no matter what it is floating over.
+     The component reads the surface under the pointer into data-surface
+     instead, and the two rules below pick the pair that will actually be
+     visible against it. */
+  border: 1px solid rgba(20, 20, 20, 0.4);
+  /* Only the ring's own look animates here; its position is set from the
+     frame loop and must stay untransitioned or it would ease twice. */
+  transition:
+    opacity 0.25s ease,
+    width 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    height 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    margin 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.3s ease,
+    background-color 0.3s ease;
+}
+
+.ed-cursor-ring[data-surface="black"] {
+  border-color: rgba(245, 242, 239, 0.45);
+}
+
+/* Over anything clickable: opens up and picks up the site's red -- the darker
+   red on the cream surfaces, the brighter one on black, matching what
+   --ed-red-tx resolves to in each. */
+.ed-cursor-ring[data-hot="true"] {
+  width: 54px;
+  height: 54px;
+  margin: -27px 0 0 -27px;
+  border-color: #8e0710;
+  background: rgba(142, 7, 16, 0.08);
+}
+
+.ed-cursor-ring[data-hot="true"][data-surface="black"] {
+  border-color: #e8404a;
+  background: rgba(232, 64, 74, 0.1);
 }
