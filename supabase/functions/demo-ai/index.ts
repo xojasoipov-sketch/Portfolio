@@ -10,8 +10,15 @@
 //   - the daily quota is claimed in one atomic statement before the model is
 //     called (xbot_demo_ai_take), so two simultaneous requests cannot both
 //     slip past the ceiling.
+//
 //   - history and message lengths are capped, so one request cannot carry a
 //     large prompt through.
+//
+// Two providers, in order: a free b.ai model first, Gemini as the fallback.
+// The demo is a shop window -- it should cost nothing to run when it can, but
+// it must never be the thing that is down when someone opens the portfolio.
+// So a b.ai failure of any kind (rate limit, deposit wall, timeout, empty
+// answer) silently falls through to Gemini rather than surfacing an error.
 //
 // The key itself is read from xbot_bot_config with the service-role key the
 // edge runtime injects, exactly like the bot does, and never reaches a browser.
@@ -201,6 +208,56 @@ function isQuotaError(status: number, body: string): boolean {
   return status === 429 || /quota|resource_exhausted|rate.?limit/i.test(body);
 }
 
+/**
+ * The free tier, tried first. OpenAI-compatible chat-completions shape.
+ *
+ * The User-Agent is not decoration: b.ai sits behind Cloudflare, and a request
+ * with no UA header is rejected with "error code: 1010" before it ever reaches
+ * the API. Deno's fetch sends no UA by default, so omitting this would fail
+ * every call in production while working fine from any browser or curl.
+ */
+async function askBai(
+  key: string,
+  model: string,
+  system: string,
+  turns: Turn[],
+): Promise<{ ok: true; reply: string } | { ok: false; error: string }> {
+  try {
+    const res = await fetch("https://api.b.ai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: "system", content: system },
+          ...turns.map((t) => ({ role: t.role, content: t.content })),
+        ],
+        max_tokens: MAX_REPLY_TOKENS,
+        temperature: 0.6,
+      }),
+      signal: AbortSignal.timeout(20_000),
+    });
+    if (!res.ok) return { ok: false, error: `HTTP ${res.status}` };
+    const json = await res.json();
+    const choice = json?.choices?.[0];
+    const reply = String(choice?.message?.content ?? "").trim();
+    if (!reply) return { ok: false, error: "bo'sh javob" };
+    // Same rule as the Gemini path: a half-sentence looks broken in a demo.
+    if (choice?.finish_reason === "length") {
+      return { ok: false, error: "javob chegaraga tegdi" };
+    }
+    return { ok: true, reply };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.name : "xato" };
+  }
+}
+
 async function askGemini(
   keys: string[],
   model: string,
@@ -362,24 +419,46 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  const rawKeys = await config("GEMINI_API_KEY");
-  const keys = [
-    ...new Set(
-      (rawKeys ?? "")
-        .split(",")
-        .map((k) => k.trim())
-        .filter(Boolean),
-    ),
-  ];
-  if (!keys.length) {
-    return Response.json(
-      { ok: false, error: "AI sozlanmagan" },
-      { status: 503, headers: cors },
-    );
-  }
-  const model = (await config("GEMINI_MODEL")) ?? "gemini-3.6-flash";
+  const system = buildPrompt(business);
 
-  const result = await askGemini(keys, model, buildPrompt(business), turns);
+  // Free tier first. Anything going wrong here -- rate limit, deposit wall,
+  // timeout, empty answer -- just means Gemini answers instead, and the
+  // visitor never sees the difference.
+  let result: { ok: true; reply: string } | { ok: false; error: string } = {
+    ok: false,
+    error: "skipped",
+  };
+  const baiKey = await config("BAI_API_KEY");
+  if (baiKey) {
+    const baiModel = (await config("BAI_MODEL")) ?? "hy3";
+    result = await askBai(baiKey, baiModel, system, turns);
+    if (!result.ok) {
+      console.warn(
+        `demo-ai: b.ai unavailable (${result.error}), falling back to Gemini`,
+      );
+    }
+  }
+
+  if (!result.ok) {
+    const rawKeys = await config("GEMINI_API_KEY");
+    const keys = [
+      ...new Set(
+        (rawKeys ?? "")
+          .split(",")
+          .map((k) => k.trim())
+          .filter(Boolean),
+      ),
+    ];
+    if (!keys.length) {
+      return Response.json(
+        { ok: false, error: "AI sozlanmagan" },
+        { status: 503, headers: cors },
+      );
+    }
+    const model = (await config("GEMINI_MODEL")) ?? "gemini-3.6-flash";
+    result = await askGemini(keys, model, system, turns);
+  }
+
   if (!result.ok) {
     return Response.json(
       {
