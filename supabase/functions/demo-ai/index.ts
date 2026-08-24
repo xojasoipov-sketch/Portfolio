@@ -14,11 +14,14 @@
 //   - history and message lengths are capped, so one request cannot carry a
 //     large prompt through.
 //
-// Two providers, in order: a free b.ai model first, Gemini as the fallback.
+// Two providers, in order: b.ai's free models first, Gemini as the fallback.
 // The demo is a shop window -- it should cost nothing to run when it can, but
 // it must never be the thing that is down when someone opens the portfolio.
-// So a b.ai failure of any kind (rate limit, deposit wall, timeout, empty
-// answer) silently falls through to Gemini rather than surfacing an error.
+// So BAI_MODEL holds a list rather than one id, and each free model that is
+// out of quota hands the question to the next; only when the whole list is
+// spent does Gemini answer. A failure of any kind (rate limit, deposit wall,
+// timeout, empty answer) falls through silently -- the visitor never sees
+// which model replied, or that one was tried and refused.
 //
 // The key itself is read from xbot_bot_config with the service-role key the
 // edge runtime injects, exactly like the bot does, and never reaches a browser.
@@ -209,7 +212,30 @@ function isQuotaError(status: number, body: string): boolean {
 }
 
 /**
+ * How long the whole b.ai stage may take before the request gives up on the
+ * free tier and lets Gemini answer. Without it a long model list turns every
+ * outage into a minute of the visitor watching a spinner: five dead models at
+ * a 12s timeout each is a full minute before the fallback even starts.
+ */
+const BAI_BUDGET_MS = 24_000;
+/** Per-model timeout. Deliberately shorter than the whole-stage budget. */
+const BAI_MODEL_TIMEOUT_MS = 12_000;
+
+/**
  * The free tier, tried first. OpenAI-compatible chat-completions shape.
+ *
+ * Walks `models` in order and returns the first real answer, which is what
+ * makes the free tier survivable: every one of b.ai's refusals is per-model,
+ * not per-key -- a daily cap is 429, an unfunded premium model is 403 "Deposit
+ * required", and a metered one is 400 "credit insufficient balance". So a
+ * failure says nothing about the next model in the list, and every status is
+ * worth continuing on. That is the opposite of askGemini below, where one key
+ * failing a *non*-quota check means the request itself is malformed and the
+ * remaining keys would fail identically.
+ *
+ * Cost of that: a genuinely broken request burns one call per model rather
+ * than one in total. Bounded by BAI_BUDGET_MS, and the visitor still gets a
+ * Gemini answer either way.
  *
  * The User-Agent is not decoration: b.ai sits behind Cloudflare, and a request
  * with no UA header is rejected with "error code: 1010" before it ever reaches
@@ -218,44 +244,70 @@ function isQuotaError(status: number, body: string): boolean {
  */
 async function askBai(
   key: string,
-  model: string,
+  models: string[],
   system: string,
   turns: Turn[],
-): Promise<{ ok: true; reply: string } | { ok: false; error: string }> {
-  try {
-    const res = await fetch("https://api.b.ai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${key}`,
-        "Content-Type": "application/json",
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: "system", content: system },
-          ...turns.map((t) => ({ role: t.role, content: t.content })),
-        ],
-        max_tokens: MAX_REPLY_TOKENS,
-        temperature: 0.6,
-      }),
-      signal: AbortSignal.timeout(20_000),
-    });
-    if (!res.ok) return { ok: false, error: `HTTP ${res.status}` };
-    const json = await res.json();
-    const choice = json?.choices?.[0];
-    const reply = String(choice?.message?.content ?? "").trim();
-    if (!reply) return { ok: false, error: "bo'sh javob" };
-    // Same rule as the Gemini path: a half-sentence looks broken in a demo.
-    if (choice?.finish_reason === "length") {
-      return { ok: false, error: "javob chegaraga tegdi" };
+): Promise<
+  { ok: true; reply: string; model: string } | { ok: false; error: string }
+> {
+  const messages = [
+    { role: "system", content: system },
+    ...turns.map((t) => ({ role: t.role, content: t.content })),
+  ];
+  const deadline = Date.now() + BAI_BUDGET_MS;
+  let last = "";
+
+  for (const model of models) {
+    if (Date.now() >= deadline) {
+      last = last || "vaqt tugadi";
+      break;
     }
-    return { ok: true, reply };
-  } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.name : "xato" };
+    try {
+      const res = await fetch("https://api.b.ai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${key}`,
+          "Content-Type": "application/json",
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          messages,
+          max_tokens: MAX_REPLY_TOKENS,
+          temperature: 0.6,
+        }),
+        // Whichever expires first: this model's own patience, or what is left
+        // of the whole stage's budget.
+        signal: AbortSignal.timeout(
+          Math.max(1_000, Math.min(BAI_MODEL_TIMEOUT_MS, deadline - Date.now())),
+        ),
+      });
+      if (!res.ok) {
+        last = `${model}: HTTP ${res.status}`;
+        continue;
+      }
+      const json = await res.json();
+      const choice = json?.choices?.[0];
+      const reply = String(choice?.message?.content ?? "").trim();
+      if (!reply) {
+        last = `${model}: bo'sh javob`;
+        continue;
+      }
+      // Same rule as the Gemini path: a half-sentence looks broken in a demo.
+      // Unlike Gemini this tries the next model rather than giving up -- the
+      // ceiling here is the model's own, so another one may well fit the answer.
+      if (choice?.finish_reason === "length") {
+        last = `${model}: javob chegaraga tegdi`;
+        continue;
+      }
+      return { ok: true, reply, model };
+    } catch (err) {
+      last = `${model}: ${err instanceof Error ? err.name : "xato"}`;
+    }
   }
+  return { ok: false, error: last || "model ro'yxati bo'sh" };
 }
 
 async function askGemini(
@@ -430,11 +482,30 @@ Deno.serve(async (req: Request) => {
   };
   const baiKey = await config("BAI_API_KEY");
   if (baiKey) {
-    const baiModel = (await config("BAI_MODEL")) ?? "hy3";
-    result = await askBai(baiKey, baiModel, system, turns);
-    if (!result.ok) {
+    // A comma-separated list, tried in order, so one model hitting its daily
+    // cap hands the next one the question instead of the visitor an error.
+    // Deduplicated because a repeated id would only spend the stage's time
+    // budget re-asking something that just refused.
+    const baiModels = [
+      ...new Set(
+        ((await config("BAI_MODEL")) ?? "hy3")
+          .split(",")
+          .map((m) => m.trim())
+          .filter(Boolean),
+      ),
+    ];
+    const bai = await askBai(baiKey, baiModels, system, turns);
+    if (bai.ok) {
+      result = bai;
+      // Which model actually answered is the only way to tell from the logs
+      // that the chain is rotating rather than the first entry carrying
+      // everything -- there is nothing in the response itself to show it.
+      if (bai.model !== baiModels[0]) {
+        console.log(`demo-ai: b.ai fell through to ${bai.model}`);
+      }
+    } else {
       console.warn(
-        `demo-ai: b.ai unavailable (${result.error}), falling back to Gemini`,
+        `demo-ai: b.ai unavailable (${bai.error}), falling back to Gemini`,
       );
     }
   }
