@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as XizmatlarRouteImport } from './routes/xizmatlar'
 import { Route as DemoRouteImport } from './routes/demo'
 import { Route as CvRouteImport } from './routes/cv'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 
 const XizmatlarRoute = XizmatlarRouteImport.update({
@@ -29,6 +30,11 @@ const CvRoute = CvRouteImport.update({
   path: '/cv',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -37,12 +43,14 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/cv': typeof CvRoute
   '/demo': typeof DemoRoute
   '/xizmatlar': typeof XizmatlarRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/cv': typeof CvRoute
   '/demo': typeof DemoRoute
   '/xizmatlar': typeof XizmatlarRoute
@@ -50,20 +58,22 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/cv': typeof CvRoute
   '/demo': typeof DemoRoute
   '/xizmatlar': typeof XizmatlarRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/cv' | '/demo' | '/xizmatlar'
+  fullPaths: '/' | '/admin' | '/cv' | '/demo' | '/xizmatlar'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/cv' | '/demo' | '/xizmatlar'
-  id: '__root__' | '/' | '/cv' | '/demo' | '/xizmatlar'
+  to: '/' | '/admin' | '/cv' | '/demo' | '/xizmatlar'
+  id: '__root__' | '/' | '/admin' | '/cv' | '/demo' | '/xizmatlar'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
   CvRoute: typeof CvRoute
   DemoRoute: typeof DemoRoute
   XizmatlarRoute: typeof XizmatlarRoute
@@ -92,6 +102,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CvRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -104,6 +121,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
   CvRoute: CvRoute,
   DemoRoute: DemoRoute,
   XizmatlarRoute: XizmatlarRoute,

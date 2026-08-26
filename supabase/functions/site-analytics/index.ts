@@ -54,6 +54,19 @@ function deviceFrom(ua: string): "mobile" | "tablet" | "desktop" | "unknown" {
   return "desktop";
 }
 
+/** Same table every other function in this project reads its admin-facing
+ *  settings from, rather than a platform secret -- there is no tool in this
+ *  project's workflow for setting a Supabase project secret directly, but
+ *  writing a row here is one SQL statement away. */
+async function config(key: string): Promise<string | null> {
+  const { data } = await db
+    .from("xbot_bot_config")
+    .select("value")
+    .eq("key", key)
+    .maybeSingle();
+  return (data?.value as string | null) ?? null;
+}
+
 async function visitorHash(ip: string, ua: string): Promise<string> {
   // The pepper keeps the hash from being brute-forceable from an IP guess;
   // the date component makes it rotate every day so it cannot follow anyone.
@@ -75,13 +88,24 @@ Deno.serve(async (req: Request) => {
     return new Response(null, { status: 204, headers: cors });
   }
 
-  // ---- Admin read: GET /?key=<TELEGRAM_WEBHOOK_SECRET>&days=30 ----------
+  // Every response below carries `cors`: unlike the POST path, this one is
+  // meant to be called from the deployed /admin dashboard's own fetch(), and
+  // a browser discards a cross-origin response body with no
+  // Access-Control-Allow-Origin header on it, 401s and 500s included.
+  // ---- Admin read: GET /?key=<ANALYTICS_DASHBOARD_KEY>&days=30 ----------
+  //
+  // A dedicated key, not TELEGRAM_WEBHOOK_SECRET: this one is meant to be
+  // typed into the /admin dashboard by hand, so it needs to be a value that
+  // can actually be handed to the site owner. Reusing the webhook secret
+  // would have meant either exposing that (rotating it would then also
+  // break Telegram's webhook signature check) or never being able to tell
+  // the owner the admin key at all.
   if (req.method === "GET") {
     const url = new URL(req.url);
     const key = url.searchParams.get("key");
-    const adminKey = Deno.env.get("TELEGRAM_WEBHOOK_SECRET");
+    const adminKey = await config("ANALYTICS_DASHBOARD_KEY");
     if (!adminKey || key !== adminKey) {
-      return Response.json({ ok: false, error: "unauthorized" }, { status: 401 });
+      return Response.json({ ok: false, error: "unauthorized" }, { status: 401, headers: cors });
     }
     const days = Math.min(Math.max(Number(url.searchParams.get("days") ?? 30), 1), 365);
     const since = new Date(Date.now() - days * 86_400_000).toISOString();
@@ -90,10 +114,11 @@ Deno.serve(async (req: Request) => {
       .from("xbot_site_pageviews")
       .select("path,visitor_hash,device,is_telegram,referrer,created_at")
       .gte("created_at", since)
+      .order("created_at", { ascending: false })
       .limit(50_000);
 
     if (error) {
-      return Response.json({ ok: false, error: error.message }, { status: 500 });
+      return Response.json({ ok: false, error: error.message }, { status: 500, headers: cors });
     }
 
     const rows = data ?? [];
@@ -107,24 +132,54 @@ Deno.serve(async (req: Request) => {
         Object.entries(out).sort((a, b) => b[1] - a[1]).slice(0, 12),
       );
     };
+    const hostOf = (referrer: string | null) => {
+      if (!referrer) return null;
+      try {
+        return new URL(referrer).hostname;
+      } catch {
+        return null;
+      }
+    };
 
-    return Response.json({
-      ok: true,
-      days,
-      pageviews: rows.length,
-      visitors: new Set(rows.map((r) => r.visitor_hash)).size,
-      telegram: rows.filter((r) => r.is_telegram).length,
-      paths: tally((r) => r.path),
-      devices: tally((r) => r.device),
-      referrers: tally((r) => {
-        if (!r.referrer) return null;
-        try {
-          return new URL(r.referrer).hostname;
-        } catch {
-          return null;
-        }
-      }),
-    });
+    // One count per calendar day (UTC), oldest first, for a trend line. Built
+    // from the same rows already in memory rather than a second query.
+    const byDay: Record<string, number> = {};
+    for (const r of rows) {
+      const day = r.created_at.slice(0, 10);
+      byDay[day] = (byDay[day] ?? 0) + 1;
+    }
+
+    // The closest honest answer to "who visited": rows already come back
+    // newest-first, capped well short of the 50k the query above allows so
+    // the dashboard payload stays small. Only the first 6 hex characters of
+    // visitor_hash ship, and only so two rows from the same anonymous
+    // visitor read as one visit in the feed -- it is one SHA-256 among an
+    // unknown IP+UA+pepper input and cannot be reversed to a person, but
+    // there is no reason to send more of it than that grouping needs.
+    const recent = rows.slice(0, 100).map((r) => ({
+      time: r.created_at,
+      path: r.path,
+      device: r.device,
+      telegram: r.is_telegram,
+      referrer: hostOf(r.referrer),
+      visitor: r.visitor_hash.slice(0, 6),
+    }));
+
+    return Response.json(
+      {
+        ok: true,
+        days,
+        pageviews: rows.length,
+        visitors: new Set(rows.map((r) => r.visitor_hash)).size,
+        telegram: rows.filter((r) => r.is_telegram).length,
+        paths: tally((r) => r.path),
+        devices: tally((r) => r.device),
+        referrers: tally((r) => hostOf(r.referrer)),
+        byDay,
+        recent,
+      },
+      { headers: cors },
+    );
   }
 
   if (req.method !== "POST") {

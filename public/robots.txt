@@ -1,5 +1,9 @@
 # Saidburxon Xojasoipov — portfolio
 User-agent: *
 Allow: /
+# Private visitor dashboard, gated on an admin key -- this line is
+# defense-in-depth for crawlers that respect it, not the real access
+# control, which lives in the page and the API it calls.
+Disallow: /admin
 
 Sitemap: https://xojasoipov-sketch.github.io/Portfolio/sitemap.xml

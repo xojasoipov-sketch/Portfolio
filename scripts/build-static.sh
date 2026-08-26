@@ -7,6 +7,13 @@ set -euo pipefail
 ROOT="${1:-$PWD}"
 PORT="${PORT:-3179}"
 ROUTES=("/" "/xizmatlar" "/cv" "/demo")
+# Prerendered so a direct visit resolves (GitHub Pages has no server-side
+# routing, and 404.html -- see step 4 below -- ships with no <script>, so
+# there is no client-side fallback to catch an unlisted path). Kept out of
+# ROUTES itself because that array also drives the sitemap in step 5, and
+# this page carries its own noindex meta and a robots.txt disallow on top of
+# the real access control, which is the admin key the page gates on.
+EXTRA_ROUTES=("/admin")
 
 cd "$ROOT"
 
@@ -47,7 +54,7 @@ if [ "$ready" -ne 1 ]; then
 fi
 
 # 3. Harvest each route as static HTML into the public dir
-for route in "${ROUTES[@]}"; do
+for route in "${ROUTES[@]}" "${EXTRA_ROUTES[@]}"; do
   if [ "$route" = "/" ]; then out=".output/public/index.html"
   else out=".output/public${route%/}/index.html"; mkdir -p "$(dirname "$out")"
   fi
