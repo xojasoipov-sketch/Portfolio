@@ -24,6 +24,10 @@ import { clampMessage, looksLikeSpam } from "../../security/validation.js";
 import { logger } from "../../utils/logger.js";
 import { catalogKeyboard, cvKeyboard, handoffKeyboard, leadConfirmKeyboard, portfolioKeyboard } from "../keyboards.js";
 import { t } from "../i18n.js";
+import { env } from "../../config.js";
+import { isAdmin } from "../../db/users.js";
+import { getAdminSession } from "../../db/adminSessions.js";
+import { processAdminSessionText } from "./adminCatalog.js";
 
 const MENU_LOOKUP: Record<string, "portfolio" | "ai" | "hire" | "cv" | "contact" | "catalog"> = {};
 for (const lang of ["uz", "en"] as const) {
@@ -49,6 +53,17 @@ export async function handleTextMessage(ctx: Context, user: UserRow) {
   if (verdict === "throttle_silent") return;
   if (verdict === "throttle_notice") {
     await ctx.reply(t(user.language, "rateLimited"));
+    return;
+  }
+
+  // An admin mid-way through the catalog/packages panel (adminCatalog.ts) has
+  // left a pending session row -- this text is the field value they were
+  // asked for, not a question for the AI. Re-checked against isAdmin() here
+  // too, not just trusted from the row's existence, in case admin status was
+  // revoked while the session was open.
+  const pendingAdminSession = await getAdminSession(user.telegram_user_id);
+  if (pendingAdminSession && (await isAdmin(user.telegram_user_id, env.TELEGRAM_ADMIN_IDS))) {
+    await processAdminSessionText(ctx, user.telegram_user_id, pendingAdminSession, text);
     return;
   }
 

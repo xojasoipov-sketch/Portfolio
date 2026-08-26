@@ -59,3 +59,17 @@ export async function isAdmin(telegramUserId: number, envAdminIds: number[]): Pr
     .maybeSingle();
   return Boolean(data);
 }
+
+/** One page of /start users for the in-bot admin panel, newest-active first. */
+export async function listRecentUsers(
+  limit: number,
+  offset: number,
+): Promise<{ users: UserRow[]; total: number }> {
+  const { data, error, count } = await db
+    .from("xbot_users")
+    .select("*", { count: "exact" })
+    .order("last_seen_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+  if (error) throw error;
+  return { users: (data as UserRow[]) ?? [], total: count ?? 0 };
+}

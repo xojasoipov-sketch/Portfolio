@@ -101,5 +101,11 @@ export function adminPanelKeyboard(): InlineKeyboard {
     .text("💼 Leads", "admin_leads:ALL")
     .text("🔥 Hot Leads", "admin_leads:HOT")
     .row()
-    .text("🆕 New Leads", "admin_leads:NEW");
+    .text("🆕 New Leads", "admin_leads:NEW")
+    .row()
+    .text("💰 Xizmatlar narxlari", "adm:cat")
+    .row()
+    .text("📦 Paketlar", "adm:pk")
+    .row()
+    .text("👥 Foydalanuvchilar", "adm:u:0");
 }

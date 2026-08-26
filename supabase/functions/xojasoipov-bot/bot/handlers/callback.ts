@@ -11,6 +11,7 @@ import { formatWeeklyReport } from "../commands/admin.ts";
 import { buildLeadNotificationText } from "../../notifications/admin.ts";
 import { logger } from "../../utils/logger.ts";
 import { handleChannelCallback } from "./channel.ts";
+import { handleAdminPanelCallback } from "./adminCatalog.ts";
 import { t } from "../i18n.ts";
 
 /**
@@ -52,6 +53,17 @@ export async function handleCallbackQuery(ctx: Context, user: UserRow) {
       return;
     }
     return handleAdminCallback(ctx, data);
+  }
+
+  // The catalog/packages/users panel (services, prices, packages) -- same
+  // forwarded-button caution as every other admin-shaped callback above.
+  if (data.startsWith("adm:")) {
+    const admin = await isAdmin(user.telegram_user_id, env.TELEGRAM_ADMIN_IDS);
+    if (!admin) {
+      await ctx.answerCallbackQuery({ text: t(user.language, "notAdmin"), show_alert: true });
+      return;
+    }
+    return handleAdminPanelCallback(ctx, data);
   }
 
   await ctx.answerCallbackQuery();
