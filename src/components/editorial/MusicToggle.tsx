@@ -13,35 +13,14 @@ const VOLUME = 0.55;
 const FADE_MS = 700;
 
 /**
- * Remembers a visitor who switched the music off, so a reload does not force
- * it back on them. Only the "off" choice is stored: leaving it on is the
- * default, so there is nothing to remember about it.
- */
-const OFF_KEY = "sx-music:v1:off";
-
-function mutedByChoice(): boolean {
-  try {
-    if (typeof window === "undefined") return false;
-    return window.localStorage.getItem(OFF_KEY) === "1";
-  } catch {
-    // Private mode or site data blocked -- treat as "no stored choice".
-    return false;
-  }
-}
-
-function rememberChoice(off: boolean) {
-  try {
-    if (off) window.localStorage.setItem(OFF_KEY, "1");
-    else window.localStorage.removeItem(OFF_KEY);
-  } catch {
-    /* nothing to do: the choice just will not survive this reload */
-  }
-}
-
-/**
  * A turntable in the corner of every page. The record starts on its own when
  * a visitor arrives; anyone who would rather not hear it taps the deck once
- * and it lifts the arm and stays off, on this visit and on the next.
+ * and it lifts the arm for the rest of this visit. Nothing is remembered
+ * across visits -- every fresh load, from anyone, including someone who
+ * paused it last time, starts the record again on their first touch. An
+ * earlier version stored the "off" choice in localStorage and respected it
+ * on the next load; that was deliberately removed so the music never stays
+ * silent for a returning visitor who never got a chance to hear it play.
  *
  * Autoplay cannot simply be called and trusted. Every current browser refuses
  * to start audible media before the page has seen a user gesture, and the
@@ -217,8 +196,6 @@ export function MusicToggle() {
    *   and the click that follows stop it again: pressed play, got silence.
    */
   useEffect(() => {
-    if (mutedByChoice()) return;
-
     let cancelled = false;
     const events = ["pointerup", "click", "touchend"] as const;
 
@@ -232,13 +209,6 @@ export function MusicToggle() {
     function onGesture(e: Event) {
       const target = e.target as Element | null;
       if (target?.closest?.(".ed-music-toggle")) return;
-      // Re-checked here, not just at mount: the visitor may have switched the
-      // music off since. Without this, turning it off and then scrolling
-      // turned it straight back on.
-      if (mutedByChoice()) {
-        disarm();
-        return;
-      }
       void start().then((ok) => {
         if (ok) disarm();
       });
@@ -266,19 +236,15 @@ export function MusicToggle() {
 
   const toggle = async () => {
     if (playing) {
-      rememberChoice(true);
-      // Switching it off has to also take down the first-gesture fallback, or
-      // the next scroll or tap starts it again -- with localStorage saying
-      // "off" while the audio plays.
+      // Takes down the first-gesture fallback too, or the next scroll or tap
+      // on the page would start the music right back up a moment after this
+      // press turned it off -- nothing is remembered past this visit, but a
+      // pause is still a pause for the rest of it.
       disarmRef.current?.();
       stop();
       return;
     }
-    // Cleared only once something actually plays: a refused start that had
-    // already cleared the flag would leave a visitor who opted out with
-    // neither music nor their preference.
-    const ok = await start();
-    if (ok) rememberChoice(false);
+    await start();
   };
 
   return (
