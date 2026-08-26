@@ -1,25 +1,33 @@
 /**
- * A private dashboard onto site-analytics' admin read -- the closest honest
- * answer this project can give to "who has visited and what did they look
- * at": since the tracker deliberately stores no IP, no cookie and no stable
+ * A private dashboard with two sections behind one key.
+ *
+ * Site visitors (site-analytics): the closest honest answer this project can
+ * give to "who has visited and what did they look at" for the public site --
+ * since the tracker deliberately stores no IP, no cookie and no stable
  * identifier (see the migration comment on xbot_site_pageviews), "who" can
- * only ever mean an anonymous visitor tag, never a name. What this page
- * actually shows: how many visits, from where, on what device, through
- * which pages, over time, and a reverse-chronological feed of the visits
- * themselves grouped by that anonymous tag.
+ * only ever mean an anonymous visitor tag, never a name. What that section
+ * shows: how many visits, from where, on what device, through which pages,
+ * over time, and a reverse-chronological feed grouped by that anonymous tag.
+ *
+ * Bot users (bot-users): a genuinely different kind of data. Pressing /start
+ * on the Telegram bot hands it a real Telegram identity -- the bot already
+ * stores that name in xbot_users on every interaction (db/users.ts), this
+ * page just shows it back to the one person who is allowed to see it.
  *
  * Not linked from the nav, excluded from the sitemap and robots.txt, and
  * carries its own noindex meta -- but the real boundary is the key: nothing
- * below this component ever renders without one that the edge function has
- * already accepted. The key is entered once and kept in this browser's own
- * localStorage (this origin only) so it does not have to be retyped on
+ * below this component ever renders without one that the edge functions
+ * have already accepted. The key is entered once and kept in this browser's
+ * own localStorage (this origin only) so it does not have to be retyped on
  * every visit; it is never hardcoded into this file.
  */
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 
-const ENDPOINT =
+const ANALYTICS_ENDPOINT =
   "https://tomkxsdkerpbvlumubbg.supabase.co/functions/v1/site-analytics";
+const BOT_USERS_ENDPOINT =
+  "https://tomkxsdkerpbvlumubbg.supabase.co/functions/v1/bot-users";
 
 const KEY_STORAGE = "sx-admin:v1:key";
 
@@ -42,6 +50,23 @@ interface AnalyticsPayload {
     telegram: boolean;
     referrer: string | null;
     visitor: string;
+  }[];
+}
+
+interface BotUsersPayload {
+  ok: true;
+  total: number;
+  bySource: Record<string, number>;
+  users: {
+    telegram_user_id: number;
+    telegram_username: string | null;
+    first_name: string | null;
+    language: string;
+    source: string;
+    is_admin: boolean;
+    is_blocked: boolean;
+    last_seen_at: string;
+    created_at: string;
   }[];
 }
 
@@ -93,6 +118,7 @@ function AdminDashboard() {
   const [key, setKey] = useState("");
   const [days, setDays] = useState<(typeof RANGES)[number]>(30);
   const [data, setData] = useState<AnalyticsPayload | null>(null);
+  const [botUsers, setBotUsers] = useState<BotUsersPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -101,21 +127,27 @@ function AdminDashboard() {
     if (stored) setKey(stored);
   }, []);
 
+  /** Both endpoints share one key, so an invalid one is reported and
+   *  cleared once no matter which of the two calls discovers it first. */
+  const rejectKey = (message: string) => {
+    clearStoredKey();
+    setKey("");
+    setError(message);
+  };
+
   useEffect(() => {
     if (!key) return;
     let cancelled = false;
     setLoading(true);
     setError(null);
 
-    fetch(`${ENDPOINT}?key=${encodeURIComponent(key)}&days=${days}`)
+    fetch(`${ANALYTICS_ENDPOINT}?key=${encodeURIComponent(key)}&days=${days}`)
       .then(async (res) => {
         if (cancelled) return;
         if (res.status === 401) {
           // A stored key that no longer works (rotated, or never valid) --
           // drop it rather than leave the visitor stuck retrying silently.
-          clearStoredKey();
-          setKey("");
-          setError("Kalit noto'g'ri yoki eskirgan.");
+          rejectKey("Kalit noto'g'ri yoki eskirgan.");
           return;
         }
         if (!res.ok) {
@@ -137,6 +169,33 @@ function AdminDashboard() {
       cancelled = true;
     };
   }, [key, days]);
+
+  // Independent of `days` -- the bot's user list is not a time-ranged report,
+  // it is everyone who has ever pressed /start.
+  useEffect(() => {
+    if (!key) return;
+    let cancelled = false;
+
+    fetch(`${BOT_USERS_ENDPOINT}?key=${encodeURIComponent(key)}`)
+      .then(async (res) => {
+        if (cancelled) return;
+        if (res.status === 401) {
+          rejectKey("Kalit noto'g'ri yoki eskirgan.");
+          return;
+        }
+        if (!res.ok) return;
+        const json = (await res.json()) as BotUsersPayload;
+        setBotUsers(json);
+      })
+      .catch(() => {
+        /* the site-visitors section already surfaces a connection error;
+           no need to duplicate it for this one */
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [key]);
 
   if (!key) {
     return <KeyGate onSubmit={setKey} error={error} />;
@@ -255,6 +314,14 @@ function AdminDashboard() {
               <ActivityFeed rows={data.recent} />
             </Section>
           </>
+        )}
+
+        {botUsers && (
+          <Section
+            title={`Bot foydalanuvchilari — ${botUsers.total.toLocaleString("uz-UZ")}`}
+          >
+            <BotUsersList users={botUsers.users} />
+          </Section>
         )}
       </div>
     </main>
@@ -459,6 +526,52 @@ function ActivityFeed({ rows }: { rows: AnalyticsPayload["recent"] }) {
             <span>{r.device}</span>
             {r.telegram && <span className="ed-admin-feed-tg">· Telegram</span>}
             {r.referrer && <span>· {r.referrer}</span>}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Reuses the feed row layout, with the name Telegram gave in place of the
+ *  anonymous tag and path -- this is the one place on this page that shows
+ *  a real name, because /start is the visitor handing it over. */
+function BotUsersList({ users }: { users: BotUsersPayload["users"] }) {
+  if (users.length === 0) {
+    return (
+      <p style={{ opacity: 0.5, fontSize: "0.85rem" }}>
+        Hali hech kim /start bosmagan.
+      </p>
+    );
+  }
+  return (
+    <div>
+      {users.map((u) => (
+        <div key={u.telegram_user_id} className="ed-admin-feed-row">
+          <span className="ed-admin-feed-time">
+            {relativeTime(u.last_seen_at)}
+          </span>
+          <span className="ed-admin-feed-path">
+            {u.first_name || "(ism yo'q)"}
+            {u.is_admin && (
+              <span
+                className="ed-admin-feed-tg"
+                style={{ marginLeft: "0.5rem" }}
+              >
+                admin
+              </span>
+            )}
+            {u.is_blocked && (
+              <span style={{ opacity: 0.5, marginLeft: "0.5rem" }}>
+                (bloklangan)
+              </span>
+            )}
+          </span>
+          <span className="ed-admin-feed-meta">
+            {u.telegram_username && <span>{u.telegram_username}</span>}
+            <span>·</span>
+            <span>{u.language}</span>
+            <span>· {u.source}</span>
           </span>
         </div>
       ))}
