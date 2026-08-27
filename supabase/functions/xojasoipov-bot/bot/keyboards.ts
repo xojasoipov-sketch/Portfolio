@@ -23,8 +23,14 @@ const CV_URL = `${SITE_ORIGIN}/cv`;
  */
 export const CV_PDF_URL = `${SITE_ORIGIN}/Saidburxon-Xojasoipov-CV.pdf`;
 
-export function mainMenuKeyboard(lang: Language): Keyboard {
-  return new Keyboard()
+/**
+ * `isAdmin` only adds the "⚙️ Admin panel" row -- it never removes anything
+ * client-facing, so a revoked admin just loses the row on their next /start
+ * (the /admin command and every "adm:"/"admin_*" callback still re-check
+ * isAdmin() themselves regardless of what this keyboard shows).
+ */
+export function mainMenuKeyboard(lang: Language, isAdmin = false): Keyboard {
+  const kb = new Keyboard()
     .text(t(lang, "menuPortfolio"))
     .text(t(lang, "menuAI"))
     .row()
@@ -32,8 +38,9 @@ export function mainMenuKeyboard(lang: Language): Keyboard {
     .text(t(lang, "menuCV"))
     .row()
     .text(t(lang, "menuContact"))
-    .text(t(lang, "menuCatalog"))
-    .resized();
+    .text(t(lang, "menuCatalog"));
+  if (isAdmin) kb.row().text(t(lang, "menuAdmin"));
+  return kb.resized();
 }
 
 /** Katalog tugmasi bosilganda — to'g'ridan-to'g'ri xizmatlar katalogi sahifasiga, mini ilova sifatida ochiladi. */
