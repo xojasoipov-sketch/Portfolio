@@ -28,8 +28,9 @@ import { env } from "../../config.js";
 import { isAdmin } from "../../db/users.js";
 import { getAdminSession } from "../../db/adminSessions.js";
 import { processAdminSessionText } from "./adminCatalog.js";
+import { handleAdminPanel } from "../commands/admin.js";
 
-const MENU_LOOKUP: Record<string, "portfolio" | "ai" | "hire" | "cv" | "contact" | "catalog"> = {};
+const MENU_LOOKUP: Record<string, "portfolio" | "ai" | "hire" | "cv" | "contact" | "catalog" | "admin"> = {};
 for (const lang of ["uz", "en"] as const) {
   MENU_LOOKUP[t(lang, "menuPortfolio")] = "portfolio";
   MENU_LOOKUP[t(lang, "menuAI")] = "ai";
@@ -37,6 +38,7 @@ for (const lang of ["uz", "en"] as const) {
   MENU_LOOKUP[t(lang, "menuCV")] = "cv";
   MENU_LOOKUP[t(lang, "menuContact")] = "contact";
   MENU_LOOKUP[t(lang, "menuCatalog")] = "catalog";
+  MENU_LOOKUP[t(lang, "menuAdmin")] = "admin";
 }
 
 export async function handleTextMessage(ctx: Context, user: UserRow) {
@@ -75,9 +77,22 @@ export async function handleTextMessage(ctx: Context, user: UserRow) {
   await handleFreeText(ctx, user, clampMessage(text));
 }
 
-async function handleMenuAction(ctx: Context, user: UserRow, action: "portfolio" | "ai" | "hire" | "cv" | "contact" | "catalog") {
+async function handleMenuAction(
+  ctx: Context,
+  user: UserRow,
+  action: "portfolio" | "ai" | "hire" | "cv" | "contact" | "catalog" | "admin",
+) {
   const lang = user.language;
   switch (action) {
+    // The button only ever renders for an admin (mainMenuKeyboard), but the
+    // tap is re-checked anyway -- same caution as every "adm:"/"admin_*"
+    // callback: admin status can be revoked after the keyboard was sent, and
+    // a forwarded button press shouldn't be trusted just because it exists.
+    case "admin": {
+      if (!(await isAdmin(user.telegram_user_id, env.TELEGRAM_ADMIN_IDS))) return;
+      await handleAdminPanel(ctx);
+      return;
+    }
     case "portfolio":
       await trackEvent(user.id, "mini_app_open");
       await ctx.reply(t(lang, "menuPortfolio"), { reply_markup: portfolioKeyboard(lang) });
