@@ -1,0 +1,12 @@
+# Minimal project config so the Supabase CLI can deploy from CI without an
+# interactive `supabase link`. Only the settings that must not drift are
+# declared here; everything else stays at the CLI's defaults.
+project_id = "tomkxsdkerpbvlumubbg"
+
+# Telegram sends no Supabase JWT, so the webhook has to stay reachable without
+# one -- turning this on would make Telegram's deliveries 401 and silently kill
+# the bot. The auth boundary is grammy's X-Telegram-Bot-Api-Secret-Token
+# comparison instead; see the function's index.ts, which refuses to boot when
+# TELEGRAM_WEBHOOK_SECRET is missing rather than accepting unsigned updates.
+[functions.xojasoipov-bot]
+verify_jwt = false

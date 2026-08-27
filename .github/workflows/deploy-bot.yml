@@ -1,0 +1,95 @@
+# Deploys the Telegram bot, which runs as the Supabase Edge Function
+# "xojasoipov-bot" (webhook mode -- Telegram POSTs each update to it).
+#
+# Why this workflow exists: the function used to be deployed by hand. On
+# 2026-08-26 a deploy left index.ts as the single line "// placeholder", so the
+# module never called Deno.serve() and the function accepted connections but
+# never answered. Telegram reported "Read timeout expired" and the bot was
+# simply dead -- with no failed build, no red check and no error log anywhere
+# to say so. Deploying from the committed source, and then proving the
+# deployment can actually boot, is what makes that failure impossible to repeat
+# quietly.
+name: Deploy Telegram bot
+
+on:
+  push:
+    branches: [claude/portfolio-template-github-hrvgty]
+    paths:
+      - "bot/src/**"
+      - "supabase/functions/xojasoipov-bot/**"
+      - "supabase/config.toml"
+      - ".github/workflows/deploy-bot.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Two overlapping deploys would race to be the live version; queue instead of
+# cancelling so a finished deploy is never discarded half-applied.
+concurrency:
+  group: deploy-bot
+  cancel-in-progress: false
+
+env:
+  SUPABASE_PROJECT_REF: tomkxsdkerpbvlumubbg
+  FUNCTION_SLUG: xojasoipov-bot
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Fail before touching production rather than after: an unset secret
+      # otherwise surfaces as an opaque CLI auth error partway through.
+      - name: Require SUPABASE_ACCESS_TOKEN
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
+            echo "::error::The SUPABASE_ACCESS_TOKEN repository secret is not set."
+            echo "Create a personal access token at https://supabase.com/dashboard/account/tokens"
+            echo "and add it under Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+
+      # bot/src is the single source of the business logic; the Deno tree under
+      # supabase/functions is generated from it by scripts/port-to-deno.mjs.
+      # Deploying a drifted tree would ship code that never went through review
+      # in the form it runs in, so the mismatch is a build failure.
+      - name: Check the Deno tree matches bot/src
+        run: node scripts/port-to-deno.mjs --check
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Deploy the function
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: supabase functions deploy "$FUNCTION_SLUG" --project-ref "$SUPABASE_PROJECT_REF"
+
+      # A successful deploy only means the files were uploaded. The entrypoint
+      # answers GET with a boot report ({"ok":true,...}), which is the one
+      # signal that says the bot can actually serve an update -- exactly what
+      # the placeholder deploy above would have failed. Retried because a cold
+      # isolate boots the bot and reads its config from Postgres first.
+      - name: Verify the bot can boot
+        run: |
+          url="https://$SUPABASE_PROJECT_REF.supabase.co/functions/v1/$FUNCTION_SLUG"
+          for attempt in 1 2 3 4 5; do
+            code=$(curl -sS -o body.json -w '%{http_code}' --max-time 60 "$url" || echo 000)
+            echo "attempt $attempt -> HTTP $code"
+            cat body.json 2>/dev/null || true
+            echo
+            if [ "$code" = "200" ]; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::The function never returned 200 -- the deployed bot cannot boot."
+          exit 1
