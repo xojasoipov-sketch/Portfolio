@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 interface TelegramWebApp {
   ready(): void;
   expand(): void;
+  requestFullscreen?(): void;
   disableVerticalSwipes?(): void;
   setHeaderColor?(color: string): void;
   setBackgroundColor?(color: string): void;
@@ -49,9 +50,14 @@ export function useTelegramMiniApp(): boolean {
     document.documentElement.dataset.telegram = "true";
 
     // ready() dismisses Telegram's loading placeholder; expand() opens to full
-    // height instead of the default half-sheet.
+    // height instead of the default half-sheet -- but on Telegram Desktop the
+    // Mini App still renders in a small, roughly-phone-sized floating window
+    // regardless of expand(). requestFullscreen() (Bot API 8.0+) is what
+    // actually makes Desktop clients open the window at a desktop-appropriate
+    // size; guarded with `?.()` since older clients simply don't have it.
     tg.ready();
     tg.expand();
+    tg.requestFullscreen?.();
 
     // The portfolio is one long scrolling page, so Telegram's swipe-to-close
     // gesture fights the content. Not available on older clients.
