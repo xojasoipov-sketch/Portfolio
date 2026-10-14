@@ -3,6 +3,8 @@ import sadiprimeShot from "@/assets/projects/sadiprime.webp";
 import pariShot from "@/assets/projects/pari.webp";
 import dliShot from "@/assets/projects/dli.webp";
 import businessHubShot from "@/assets/projects/business-hub.webp";
+import hisobimShot from "@/assets/projects/hisobim.webp";
+import sahnaStudioShot from "@/assets/projects/sahna-studio.webp";
 
 /**
  * Project data — sourced from the actual repositories, not marketing copy.
@@ -129,6 +131,7 @@ export const PROJECTS: Project[] = [
     detail:
       "Hisob-kitobni tartibli yuritish uchun ishlab chiqilgan loyiha. Batafsil tavsif va texnologiyalar muallif tomonidan tasdiqlanadi.",
     tech: [],
+    shot: hisobimShot,
   },
   {
     id: "sahna-studio",
@@ -140,5 +143,6 @@ export const PROJECTS: Project[] = [
     detail:
       "Studiya loyihasi sifatida ishlab chiqilgan. Batafsil tavsif, texnologiyalar va havola muallif tomonidan tasdiqlanadi.",
     tech: [],
+    shot: sahnaStudioShot,
   },
 ];
