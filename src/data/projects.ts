@@ -120,4 +120,25 @@ export const PROJECTS: Project[] = [
     demo: "/demo",
     shot: businessHubShot,
   },
+  {
+    id: "hisobim",
+    index: "06",
+    title: "HISOBIM",
+    category: "Moliya / Hisob-kitob",
+    summary: "Shaxsiy hisob-kitob loyihasi.",
+    detail:
+      "Hisob-kitobni tartibli yuritish uchun ishlab chiqilgan loyiha. Batafsil tavsif va texnologiyalar muallif tomonidan tasdiqlanadi.",
+    tech: [],
+  },
+  {
+    id: "sahna-studio",
+    index: "07",
+    title: "SAHNA",
+    titleAlt: "STUDIO",
+    category: "Studio / Kreativ loyiha",
+    summary: "Sahna va vizual kontent yaratish uchun studiya loyihasi.",
+    detail:
+      "Studiya loyihasi sifatida ishlab chiqilgan. Batafsil tavsif, texnologiyalar va havola muallif tomonidan tasdiqlanadi.",
+    tech: [],
+  },
 ];

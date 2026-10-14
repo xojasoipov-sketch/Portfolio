@@ -8,8 +8,8 @@ import { useSpotlight } from "./useSpotlight";
 import { Arrow } from "./icons";
 
 /**
- * One slot per project, so the ring has five cards and 72 degrees between
- * neighbours.
+ * One slot per project, so the ring has one card per project and an equal
+ * share of the circle between neighbours (360 / count degrees).
  *
  * The ring carried each project twice before, which halved the spacing and put
  * all five on the front half at once -- read as one clump rather than a
