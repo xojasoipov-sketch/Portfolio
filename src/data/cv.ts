@@ -127,6 +127,21 @@ export const CV_PROJECTS: CvProject[] = [
     // portfolio's work section instead.
     link: "portfolio saytidagi jonli demo",
   },
+  {
+    title: "Hisobim",
+    category: "Moliya / Hisob-kitob",
+    summary:
+      "Telegram'dagi AI shaxsiy buxgalter: o'zbekcha ovoz yoki matndan tranzaksiyalarni ajratadi, hisob-kitobni esa backend aniq matematika bilan yuritadi. Qarzlar, audit jurnali, Telegram Mini App va PWA.",
+    tech: ["TypeScript", "Hono", "grammY", "React", "Supabase PostgreSQL", "Whisper"],
+    link: "t.me/Hisobimaibot",
+  },
+  {
+    title: "Sahna Studio",
+    category: "Studio / Kreativ loyiha",
+    summary:
+      "Google Flow uchun Chrome kengaytmasi: AI video promptlarini navbat bilan bajaradi, natijalarni galereyaga yig'adi; AI yordamchi va ovozli boshqaruv bilan.",
+    tech: ["Chrome Extension (MV3)", "JavaScript", "OpenAI / Gemini / OpenRouter", "Web Speech"],
+  },
 ];
 
 export interface CvSkillGroup {
