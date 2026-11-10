@@ -292,15 +292,28 @@ export function Projects() {
     const world = worldRef.current;
     if (!world) return;
 
+    // Off screen there is nothing to draw and nothing worth hearing, so the
+    // loop does not run at all. It used to keep ticking sixty times a second
+    // for the whole visit -- on every other section of the page too -- with
+    // only the drift paused, which is main-thread time taken straight out of
+    // the scroll the visitor was actually doing. `last` is re-seeded below,
+    // so coming back on screen resumes from where the ring stopped instead
+    // of jumping by however long it was away.
+    if (!onScreen) return;
+
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
     let raf = 0;
     let last = performance.now();
+    /** Last angle written, so a ring at rest costs no style work at all. */
+    let written: number | null = null;
+    /** Last front/back state per slot, for the same reason. */
+    const facingFront: (boolean | null)[] = [];
 
     const frame = (now: number) => {
       const dt = Math.min((now - last) / 1000, 0.05);
       last = now;
 
-      const paused = zoomed !== null || focused || !onScreen || document.hidden;
+      const paused = zoomed !== null || focused || document.hidden;
 
       // Two modes. Snapping wins: while a target is set the ring is being
       // driven to an exact angle, and neither the drift nor any leftover
@@ -372,18 +385,36 @@ export function Projects() {
         setFrontIndex(front);
       }
 
-      world.style.setProperty("--ed-spin", `${spin.current}deg`);
-      for (let i = 0; i < slotsRef.current.length; i++) {
-        const node = slotsRef.current[i];
-        if (!node) continue;
-        const angle = ((i * STEP + spin.current) * Math.PI) / 180;
-        const facing = Math.cos(angle);
-        // The only per-frame write left. --ed-depth and z-index were written
-        // here too; nothing reads --ed-depth since the opacity fade was
-        // removed, and z-index does not order children inside a preserve-3d
-        // context -- the 3D sort does. Both were no-op style writes on five
-        // nodes, sixty times a second.
-        node.style.pointerEvents = facing > 0 ? "auto" : "none";
+      // Nothing moved since the last frame (paused, dialog open, or settled
+      // with reduced motion): skip every write, so a still ring is free.
+      if (written !== spin.current) {
+        written = spin.current;
+        for (let i = 0; i < slotsRef.current.length; i++) {
+          const node = slotsRef.current[i];
+          if (!node) continue;
+          // The slot's transform is written directly, with the angle baked
+          // in. It used to be one --ed-spin custom property on the world,
+          // which the slots' CSS transform read -- but a custom property is
+          // inherited, so every write restyled the world and every card,
+          // title, image and label inside it (~140 elements) sixty times a
+          // second, for a number only five elements use. An inline transform
+          // is not inherited: each write restyles exactly one element. The
+          // tilt, radius and entry bloom stay in CSS variables, so the
+          // --ed-enter transition still drives the radius as before.
+          node.style.transform =
+            `translate(-50%, -50%) rotateX(var(--ed-orbit-tilt)) ` +
+            `rotateY(${i * STEP + spin.current}deg) ` +
+            `translateZ(calc(var(--ed-orbit-r) * var(--ed-enter, 1)))`;
+          const front =
+            Math.cos(((i * STEP + spin.current) * Math.PI) / 180) > 0;
+          // z-index does not order children inside a preserve-3d context --
+          // the 3D sort does -- so pointer-events is the only other write,
+          // and only on the frame a card actually turns around.
+          if (facingFront[i] !== front) {
+            facingFront[i] = front;
+            node.style.pointerEvents = front ? "auto" : "none";
+          }
+        }
       }
       raf = requestAnimationFrame(frame);
     };
@@ -436,9 +467,14 @@ export function Projects() {
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
+    // Threshold 0, not 0.15: an observer only reports at its thresholds, and
+    // with 0.15 as the only one the last report on the way out was "15%
+    // visible, still intersecting" -- so the section never registered as
+    // gone and the loop never stopped. The margin starts the ring a little
+    // before it scrolls in, so it is already turning when it appears.
     const io = new IntersectionObserver(
       ([entry]) => setOnScreen(entry?.isIntersecting ?? true),
-      { threshold: 0.15 },
+      { threshold: 0, rootMargin: "200px 0px" },
     );
     io.observe(node);
     return () => io.disconnect();

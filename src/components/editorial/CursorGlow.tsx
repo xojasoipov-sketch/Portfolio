@@ -47,6 +47,8 @@ export function CursorGlow() {
     let ry = py;
     let raf = 0;
     let visible = false;
+    let hot = "";
+    let surface = "";
 
     const onMove = (e: PointerEvent) => {
       // Only a real mouse. A pen or a trackpad-as-touch event would drag the
@@ -67,6 +69,7 @@ export function CursorGlow() {
         dot.style.opacity = "1";
         ring.style.opacity = "1";
       }
+      wake();
     };
 
     const onLeave = () => {
@@ -77,10 +80,14 @@ export function CursorGlow() {
 
     const onOver = (e: PointerEvent) => {
       const target = e.target as Element | null;
-      ring.setAttribute(
-        "data-hot",
-        target?.closest?.(INTERACTIVE) ? "true" : "false",
-      );
+      // pointerover also fires while the page scrolls under a still pointer,
+      // once per element boundary crossed. Writing the attributes only when
+      // they change keeps that from restyling the ring on every one.
+      const nextHot = target?.closest?.(INTERACTIVE) ? "true" : "false";
+      if (nextHot !== hot) {
+        hot = nextHot;
+        ring.setAttribute("data-hot", hot);
+      }
       // The ring is fixed to <html>, so it sits outside every section and
       // cannot inherit the surface-aware colour tokens the rest of the site
       // uses -- left to itself it painted the light theme's dark red while
@@ -88,19 +95,33 @@ export function CursorGlow() {
       // the cream hero, i.e. invisible on one surface or the other. Reading
       // the surface out of the element under the pointer puts it back on the
       // site's own convention.
-      ring.setAttribute(
-        "data-surface",
-        target?.closest?.('[data-surface="black"]') ? "black" : "light",
-      );
+      const nextSurface = target?.closest?.('[data-surface="black"]')
+        ? "black"
+        : "light";
+      if (nextSurface !== surface) {
+        surface = nextSurface;
+        ring.setAttribute("data-surface", surface);
+      }
     };
 
+    // The ring only animates while it is catching up. Once it has landed on
+    // the pointer the loop stops, and the next pointermove starts it again --
+    // it used to run every frame for the whole visit, mouse moving or not.
     const frame = () => {
-      raf = requestAnimationFrame(frame);
       rx += (px - rx) * RING_EASE;
       ry += (py - ry) * RING_EASE;
+      if (Math.abs(px - rx) < 0.1 && Math.abs(py - ry) < 0.1) {
+        rx = px;
+        ry = py;
+        raf = 0;
+      } else {
+        raf = requestAnimationFrame(frame);
+      }
       ring.style.transform = `translate3d(${rx}px, ${ry}px, 0)`;
     };
-    raf = requestAnimationFrame(frame);
+    function wake() {
+      if (!raf) raf = requestAnimationFrame(frame);
+    }
 
     window.addEventListener("pointermove", onMove, { passive: true });
     window.addEventListener("pointerover", onOver, { passive: true });

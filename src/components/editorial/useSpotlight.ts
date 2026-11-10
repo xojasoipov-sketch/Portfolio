@@ -19,14 +19,32 @@ export function useSpotlight<T extends HTMLElement = HTMLElement>() {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     if (!window.matchMedia("(pointer: fine)").matches) return;
 
-    const onMove = (e: PointerEvent) => {
+    // Coalesced to one write per frame. A mouse reports pointermove faster
+    // than the display refreshes on many machines, and each event used to
+    // force a layout (getBoundingClientRect) and repaint the whole section's
+    // background -- several times per frame for a glow that can only move
+    // once per frame anyway.
+    let raf = 0;
+    let x = 0;
+    let y = 0;
+    const flush = () => {
+      raf = 0;
       const rect = node.getBoundingClientRect();
-      node.style.setProperty("--spot-x", `${e.clientX - rect.left}px`);
-      node.style.setProperty("--spot-y", `${e.clientY - rect.top}px`);
+      node.style.setProperty("--spot-x", `${x - rect.left}px`);
+      node.style.setProperty("--spot-y", `${y - rect.top}px`);
+    };
+    const onMove = (e: PointerEvent) => {
+      if (e.pointerType !== "mouse") return;
+      x = e.clientX;
+      y = e.clientY;
+      if (!raf) raf = requestAnimationFrame(flush);
     };
 
-    node.addEventListener("pointermove", onMove);
-    return () => node.removeEventListener("pointermove", onMove);
+    node.addEventListener("pointermove", onMove, { passive: true });
+    return () => {
+      cancelAnimationFrame(raf);
+      node.removeEventListener("pointermove", onMove);
+    };
   }, []);
 
   return ref;
