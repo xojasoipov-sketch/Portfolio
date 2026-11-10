@@ -109,25 +109,78 @@ export function Nav() {
     };
   }, [open]);
 
+  /**
+   * Which surface sits under the nav. Watched with an IntersectionObserver
+   * whose root is a 1px line across the viewport just under the nav's
+   * baseline, so the browser reports surfaces crossing that line off the main
+   * thread.
+   *
+   * This used to be a scroll listener that queried every [data-surface] and
+   * called getBoundingClientRect on each one, on every scroll event. Each read
+   * forced a synchronous layout in the middle of the scroll -- with the
+   * reveal transitions running, that was a full style + layout per event --
+   * which is a large part of why scrolling felt heavy.
+   */
   useEffect(() => {
-    const sections = () =>
-      Array.from(document.querySelectorAll<HTMLElement>("[data-surface]"));
+    if (typeof IntersectionObserver === "undefined") return;
 
-    const sync = () => {
-      const probe = 34; // just under the nav's own baseline
-      const hit = sections().find((el) => {
-        const r = el.getBoundingClientRect();
-        return r.top <= probe && r.bottom > probe;
-      });
+    const PROBE = 34; // just under the nav's own baseline
+    // The cursor ring also carries data-surface (to colour itself), but it
+    // is a follower, not a surface: it must never decide the nav's colour.
+    const sections = Array.from(
+      document.querySelectorAll<HTMLElement>(
+        "[data-surface]:not(.ed-cursor-ring)",
+      ),
+    );
+    const crossing = new Set<HTMLElement>();
+    let io: IntersectionObserver | null = null;
+
+    const pick = () => {
+      // First in document order, matching how the old probe resolved
+      // overlaps between nested surfaces.
+      const hit = sections.find((el) => crossing.has(el));
       setOnDark(hit?.dataset.surface === "black");
     };
 
-    sync();
-    window.addEventListener("scroll", sync, { passive: true });
-    window.addEventListener("resize", sync);
+    const observe = () => {
+      io?.disconnect();
+      crossing.clear();
+      const bottom = Math.max(0, window.innerHeight - PROBE - 1);
+      io = new IntersectionObserver(
+        (entries) => {
+          for (const e of entries) {
+            const el = e.target as HTMLElement;
+            if (e.isIntersecting) crossing.add(el);
+            else crossing.delete(el);
+          }
+          pick();
+        },
+        {
+          // The document, not the implicit root: inside an iframe (Telegram
+          // Web opens the site in one) the implicit root is the top-level
+          // viewport, and rootMargin is ignored for it -- the probe line
+          // would widen to the whole screen.
+          root: document,
+          rootMargin: `-${PROBE}px 0px -${bottom}px 0px`,
+          threshold: 0,
+        },
+      );
+      for (const el of sections) io.observe(el);
+    };
+
+    observe();
+    // The probe line is measured in pixels from both edges, so a new
+    // viewport height needs a new observer. Resizes are rare and debounced.
+    let resizeTimer = 0;
+    const onResize = () => {
+      window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(observe, 150);
+    };
+    window.addEventListener("resize", onResize);
     return () => {
-      window.removeEventListener("scroll", sync);
-      window.removeEventListener("resize", sync);
+      window.clearTimeout(resizeTimer);
+      window.removeEventListener("resize", onResize);
+      io?.disconnect();
     };
   }, []);
 

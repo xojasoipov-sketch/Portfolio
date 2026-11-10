@@ -1312,9 +1312,11 @@ body {
    The work section: the projects turn around the portrait, and a click
    opens one full size.
 
-   The ring is driven by one CSS custom property, --ed-spin, written by a
-   single rAF loop. Everything else is static CSS reading that variable, so
-   a frame costs one property write and no React render. Each card keeps the
+   The ring is driven by a single rAF loop that writes each slot's inline
+   transform (the angle baked in, tilt/radius/entry still read from the
+   variables here). --ed-spin below only seeds the first paint, before the
+   loop has run. A frame costs five transform writes and no React render,
+   and the loop stops whenever the section is off screen. Each card keeps the
    angle of its place on the ring, and the ring's plane is tilted back so the
    whole thing is seen slightly from above: the far side rides higher, the
    near side lower, and the path reads as a circle instead of a straight row.
@@ -1378,7 +1380,7 @@ body {
    Two details are load-bearing:
 
    - The transition is on the custom property, never on `transform`. The frame
-     loop rewrites --ed-spin every frame, and a transition on the transform
+     loop rewrites the slot transform every frame, and a transition on the transform
      itself would try to ease each of those rewrites -- the ring would stop
      tracking the drag and lag behind its own velocity.
 
@@ -1465,9 +1467,13 @@ body {
       rgba(245, 242, 239, 0.07),
       rgba(245, 242, 239, 0.02)
     ),
-    rgba(5, 5, 5, 0.55);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+    rgba(5, 5, 5, 0.8);
+  /* No backdrop-filter. A blur behind five cards that are re-transformed in
+     3D every frame makes the compositor re-read and re-blur what is behind
+     each of them on every frame the ring turns -- the single most expensive
+     thing on the page, and it landed exactly while the visitor was
+     scrolling through this section. Behind the cards is near-black and the
+     feathered portrait, so a denser fill (0.55 -> 0.8) reads the same. */
   padding: 1rem 1rem 1.15rem;
   text-align: left;
   box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.9);
@@ -1527,7 +1533,7 @@ body {
       rgba(245, 242, 239, 0.12),
       rgba(245, 242, 239, 0.03)
     ),
-    rgba(5, 5, 5, 0.55);
+    rgba(5, 5, 5, 0.8);
   box-shadow:
     0 30px 60px -30px rgba(0, 0, 0, 0.9),
     0 0 34px -8px rgba(232, 64, 74, 0.45);
