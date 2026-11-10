@@ -802,6 +802,31 @@ body {
   font-size: clamp(0.95rem, 1.4vw, 1.1rem);
 }
 
+/* Narrow phones: the price drops under the name instead of squeezing it. */
+@media (max-width: 420px) {
+  .ed-cat-item {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ed-cat-item-price {
+    grid-column: 1;
+    grid-row: auto;
+    text-align: left;
+  }
+}
+
+/* Terms + CTA block on /xizmatlar */
+.ed-terms-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: clamp(2rem, 5vw, 4rem);
+  align-items: start;
+}
+@media (max-width: 760px) {
+  .ed-terms-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* Package tariff cards */
 .ed-pkg-grid {
   display: grid;
@@ -1984,14 +2009,17 @@ body {
    front and are a shortcut to any other one. */
 .ed-orbit-dots {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   align-items: center;
-  gap: 0.55rem;
+  gap: clamp(0rem, 2vw - 0.4rem, 0.55rem);
+  min-width: 0;
 }
 
 .ed-orbit-dot {
   /* The hit area is the padding, not the dot -- a 7px target is unusable on
-     a phone, but a 7px dot inside a 25px button is both. */
-  width: 25px;
+     a phone, but a 7px dot inside a 24px+ button is both. */
+  width: clamp(24px, 6vw, 25px);
   height: 25px;
   padding: 0;
   border: 0;

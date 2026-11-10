@@ -991,7 +991,7 @@ function DemoPage() {
             >
               <Menu size={20} />
             </button>
-            <div className="relative flex-1 max-w-md mx-auto">
+            <div className="relative flex-1 min-w-0 max-w-md mx-auto">
               <div className="flex items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.03] px-3 py-2">
                 <Search size={14} className="text-neutral-500 shrink-0" />
                 <input

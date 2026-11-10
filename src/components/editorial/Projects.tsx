@@ -712,7 +712,7 @@ export function Projects() {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: "1.25rem",
+              gap: "clamp(0.25rem, 3vw - 0.25rem, 1.25rem)",
               marginTop: "clamp(1rem, 3vw, 2rem)",
             }}
           >
@@ -721,7 +721,7 @@ export function Projects() {
               className="ed-btn"
               onClick={() => step(-1)}
               aria-label="Oldingi loyiha"
-              style={{ padding: "0.7rem 1.2rem" }}
+              style={{ padding: "0.7rem clamp(0.6rem, 3vw, 1.2rem)" }}
             >
               <Arrow direction="left" size="0.85em" />
             </button>
@@ -746,7 +746,7 @@ export function Projects() {
               className="ed-btn"
               onClick={() => step(1)}
               aria-label="Keyingi loyiha"
-              style={{ padding: "0.7rem 1.2rem" }}
+              style={{ padding: "0.7rem clamp(0.6rem, 3vw, 1.2rem)" }}
             >
               <Arrow size="0.85em" />
             </button>

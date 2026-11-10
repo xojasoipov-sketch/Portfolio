@@ -84,6 +84,10 @@ export function Hero() {
           position: "relative",
           display: "grid",
           gridTemplateAreas: '"stack"',
+          // minmax(0, 1fr) keeps the single track at the section width;
+          // an auto track grows to the portrait's intrinsic width on
+          // narrow screens and pushes the stack off-centre.
+          gridTemplateColumns: "minmax(0, 1fr)",
           placeItems: "end center",
           flex: 1,
           minHeight: 0,
@@ -101,7 +105,7 @@ export function Hero() {
         >
           <h1
             className="ed-display"
-            style={{ fontSize: "clamp(3rem, 11vw, 11.5rem)", margin: 0 }}
+            style={{ fontSize: "clamp(2.75rem, 11vw, 11.5rem)", margin: 0 }}
           >
             <span className="ed-clip" data-shown={shown}>
               <span style={{ color: "var(--ed-black)" }}>Saidburxon</span>
@@ -125,6 +129,7 @@ export function Hero() {
             gridArea: "stack",
             transitionDelay: "0.35s",
             zIndex: 2,
+            maxWidth: "100%",
             filter: "drop-shadow(0 18px 34px rgba(5, 5, 5, 0.16))",
           }}
           data-hero-portrait
