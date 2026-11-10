@@ -293,7 +293,10 @@ function AdminDashboard() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 1fr",
+                // Two columns where there is room, one on phones -- no
+                // breakpoint needed, the track minimum decides.
+                gridTemplateColumns:
+                  "repeat(auto-fit, minmax(min(100%, 18rem), 1fr))",
                 gap: "clamp(1.5rem, 4vw, 3rem)",
                 marginTop: "clamp(2rem, 5vw, 3rem)",
               }}

@@ -335,16 +335,7 @@ function TermsAndCta() {
       }}
     >
       <div className="ed-shell">
-        <div
-          className="ed-rise"
-          data-shown={shown}
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1.4fr",
-            gap: "clamp(2rem, 5vw, 4rem)",
-            alignItems: "start",
-          }}
-        >
+        <div className="ed-rise ed-terms-grid" data-shown={shown}>
           <div>
             <p
               className="ed-label"
