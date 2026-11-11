@@ -127,6 +127,35 @@ export const CV_PROJECTS: CvProject[] = [
     // portfolio's work section instead.
     link: "portfolio saytidagi jonli demo",
   },
+  {
+    title: "Hisobim",
+    category: "AI Moliya / Telegram",
+    summary:
+      "O'zbekcha ovozli xabardan tranzaksiyalarni ajratib oluvchi Telegram buxgalter va Mini App. AI faqat gapni strukturaga soladi; balans, foyda va valyuta hisobini backend bilan PostgreSQL deterministik sanaydi. Qarzlar, tabiiy tilda tuzatish va audit jurnali bilan.",
+    tech: [
+      "TypeScript",
+      "Hono",
+      "grammY",
+      "Supabase PostgreSQL",
+      "React",
+      "Whisper STT",
+    ],
+    link: "t.me/Hisobimaibot",
+  },
+  {
+    title: "Sahna Studio",
+    category: "Chrome kengaytma / AI video",
+    summary:
+      "Google Flow uchun yon panel: promptlarni navbatga qo'yib ishlatish, XLSX'dan import, chiqmagan sahnani avtomatik qayta yuborish, prompt ustaxonasi va ovoz bilan boshqaruv. Kalit va promptlar foydalanuvchi qurilmasida qoladi.",
+    tech: [
+      "Chrome MV3",
+      "Side Panel API",
+      "JavaScript",
+      "Service Worker",
+      "Web Speech API",
+    ],
+    // Not on the Chrome Web Store yet, so there is no address to print.
+  },
 ];
 
 export interface CvSkillGroup {

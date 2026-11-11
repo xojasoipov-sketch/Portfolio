@@ -126,11 +126,22 @@ export const PROJECTS: Project[] = [
     id: "hisobim",
     index: "06",
     title: "HISOBIM",
-    category: "Moliya / Hisob-kitob",
-    summary: "Shaxsiy hisob-kitob loyihasi.",
+    category: "AI Moliya / Telegram",
+    summary:
+      "O'zbekcha ovozli xabarni tushunadigan Telegram buxgalter va Mini App.",
     detail:
-      "Hisob-kitobni tartibli yuritish uchun ishlab chiqilgan loyiha. Batafsil tavsif va texnologiyalar muallif tomonidan tasdiqlanadi.",
-    tech: [],
+      "\"Bugun taksiga 25 ming, ovqatga 48 ming ketdi, mijozdan 900 ming oldim\" — bitta ovozli xabardan uchta alohida tranzaksiya ajraladi. AI faqat gapni strukturaga soladi: balans, sof foyda va valyuta hisobini backend bilan PostgreSQL o'zi sanaydi, shuning uchun raqamda model xatosi bo'lmaydi va so'm bilan dollar aralashmaydi. Qarz berish va qaytarishni yuritadi, \"haligi benzin 85 emas, 65 ming edi\" deganda oxirgi mos yozuvni tuzatadi — har o'zgarish audit jurnaliga tushadi. Mini App va o'rnatiladigan PWA dashboard, Markaziy bank kursi, push-bildirishnoma bilan.",
+    tech: [
+      "TypeScript",
+      "Hono",
+      "grammY",
+      "Supabase PostgreSQL",
+      "React + Vite",
+      "Whisper STT",
+      "Zod",
+      "Railway",
+    ],
+    bot: "Hisobimaibot",
     shot: hisobimShot,
   },
   {
@@ -138,11 +149,19 @@ export const PROJECTS: Project[] = [
     index: "07",
     title: "SAHNA",
     titleAlt: "STUDIO",
-    category: "Studio / Kreativ loyiha",
-    summary: "Sahna va vizual kontent yaratish uchun studiya loyihasi.",
+    category: "Chrome kengaytma / AI video",
+    summary:
+      "Google Flow uchun yon panel — sahnalar bittalab emas, navbat bilan ketadi.",
     detail:
-      "Studiya loyihasi sifatida ishlab chiqilgan. Batafsil tavsif, texnologiyalar va havola muallif tomonidan tasdiqlanadi.",
-    tech: [],
+      "Flow'da har bir promptni qo'lda yuborib o'tirish o'rniga, ularni ro'yxatga yig'asiz yoki XLSX'dan import qilasiz va navbatni qo'yib yuborasiz: to'xtatish, davom ettirish, chiqmagan sahnani avtomatik qayta yuborish bor. Yonida prompt ustaxonasi, media galereya, tezkor montaj va ovoz bilan boshqaruv. AI uchun o'zingizning OpenAI, Gemini yoki OpenRouter kalitingiz ulanadi — promptlar qurilmada qoladi, oraliq server yo'q.",
+    tech: [
+      "Chrome MV3",
+      "Side Panel API",
+      "JavaScript",
+      "Service Worker",
+      "Web Speech API",
+      "SheetJS",
+    ],
     shot: sahnaStudioShot,
   },
 ];
