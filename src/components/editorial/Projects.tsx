@@ -4,7 +4,7 @@ import { PROJECTS } from "@/data/projects";
 import { asset } from "@/lib/asset";
 import orbitPortrait from "@/assets/orbit-portrait.webp";
 import { useReveal } from "./useReveal";
-import { useSpotlight } from "./useSpotlight";
+import { Spoken } from "./Spoken";
 import { Arrow } from "./icons";
 
 /**
@@ -76,7 +76,6 @@ const ENTRY_STAGGER_MS = 90;
  */
 export function Projects() {
   const { ref, shown } = useReveal<HTMLElement>(0.06);
-  const spotlightRef = useSpotlight<HTMLElement>();
   const worldRef = useRef<HTMLDivElement | null>(null);
   /**
    * "pending" is the initial state so the collapsed deck is what the markup
@@ -584,20 +583,30 @@ export function Projects() {
   return (
     <section
       id="work"
-      ref={(node) => {
-        ref.current = node;
-        spotlightRef.current = node;
-      }}
+      ref={ref}
       data-surface="black"
-      className="ed-spotlight"
+      className="ed-night"
       style={{
-        backgroundColor: "var(--ed-black)",
+        backgroundColor: "var(--ed-night)",
         color: "var(--ed-offwhite)",
         paddingBlock: "var(--ed-section)",
         overflow: "hidden",
       }}
     >
       <div className="ed-shell">
+        {/* The turn ("burilish", uslub.md 5.1): the one night scene on the
+            page. Everything above talked about problems and method; this is
+            where the reel flips to proof. */}
+        <Spoken
+          as="h2"
+          className="ed-say ed-turn"
+          parts={[
+            { text: "Lekin gap kodda emas.", tone: "intro" },
+            { text: "Gap ishlab turgan", tone: "key", br: true },
+            { text: "natijada.", tone: "accent" },
+          ]}
+        />
+
         <div
           className="ed-rise"
           data-shown={shown}
@@ -608,14 +617,10 @@ export function Projects() {
             gap: "1rem",
             marginBottom: "clamp(1.5rem, 4vw, 2.5rem)",
             flexWrap: "wrap",
+            position: "relative",
+            zIndex: 2,
           }}
         >
-          <h2
-            className="ed-label"
-            style={{ margin: 0, color: "var(--ed-red-tx)" }}
-          >
-            04 — Tanlangan loyihalar
-          </h2>
           <p
             style={{
               margin: 0,
@@ -623,7 +628,7 @@ export function Projects() {
               color: "var(--ed-gray-tx)",
             }}
           >
-            Sudrab aylantiring — bossangiz ochiladi
+            Sudrab aylantiring, kartani bosib oching
           </p>
         </div>
 
@@ -666,7 +671,7 @@ export function Projects() {
                     }}
                     onFocus={() => bringToFront(i)}
                     onClick={() => openCard(i)}
-                    aria-label={`${project.title} — loyihani ochish`}
+                    aria-label={`${project.title}: loyihani ochish`}
                   >
                     <span
                       className="ed-orbit-face"
@@ -793,7 +798,7 @@ export function Projects() {
               className="ed-label"
               style={{ margin: 0, color: "var(--ed-red-tx)" }}
             >
-              {open.index} — {open.category}
+              {open.index} · {open.category}
             </p>
             <h3
               style={{

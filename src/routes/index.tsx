@@ -9,11 +9,10 @@ import { Projects } from "@/components/editorial/Projects";
 import { Testimonials } from "@/components/editorial/Testimonials";
 import { Contact } from "@/components/editorial/Contact";
 import { Footer } from "@/components/editorial/Footer";
-import { CurveDivider } from "@/components/editorial/Curve";
 
-const TITLE = "Saidburxon Xojasoipov — Full-stack Developer & AI Builder";
+const TITLE = "Saidburxon Xojasoipov | Full-stack Developer & AI Builder";
 const DESCRIPTION =
-  "Saidburxon Xojasoipov — full-stack dasturchi va AI-yechimlar mutaxassisi. Web, AI tizimlar, SaaS mahsulotlar va biznes avtomatlashtirish.";
+  "Saidburxon Xojasoipov, full-stack dasturchi va AI-yechimlar mutaxassisi. Web, AI tizimlar, SaaS mahsulotlar va biznes avtomatlashtirish.";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -30,44 +29,23 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  // The page is built like one of the owner's reels (uslub.md): hook on
+  // the visitor's pain, trust (who, how, what), one night "turn" into real
+  // projects, then a single call to action. Paper background with a quiet
+  // dotted grid; only the projects scene goes to night.
   return (
-    <main style={{ background: "var(--ed-offwhite)", overflowX: "clip" }}>
+    <main className="ed-paper" style={{ overflowX: "clip" }}>
       <Nav />
       <Hero />
       <Intro />
       <About />
       <Skills />
       <Services />
-
-      <CurveDivider from="offwhite" to="black" />
       <Projects />
-
-      <CurveDivider from="black" to="offwhite" flip />
-      {/* Renders only once real testimonials exist; until then the spacer
-          alone keeps the two dark panels apart. */}
+      {/* Renders only once real testimonials exist. */}
       <Testimonials />
-      <ServicesSpacer />
-
-      <CurveDivider from="offwhite" to="black" />
       <Contact />
       <Footer />
     </main>
-  );
-}
-
-/**
- * A short off-white breath between the two dark blocks so the black
- * projects panel and the black contact panel do not read as one slab.
- */
-function ServicesSpacer() {
-  return (
-    <div
-      data-surface="offwhite"
-      aria-hidden="true"
-      style={{
-        background: "var(--ed-offwhite)",
-        height: "clamp(3rem, 10vw, 8rem)",
-      }}
-    />
   );
 }

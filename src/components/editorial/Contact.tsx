@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { sendContactMessage } from "@/lib/api/contact";
 import { useReveal } from "./useReveal";
-import { useSpotlight } from "./useSpotlight";
+import { Spoken } from "./Spoken";
 import { Portrait } from "./Portrait";
 import { Arrow } from "./icons";
 
@@ -14,7 +14,6 @@ type Status = "idle" | "sending" | "sent" | "error";
 
 export function Contact() {
   const { ref, shown } = useReveal<HTMLElement>(0.06);
-  const spotlightRef = useSpotlight<HTMLElement>();
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
 
@@ -50,42 +49,25 @@ export function Contact() {
   return (
     <section
       id="contact"
-      ref={(node) => {
-        ref.current = node;
-        spotlightRef.current = node;
-      }}
-      data-surface="black"
-      className="ed-spotlight"
+      ref={ref}
       style={{
-        backgroundColor: "var(--ed-black)",
-        color: "var(--ed-offwhite)",
         paddingBlock: "var(--ed-section)",
         position: "relative",
         overflow: "hidden",
       }}
     >
       <div className="ed-shell">
-        <h2
-          className="ed-display"
-          style={{ fontSize: "clamp(2.5rem, 11vw, 9.5rem)", margin: 0 }}
-        >
-          {[
-            { t: "Biror", c: "var(--ed-offwhite)" },
-            { t: "Narsa", c: "var(--ed-offwhite)" },
-            { t: "Yaratamizmi?", c: "var(--ed-red-br)" },
-          ].map((l, i) => (
-            <span
-              key={l.t}
-              className="ed-clip"
-              data-shown={shown}
-              style={{ transitionDelay: `${i * 0.09}s` }}
-            >
-              <span style={{ color: l.c, transitionDelay: `${i * 0.09}s` }}>
-                {l.t}
-              </span>
-            </span>
-          ))}
-        </h2>
+        {/* Lesson and CTA: the reel's last beat, back on paper after the
+            one night scene. */}
+        <Spoken
+          as="h2"
+          className="ed-say"
+          parts={[
+            { text: "Biror narsa", tone: "intro" },
+            { text: "birga", tone: "serif", br: true },
+            { text: "yaratamizmi?", tone: "key" },
+          ]}
+        />
 
         <div className="ed-contact-grid">
           <form onSubmit={onSubmit} className="ed-rise" data-shown={shown}>
@@ -155,7 +137,7 @@ export function Contact() {
               >
                 <button
                   type="submit"
-                  className="ed-btn"
+                  className="ed-btn ed-btn-ink"
                   disabled={status === "sending"}
                 >
                   {status === "sending" ? (
@@ -202,15 +184,15 @@ export function Contact() {
             }}
           >
             <div
-              className="ed-veil"
+              className="ed-rise"
               data-shown={shown}
               style={{
                 aspectRatio: "1 / 1",
                 maxWidth: "16rem",
-                background: "#141414",
+                background: "#ECEAE6",
               }}
             >
-              <Portrait treatment="duotone" fit="cover" variant="standing" />
+              <Portrait treatment="mono" fit="cover" variant="standing" />
             </div>
 
             <div>

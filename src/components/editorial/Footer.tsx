@@ -1,15 +1,15 @@
 export function Footer() {
   return (
     <footer
-      data-surface="black"
       style={{
-        background: "var(--ed-black)",
-        color: "var(--ed-offwhite)",
         paddingBottom: "clamp(2rem, 5vw, 3rem)",
       }}
     >
       <div className="ed-shell">
-        <hr className="ed-rule" style={{ margin: 0 }} />
+        <hr
+          className="ed-rule"
+          style={{ margin: 0, background: "var(--ed-line)", opacity: 1 }}
+        />
         <div
           style={{
             display: "flex",
@@ -24,7 +24,7 @@ export function Footer() {
             Saidburxon Xojasoipov
           </p>
           <p className="ed-label" style={{ margin: 0, opacity: 0.55 }}>
-            Full-stack Developer × AI Builder
+            sadiprime.lab
           </p>
           <p className="ed-label" style={{ margin: 0, opacity: 0.55 }}>
             © 2026

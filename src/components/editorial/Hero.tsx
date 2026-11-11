@@ -1,173 +1,75 @@
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { useReveal } from "./useReveal";
 import { Portrait } from "./Portrait";
-import { RedArc } from "./Curve";
+import { Spoken } from "./Spoken";
+import { Arrow } from "./icons";
 
 /**
- * Cursor-reactive tilt on the hero portrait — mouse only, and inert under
- * prefers-reduced-motion. Kept as its own inner wrapper (not on the outer
- * `.ed-rise` element) so it never fights that element's own CSS entrance
- * transform: the rise-in plays first, then this takes over afterwards.
+ * Hook. The page reads like one of the owner's reels (uslub.md, section 5):
+ * it opens on the visitor's pain, in plain words, not on technology. The
+ * three lines are "spoken" word by word on load; the portrait floats very
+ * slowly and the whole frame makes one slow camera push (1.00 -> 1.04).
  */
-function TiltPortrait() {
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const springX = useSpring(x, { stiffness: 120, damping: 14, mass: 0.6 });
-  const springY = useSpring(y, { stiffness: 120, damping: 14, mass: 0.6 });
-  const rotateX = useTransform(springY, [-40, 40], [5, -5]);
-  const rotateY = useTransform(springX, [-40, 40], [-5, 5]);
-
-  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.pointerType !== "mouse") return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    x.set(((e.clientX - rect.left) / rect.width - 0.5) * 80);
-    y.set(((e.clientY - rect.top) / rect.height - 0.5) * 80);
-  };
-  const onPointerLeave = () => {
-    x.set(0);
-    y.set(0);
-  };
-
-  return (
-    <motion.div
-      onPointerMove={onPointerMove}
-      onPointerLeave={onPointerLeave}
-      style={{
-        x: springX,
-        y: springY,
-        rotateX,
-        rotateY,
-        transformPerspective: 900,
-      }}
-    >
-      <Portrait treatment="natural" priority />
-    </motion.div>
-  );
-}
-
 export function Hero() {
   const { ref, shown } = useReveal<HTMLElement>(0.05);
 
   return (
-    <section
-      id="top"
-      ref={ref}
-      data-surface="offwhite"
-      style={{
-        position: "relative",
-        minHeight: "100svh",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "flex-end",
-        paddingTop: "clamp(6rem, 14vh, 9rem)",
-        paddingBottom: "clamp(2rem, 5vh, 3.5rem)",
-        background: "var(--ed-offwhite)",
-        overflow: "hidden",
-      }}
-    >
-      <RedArc
-        style={{
-          width: "min(150vw, 1200px)",
-          aspectRatio: "1",
-          left: "50%",
-          top: "46%",
-          transform: "translate(-50%, -50%)",
-          opacity: 0.5,
-        }}
-      />
+    <section id="top" ref={ref} className="ed-hero">
+      <div className="ed-hero-frame">
+        <div className="ed-shell ed-hero-grid">
+          <div className="ed-hero-copy">
+            <p className="ed-rise ed-hero-name" data-shown={shown}>
+              Saidburxon Xojasoipov
+            </p>
 
-      {/* Name and portrait share one stacking context so the type can sit
-          behind the shoulders while the wordmark stays readable. */}
-      <div
-        style={{
-          position: "relative",
-          display: "grid",
-          gridTemplateAreas: '"stack"',
-          placeItems: "end center",
-          flex: 1,
-          minHeight: 0,
-        }}
-      >
-        <div
-          style={{
-            gridArea: "stack",
-            width: "100%",
-            alignSelf: "start",
-            paddingInline: "var(--ed-gutter)",
-            textAlign: "center",
-            zIndex: 1,
-          }}
-        >
-          <h1
-            className="ed-display"
-            style={{ fontSize: "clamp(3rem, 11vw, 11.5rem)", margin: 0 }}
-          >
-            <span className="ed-clip" data-shown={shown}>
-              <span style={{ color: "var(--ed-black)" }}>Saidburxon</span>
-            </span>
-            <span
-              className="ed-clip"
+            <Spoken
+              as="h1"
+              className="ed-hook"
+              threshold={0.05}
+              delay={0.25}
+              step={0.16}
+              parts={[
+                { text: "Javobsiz", tone: "intro" },
+                { text: "xabarlar.", tone: "key" },
+                { text: "Yo'qolgan", tone: "intro", br: true },
+                { text: "arizalar.", tone: "key" },
+                { text: "Charchagan", tone: "intro", br: true },
+                { text: "admin.", tone: "key" },
+              ]}
+            />
+
+            <Spoken
+              className="ed-hook-sub"
+              threshold={0.05}
+              delay={1.35}
+              step={0.06}
+              parts={[
+                { text: "Bularni" },
+                { text: "tinch", tone: "serif" },
+                { text: "ishlaydigan tizimga aylantiraman." },
+              ]}
+            />
+
+            <div
+              className="ed-rise"
               data-shown={shown}
-              style={{ transitionDelay: "0.1s" }}
+              style={{ transitionDelay: "1.9s" }}
             >
-              <span style={{ color: "var(--ed-red)", transitionDelay: "0.1s" }}>
-                Xojasoipov
-              </span>
-            </span>
-          </h1>
-        </div>
+              <a href="#contact" className="ed-btn ed-btn-solid">
+                Bepul tahlil <Arrow size="0.85em" />
+              </a>
+            </div>
+          </div>
 
-        <div
-          className="ed-rise"
-          data-shown={shown}
-          style={{
-            gridArea: "stack",
-            transitionDelay: "0.35s",
-            zIndex: 2,
-            filter: "drop-shadow(0 18px 34px rgba(5, 5, 5, 0.16))",
-          }}
-          data-hero-portrait
-        >
-          <TiltPortrait />
+          <div
+            className="ed-rise ed-hero-figure"
+            data-shown={shown}
+            style={{ transitionDelay: "0.4s" }}
+          >
+            <div className="ed-float">
+              <Portrait treatment="mono" priority />
+            </div>
+          </div>
         </div>
-      </div>
-
-      <div
-        className="ed-rise"
-        data-shown={shown}
-        style={{
-          transitionDelay: "0.5s",
-          position: "relative",
-          zIndex: 3,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-end",
-          gap: "1.5rem",
-          flexWrap: "wrap",
-          paddingInline: "var(--ed-gutter)",
-        }}
-      >
-        <p className="ed-label" style={{ margin: 0, lineHeight: 1.8 }}>
-          To'liq stack
-          <br />
-          dasturchi
-          <br />
-          &amp; AI mutaxassisi
-        </p>
-        <p
-          className="ed-label"
-          style={{
-            margin: 0,
-            lineHeight: 1.8,
-            textAlign: "right",
-            color: "var(--ed-gray-tx)",
-          }}
-        >
-          Manzil:
-          <br />
-          Toshkent, O'zbekiston
-        </p>
       </div>
     </section>
   );

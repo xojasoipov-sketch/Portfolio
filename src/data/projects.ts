@@ -34,7 +34,7 @@ export const PROJECTS: Project[] = [
     category: "AI SaaS / Education",
     summary: "O'quv markazlari uchun AI-quvvatli boshqaruv platformasi.",
     detail:
-      "Ko'p-tenantli CRM: o'qituvchilar, guruhlar, o'quvchilar, davomat, to'lov davrlari va obunalarni boshqaruvchi super-admin paneli. Ishlab turgan mahsulot — sadiprime-tizim.uz.",
+      "Ko'p-tenantli CRM: o'qituvchilar, guruhlar, o'quvchilar, davomat, to'lov davrlari va obunalarni boshqaruvchi super-admin paneli. Ishlab turgan mahsulot: sadiprime-tizim.uz.",
     tech: [
       "TanStack Start",
       "TypeScript",
@@ -54,7 +54,7 @@ export const PROJECTS: Project[] = [
     category: "E-Commerce",
     summary: "To'liq e-commerce platformasi va unga ulangan Telegram do'koni.",
     detail:
-      "Katalog, qidiruv, narx oralig'i va saralash filtrlari; JWT autentifikatsiya, ko'p tilli interfeys va admin dashboard. \"Look\" tizimi tayyor kiyim to'plamlarini bitta mahsulot sifatida ko'rsatadi — katalogda ham, Telegram mini-ilovasida ham.",
+      "Katalog, qidiruv, narx oralig'i va saralash filtrlari; JWT autentifikatsiya, ko'p tilli interfeys va admin dashboard. \"Look\" tizimi tayyor kiyim to'plamlarini bitta mahsulot sifatida ko'rsatadi: katalogda ham, Telegram mini-ilovasida ham.",
     tech: ["React", "FastAPI", "MongoDB", "Telegram Mini App", "JWT", "i18n"],
     bot: "Dli_shinebot",
     shot: dliShot,

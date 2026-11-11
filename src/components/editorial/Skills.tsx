@@ -1,18 +1,28 @@
 import { useReveal } from "./useReveal";
+import { Spoken } from "./Spoken";
 
-const TECH = [
-  "React",
-  "Next.js",
-  "TypeScript",
-  "Python",
-  "FastAPI",
-  "PostgreSQL",
-  "MongoDB",
-  "Docker",
-  "AI Agents",
-  "LLM APIs",
-  "Telegram API",
-  "Cloudflare",
+/**
+ * Twelve tools used to be one long hairline list, numbered 01-12. Grouped
+ * into the three areas they actually serve, the same names read at a
+ * glance and the section stops being the longest scroll on the page.
+ */
+const GROUPS: { title: string; items: string[] }[] = [
+  { title: "Frontend", items: ["React", "Next.js", "TypeScript"] },
+  {
+    title: "Backend va infratuzilma",
+    items: [
+      "Python",
+      "FastAPI",
+      "PostgreSQL",
+      "MongoDB",
+      "Docker",
+      "Cloudflare",
+    ],
+  },
+  {
+    title: "AI va avtomatlashtirish",
+    items: ["AI Agents", "LLM APIs", "Telegram API"],
+  },
 ];
 
 export function Skills() {
@@ -22,53 +32,36 @@ export function Skills() {
     <section
       id="skills"
       ref={ref}
-      data-surface="offwhite"
-      style={{
-        background: "var(--ed-offwhite)",
-        paddingBlock: "var(--ed-section)",
-      }}
+      style={{ paddingBlock: "var(--ed-section)" }}
     >
       <div className="ed-shell">
-        <div
-          className="ed-rise"
-          data-shown={shown}
+        <Spoken
+          as="h2"
+          className="ed-display"
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "baseline",
-            marginBottom: "clamp(2rem, 5vw, 3.5rem)",
-            gap: "1rem",
+            fontSize: "clamp(2rem, 5vw, 4rem)",
+            margin: "0 0 clamp(2rem, 5vw, 3.5rem)",
           }}
-        >
-          <h2
-            className="ed-label"
-            style={{ margin: 0, color: "var(--ed-red)" }}
-          >
-            02 — Texnologiyalar
-          </h2>
-          <p
-            className="ed-label"
-            style={{ margin: 0, color: "var(--ed-gray-tx)" }}
-          >
-            {TECH.length}
-          </p>
-        </div>
+          parts={[{ text: "Texnologiyalar", tone: "key" }]}
+        />
 
-        <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
-          {TECH.map((name, i) => (
-            <li
-              key={name}
-              className="ed-skill ed-rise"
+        <div className="ed-stack">
+          {GROUPS.map((g, i) => (
+            <div
+              key={g.title}
+              className="ed-stack-group ed-rise"
               data-shown={shown}
-              style={{ transitionDelay: `${Math.min(i * 0.045, 0.5)}s` }}
+              style={{ transitionDelay: `${i * 0.08}s` }}
             >
-              <span className="ed-skill-name">{name}</span>
-              <span className="ed-label" style={{ color: "var(--ed-gray-tx)" }}>
-                {String(i + 1).padStart(2, "0")}
-              </span>
-            </li>
+              <h3 className="ed-stack-title">{g.title}</h3>
+              <ul className="ed-stack-list">
+                {g.items.map((name) => (
+                  <li key={name}>{name}</li>
+                ))}
+              </ul>
+            </div>
           ))}
-        </ul>
+        </div>
       </div>
     </section>
   );

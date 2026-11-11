@@ -1,29 +1,36 @@
 import { Link } from "@tanstack/react-router";
 import { useReveal } from "./useReveal";
 import { Arrow } from "./icons";
+import { Spoken } from "./Spoken";
 
+/**
+ * Four services as an asymmetric 2+2 bento (wide/narrow, then
+ * narrow/wide) instead of four identical numbered rows. Each cell has its
+ * own quiet surface (white, stone, dotted) so the grid does not read as
+ * four copies.
+ */
 const SERVICES = [
   {
-    num: "01",
     name: "To'liq stack ishlab chiqish",
-    note: "Sayt, marketplace, dashboard va mobil ilova — bitta izchil arxitektura bilan.",
+    note: "Sayt, marketplace, dashboard va mobil ilova. Bitta izchil arxitektura bilan.",
+    tone: "white",
   },
   {
-    num: "02",
     name: "AI tizimlari",
     note: "Real ma'lumot bazasiga ulangan AI xizmat, agentlar va model routing.",
+    tone: "stone",
   },
   {
-    num: "03",
     name: "SaaS mahsulotlar",
     note: "Ko'p-tenantli CRM va boshqaruv tizimlari, obuna va to'lov davrlari bilan.",
+    tone: "dots",
   },
   {
-    num: "04",
     name: "Avtomatlashtirish",
     note: "Telegram botlar, mini-ilovalar va takroriy jarayonlarni avtomatlashtirish.",
+    tone: "white",
   },
-];
+] as const;
 
 export function Services() {
   const { ref, shown } = useReveal<HTMLElement>(0.08);
@@ -32,79 +39,50 @@ export function Services() {
     <section
       id="services"
       ref={ref}
-      data-surface="offwhite"
-      style={{
-        background: "var(--ed-offwhite)",
-        paddingBlock: "var(--ed-section)",
-      }}
+      style={{ paddingBlock: "var(--ed-section)" }}
     >
-      <div
-        className="ed-shell"
-        style={{ marginBottom: "clamp(2rem, 5vw, 3.5rem)" }}
-      >
-        <h2
-          className="ed-label ed-rise"
-          data-shown={shown}
-          style={{ margin: 0, color: "var(--ed-red)" }}
-        >
-          03 — Xizmatlar
-        </h2>
-      </div>
-
-      <div>
-        {SERVICES.map((s, i) => (
-          <a
-            key={s.num}
-            href="#contact"
-            className="ed-service ed-rise"
-            data-shown={shown}
-            style={{ transitionDelay: `${i * 0.07}s` }}
-          >
-            <span className="ed-service-num">{s.num}</span>
-            <span>
-              <span className="ed-service-name" style={{ display: "block" }}>
-                {s.name}
-              </span>
-              <span
-                style={{
-                  display: "block",
-                  marginTop: "0.5rem",
-                  fontSize: "0.9rem",
-                  opacity: 0.7,
-                  maxWidth: "34rem",
-                }}
-              >
-                {s.note}
-              </span>
-            </span>
-            <span className="ed-service-arrow" aria-hidden="true">
-              <Arrow />
-            </span>
-          </a>
-        ))}
-      </div>
-
-      <div
-        className="ed-shell ed-rise"
-        data-shown={shown}
-        style={{
-          marginTop: "clamp(2.5rem, 6vw, 4rem)",
-          transitionDelay: "0.35s",
-          display: "flex",
-          justifyContent: "center",
-        }}
-      >
-        <Link
-          to="/xizmatlar"
-          className="ed-btn"
+      <div className="ed-shell">
+        <Spoken
+          as="h2"
+          className="ed-display"
           style={{
-            background: "var(--ed-red-br)",
-            borderColor: "var(--ed-red-br)",
-            color: "var(--ed-offwhite)",
+            fontSize: "clamp(2rem, 5vw, 4rem)",
+            margin: "0 0 clamp(2rem, 5vw, 3.5rem)",
+          }}
+          parts={[{ text: "Xizmatlar", tone: "key" }]}
+        />
+
+        <div className="ed-bento">
+          {SERVICES.map((s, i) => (
+            <a
+              key={s.name}
+              href="#contact"
+              className="ed-bento-cell ed-rise"
+              data-tone={s.tone}
+              data-shown={shown}
+              style={{ transitionDelay: `${i * 0.07}s` }}
+            >
+              <span className="ed-bento-name">{s.name}</span>
+              <span className="ed-bento-note">{s.note}</span>
+              <span className="ed-bento-arrow" aria-hidden="true">
+                <Arrow direction="upRight" />
+              </span>
+            </a>
+          ))}
+        </div>
+
+        <div
+          className="ed-rise"
+          data-shown={shown}
+          style={{
+            marginTop: "clamp(2rem, 5vw, 3rem)",
+            transitionDelay: "0.35s",
           }}
         >
-          Barcha narxlarni ko'rish <Arrow size="0.85em" />
-        </Link>
+          <Link to="/xizmatlar" className="ed-label ed-navlink">
+            Barcha narxlar <Arrow size="0.85em" />
+          </Link>
+        </div>
       </div>
     </section>
   );
