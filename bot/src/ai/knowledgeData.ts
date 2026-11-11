@@ -42,6 +42,22 @@ export const PROJECTS = [
     detail: "Katalog, qidiruv, narx oralig'i va saralash filtrlari; JWT autentifikatsiya, ko'p tilli interfeys va admin dashboard.",
     tech: ["React", "FastAPI", "MongoDB", "Telegram Mini App", "JWT", "i18n"],
   },
+  {
+    key: "hisobim",
+    title: "Hisobim",
+    category: "AI Moliya / Telegram",
+    summary: "O'zbekcha ovozli xabarni tushunadigan Telegram buxgalter va Mini App.",
+    detail: "Bitta ovozli xabardan bir nechta tranzaksiya ajraladi. AI faqat gapni strukturaga soladi; balans, sof foyda va valyuta hisobini backend bilan PostgreSQL deterministik sanaydi, so'm bilan dollar aralashmaydi. Qarz berish-qaytarish, tabiiy tilda tuzatish va audit jurnali bor. Mini App va PWA dashboard, Markaziy bank kursi, push-bildirishnoma. Bot: @Hisobimaibot",
+    tech: ["TypeScript", "Hono", "grammY", "Supabase PostgreSQL", "React", "Whisper STT", "Railway"],
+  },
+  {
+    key: "sahna-studio",
+    title: "Sahna Studio",
+    category: "Chrome kengaytma / AI video",
+    summary: "Google Flow uchun yon panel — sahnalar navbat bilan yaratiladi.",
+    detail: "Promptlarni ro'yxatga yig'ib yoki XLSX'dan import qilib navbatga qo'yadi: to'xtatish, davom ettirish, chiqmagan sahnani avtomatik qayta yuborish. Prompt ustaxonasi, media galereya, tezkor montaj va ovoz bilan boshqaruv. AI uchun foydalanuvchining o'z OpenAI, Gemini yoki OpenRouter kaliti ulanadi; promptlar qurilmada qoladi, oraliq server yo'q.",
+    tech: ["Chrome MV3", "Side Panel API", "JavaScript", "Service Worker", "Web Speech API", "SheetJS"],
+  },
 ] as const;
 
 export const CONTACT = {
