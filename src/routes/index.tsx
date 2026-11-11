@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Nav } from "@/components/editorial/Nav";
+import { Daylight } from "@/components/editorial/Daylight";
 import { Hero } from "@/components/editorial/Hero";
 import { Intro } from "@/components/editorial/Intro";
 import { About } from "@/components/editorial/About";
@@ -35,6 +36,7 @@ function Index() {
   // dotted grid; only the projects scene goes to night.
   return (
     <main className="ed-paper" style={{ overflowX: "clip" }}>
+      <Daylight />
       <Nav />
       <Hero />
       <Intro />

@@ -2562,3 +2562,51 @@ body {
     animation: none;
   }
 }
+
+/* ── Daylight: morning window light over the page (Daylight.tsx) ── */
+.ed-daylight {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+  overflow: hidden;
+  mix-blend-mode: multiply;
+  opacity: 0.17;
+}
+.ed-daylight-sun {
+  position: absolute;
+  inset: -12% -14% -12% -6%;
+  will-change: transform;
+}
+.ed-daylight-map {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: 70% 40%;
+  transform-origin: 85% 15%;
+  animation: ed-breeze 14s ease-in-out infinite alternate;
+}
+@keyframes ed-breeze {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+  50% {
+    transform: translate3d(-0.6%, 0.4%, 0) rotate(-0.35deg) scale(1.01);
+  }
+  100% {
+    transform: translate3d(0.4%, -0.3%, 0) rotate(0.25deg) scale(1.005);
+  }
+}
+@media (max-width: 860px) {
+  .ed-daylight {
+    opacity: 0.14;
+  }
+  .ed-daylight-map {
+    background-position: 80% 30%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ed-daylight-map {
+    animation: none;
+  }
+}
