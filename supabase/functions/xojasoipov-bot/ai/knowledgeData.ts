@@ -27,29 +27,12 @@ export const PROFILE = {
 /** Real project data — mirrors src/data/projects.ts in the portfolio site. */
 export const PROJECTS = [
   {
-    key: "zet",
-    title: "ZET",
-    category: "AI Operating System",
-    summary: "Shaxsiy AI operatsion tizimi — bitta egaga tegishli, ommaviy SaaS emas.",
-    detail:
-      "Buyruq -> Reja -> Harakat -> Tekshirish -> Natija modeli. To'rt bosqichli model strategiyasi (lokal -> bepul -> arzon -> kuchli) va qattiq budjet chegaralari bilan.",
-    tech: ["Python 3.12", "FastAPI", "PostgreSQL", "pgvector", "Redis", "Multi-agent"],
-  },
-  {
     key: "sadiprime",
     title: "SadiPrime",
     category: "AI SaaS / Education",
     summary: "O'quv markazlari uchun AI-quvvatli boshqaruv platformasi.",
     detail: "Ko'p-tenantli CRM: o'qituvchilar, guruhlar, o'quvchilar, davomat, to'lov davrlari va obunalar. Ishlab turgan mahsulot: sadiprime-tizim.uz",
     tech: ["TanStack Start", "TypeScript", "PostgreSQL", "Cloudflare", "Docker"],
-  },
-  {
-    key: "pari",
-    title: "Pari AI",
-    category: "AI Assistant / Telegram",
-    summary: "Next.js asosidagi shaxsiy AI assistant.",
-    detail: "Chat, Telegram bot, knowledge base, SMM va biznes vositalari bitta tizimda. Bulutli LLM bilan bir qatorda lokal model (Ollama) qo'llab-quvvatlanadi.",
-    tech: ["Next.js", "TypeScript", "Python", "Telegram Bot API", "Ollama", "Railway"],
   },
   {
     key: "dli",
