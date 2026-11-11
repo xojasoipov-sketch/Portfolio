@@ -6,6 +6,12 @@ import orbitPortrait from "@/assets/orbit-portrait.webp";
 import { useReveal } from "./useReveal";
 import { Spoken } from "./Spoken";
 import { Arrow } from "./icons";
+import {
+  motion,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+} from "framer-motion";
 
 /**
  * One slot per project, so the ring has one card per project and an equal
@@ -580,6 +586,19 @@ export function Projects() {
 
   const open = zoomed === null ? null : PROJECTS[zoomed];
 
+  // The turn: as the section scrolls in, the paper fades to night under it,
+  // and fades back to paper as it leaves (uslub.md: "oq fon night ga o'tadi
+  // va qaytadi"). One opacity layer, so it stays on the compositor.
+  const { scrollYProgress: pass } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
+  // Function transform, not a range map: see the note in Hero.tsx.
+  const fade = useTransform(pass, (v) =>
+    v < 0.16 ? v / 0.16 : v > 0.84 ? (1 - v) / 0.16 : 1,
+  );
+  const night = useReducedMotion() ? 1 : fade;
+
   return (
     <section
       id="work"
@@ -587,18 +606,25 @@ export function Projects() {
       data-surface="black"
       className="ed-night"
       style={{
-        backgroundColor: "var(--ed-night)",
+        position: "relative",
+        isolation: "isolate",
         color: "var(--ed-offwhite)",
         paddingBlock: "var(--ed-section)",
         overflow: "hidden",
       }}
     >
+      <motion.div
+        className="ed-night-veil"
+        aria-hidden="true"
+        style={{ opacity: night }}
+      />
       <div className="ed-shell">
         {/* The turn ("burilish", uslub.md 5.1): the one night scene on the
             page. Everything above talked about problems and method; this is
             where the reel flips to proof. */}
         <Spoken
           as="h2"
+          night
           className="ed-say ed-turn"
           parts={[
             { text: "Lekin gap kodda emas.", tone: "intro" },

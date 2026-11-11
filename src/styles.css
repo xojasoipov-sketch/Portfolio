@@ -2138,23 +2138,14 @@ body {
 }
 
 /* ---------- Spoken words ---------- */
-/* Not yet said: muted + 6px blur. Said: ink, sharp. Only color and filter
-   transition, staggered per word by --d. */
+/* Color and blur are driven per word by Spoken.tsx (scroll-scrubbed);
+   this only sets the typographic tones. */
 .ed-spoken {
   margin: 0;
 }
 .ed-word {
   display: inline-block;
-  color: var(--ed-mute);
-  filter: blur(6px);
-  transition:
-    color 0.5s var(--ed-ease),
-    filter 0.5s var(--ed-ease);
-  transition-delay: var(--d, 0s);
-}
-.ed-spoken[data-shown="true"] .ed-word {
-  color: var(--ed-ink-now, var(--ed-black));
-  filter: none;
+  will-change: color, filter;
 }
 .ed-word[data-tone="intro"] {
   font-weight: 500;
@@ -2172,9 +2163,6 @@ body {
   font-size: 1.12em;
   line-height: 1.1;
   padding-bottom: 0.08em;
-}
-.ed-spoken[data-shown="true"] .ed-word[data-tone="accent"] {
-  color: var(--ed-red-tx);
 }
 .ed-word[data-tone="accent"] {
   font-weight: 800;
@@ -2201,46 +2189,43 @@ body {
   font-size: clamp(1rem, 1.4vw, 1.15rem);
   line-height: 1.6;
 }
-.ed-say-note .ed-word {
-  filter: blur(4px);
-}
-.ed-spoken.ed-say-note[data-shown="true"] .ed-word {
-  color: var(--ed-gray-tx);
-}
 
-/* ---------- Hero (hook) ---------- */
-.ed-hero {
+/* ---------- Hero: the pinned reel scene ---------- */
+/* 320vh of scroll play one 100dvh frame (Hero.tsx choreographs it). */
+.ed-scene {
   position: relative;
-  min-height: 100dvh;
+  height: 320vh;
+}
+.ed-scene-frame {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
   display: flex;
   align-items: center;
-  padding-top: clamp(5rem, 11vh, 6rem);
-  padding-bottom: clamp(2rem, 6vh, 4rem);
   overflow: hidden;
+  padding-top: clamp(4.5rem, 10vh, 6rem);
+  padding-bottom: clamp(1.5rem, 4vh, 3rem);
+  transform-origin: 50% 40%;
 }
-/* One slow camera push for the whole frame, once (uslub.md: 1.00 -> 1.04). */
-.ed-hero-frame {
+.ed-scene[data-still="true"] {
+  height: auto;
+}
+.ed-scene[data-still="true"] .ed-scene-frame {
+  position: relative;
+  min-height: 100dvh;
+  height: auto;
+}
+.ed-scene-grid {
   width: 100%;
-  animation: ed-push 9s var(--ed-ease) both;
-}
-@keyframes ed-push {
-  from {
-    transform: scale(1);
-  }
-  to {
-    transform: scale(1.04);
-  }
-}
-.ed-hero-grid {
   display: grid;
-  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  grid-template-columns: minmax(0, 6fr) minmax(0, 6fr);
   align-items: center;
   gap: clamp(1.5rem, 4vw, 4rem);
 }
-.ed-hero-copy {
+.ed-scene-copy {
   display: flex;
   flex-direction: column;
-  gap: clamp(1.25rem, 2.5vw, 2rem);
+  gap: clamp(1rem, 2.2vw, 1.75rem);
 }
 .ed-hero-name {
   margin: 0;
@@ -2249,11 +2234,16 @@ body {
   color: var(--ed-gray-tx);
 }
 .ed-hook {
-  font-size: clamp(2.4rem, 5.2vw, 4.9rem);
-  line-height: 1;
+  margin: 0;
+  font-size: clamp(2.3rem, 5vw, 4.7rem);
+  line-height: 1.02;
   letter-spacing: -0.045em;
+  font-weight: 400;
 }
-.ed-hook .ed-word[data-tone="intro"] {
+.ed-hook-line {
+  display: block;
+}
+.ed-hook [data-tone="intro"] {
   font-weight: 500;
 }
 .ed-hook-sub {
@@ -2262,28 +2252,133 @@ body {
   letter-spacing: -0.015em;
   max-width: 24ch;
 }
-.ed-hero-figure {
-  justify-self: center;
-  width: min(100%, 34rem);
+
+/* Stage: portrait on the right, three cards that go from a mess to a
+   neat column on the left. */
+.ed-scene-stage {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  max-width: 40rem;
+  justify-self: end;
+}
+.ed-scene-figure {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 78%;
   aspect-ratio: 1163 / 1044;
 }
-.ed-hero-figure img {
+.ed-scene-figure img {
   -webkit-mask-image: linear-gradient(to bottom, #000 78%, transparent 99%);
   mask-image: linear-gradient(to bottom, #000 78%, transparent 99%);
 }
+.ed-card {
+  position: absolute;
+  left: 0;
+  width: min(62%, 21rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.9rem 1rem;
+  border-radius: 16px;
+  background: var(--ed-white);
+  border: 1px solid var(--ed-line);
+  box-shadow: 0 18px 40px -22px rgba(17, 17, 17, 0.28);
+  will-change: transform, opacity;
+}
+.ed-card[data-slot="0"] {
+  top: 6%;
+}
+.ed-card[data-slot="1"] {
+  top: 34%;
+}
+.ed-card[data-slot="2"] {
+  top: 62%;
+}
+.ed-card-meta {
+  font-size: 0.72rem;
+  color: var(--ed-gray-tx);
+}
+.ed-card-body {
+  font-size: 0.98rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.ed-card-status {
+  position: relative;
+  display: grid;
+  font-size: 0.78rem;
+  color: var(--ed-gray-tx);
+}
+.ed-card-status > span {
+  grid-area: 1 / 1;
+}
+.ed-card-done {
+  color: var(--ed-black);
+  font-weight: 600;
+}
+.ed-maket {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ed-mute);
+}
 @media (max-width: 860px) {
-  .ed-hero-grid {
-    grid-template-columns: 1fr;
-    gap: 1.25rem;
+  .ed-scene {
+    height: 300vh;
   }
-  .ed-hero-figure {
+  .ed-scene-frame {
+    align-items: flex-start;
+  }
+  .ed-scene-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  .ed-scene-stage {
     order: -1;
-    width: min(92%, 26rem);
-    justify-self: end;
+    aspect-ratio: auto;
+    height: 38dvh;
+    max-width: none;
+  }
+  .ed-scene-figure {
+    width: auto;
+    height: 100%;
+  }
+  .ed-card {
+    width: min(64%, 15rem);
+    padding: 0.6rem 0.75rem;
+    border-radius: 12px;
+  }
+  .ed-card-body {
+    font-size: 0.82rem;
+  }
+  .ed-card-meta,
+  .ed-card-status {
+    font-size: 0.66rem;
+  }
+  .ed-card[data-slot="0"] {
+    top: 0;
+  }
+  .ed-card[data-slot="1"] {
+    top: 31%;
+  }
+  .ed-card[data-slot="2"] {
+    top: 62%;
+  }
+  .ed-hook {
+    font-size: clamp(2rem, 9.4vw, 2.6rem);
+  }
+  .ed-hook-sub {
+    font-size: 1.1rem;
   }
   /* Keep the CTA clear of the fixed 64px music disc (bottom-right). */
-  .ed-hero-copy .ed-btn {
-    margin-bottom: 4.5rem;
+  .ed-scene-copy .ed-btn {
+    margin-right: 4.5rem;
   }
 }
 
@@ -2374,36 +2469,27 @@ body {
   }
 }
 
-/* ---------- Services: asymmetric 2+2 bento ---------- */
+/* ---------- Services: cards that stack as you scroll ---------- */
+/* Pure CSS sticky: each card pins a little lower than the one before and
+   the next slides over it. No script, no scroll listener. */
 .ed-bento {
   display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: clamp(0.75rem, 1.5vw, 1rem);
+  gap: clamp(1rem, 3vw, 2rem);
 }
 .ed-bento-cell {
-  position: relative;
+  position: sticky;
+  top: calc(16vh + var(--i, 0) * 1.6rem);
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  gap: 0.75rem;
-  min-height: clamp(13rem, 22vw, 17rem);
-  padding: clamp(1.25rem, 2.5vw, 2rem);
-  border-radius: 20px;
+  gap: 0.9rem;
+  min-height: clamp(15rem, 42vh, 24rem);
+  padding: clamp(1.5rem, 3.5vw, 3rem);
+  border-radius: 24px;
   border: 1px solid var(--ed-line);
   background: var(--ed-white);
-  box-shadow: 0 1px 0 rgba(17, 17, 17, 0.02);
-  transition:
-    border-color 0.35s ease,
-    box-shadow 0.5s var(--ed-ease),
-    transform 0.5s var(--ed-ease);
-}
-.ed-bento-cell:nth-child(1),
-.ed-bento-cell:nth-child(4) {
-  grid-column: span 7;
-}
-.ed-bento-cell:nth-child(2),
-.ed-bento-cell:nth-child(3) {
-  grid-column: span 5;
+  box-shadow: 0 -18px 40px -30px rgba(17, 17, 17, 0.35);
+  transition: border-color 0.35s ease;
 }
 .ed-bento-cell[data-tone="stone"] {
   background: var(--ed-gray-sf);
@@ -2415,56 +2501,52 @@ body {
   background-size: 14px 14px;
 }
 .ed-bento-cell:hover {
-  border-color: rgba(17, 17, 17, 0.25);
-  box-shadow: 0 18px 40px -24px rgba(17, 17, 17, 0.25);
-  transform: translateY(-3px);
+  border-color: rgba(17, 17, 17, 0.3);
 }
 .ed-bento-name {
   font-weight: 800;
-  letter-spacing: -0.035em;
-  line-height: 1.05;
-  font-size: clamp(1.4rem, 2.6vw, 2.1rem);
-  max-width: 16ch;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  font-size: clamp(1.8rem, 4.6vw, 4rem);
+  max-width: 18ch;
 }
 .ed-bento-note {
-  max-width: 34rem;
-  font-size: 0.95rem;
+  max-width: 36rem;
+  font-size: clamp(0.95rem, 1.3vw, 1.1rem);
   line-height: 1.55;
   color: var(--ed-gray-tx);
 }
 .ed-bento-arrow {
   position: absolute;
-  top: clamp(1.25rem, 2.5vw, 2rem);
-  right: clamp(1.25rem, 2.5vw, 2rem);
-  font-size: 1.15rem;
+  top: clamp(1.5rem, 3.5vw, 3rem);
+  right: clamp(1.5rem, 3.5vw, 3rem);
+  font-size: 1.5rem;
   transition: transform 0.5s var(--ed-ease);
 }
 .ed-bento-cell:hover .ed-bento-arrow {
-  transform: translate(3px, -3px);
+  transform: translate(4px, -4px);
 }
 @media (max-width: 768px) {
-  .ed-bento-cell:nth-child(n) {
-    grid-column: 1 / -1;
-    min-height: 11rem;
+  .ed-bento-cell {
+    top: calc(12vh + var(--i, 0) * 1rem);
+    min-height: 15rem;
   }
 }
 
 /* ---------- The night turn (projects) ---------- */
+.ed-night-veil {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--ed-night);
+  pointer-events: none;
+}
 .ed-turn {
   margin-bottom: clamp(3rem, 7vw, 5.5rem);
 }
 
 /* ---------- Reduced motion: everything lands at once, nothing floats ---------- */
 @media (prefers-reduced-motion: reduce) {
-  .ed-word {
-    color: var(--ed-ink-now, var(--ed-black));
-    filter: none;
-    transition: none;
-  }
-  .ed-spoken.ed-say-note .ed-word {
-    color: var(--ed-gray-tx);
-  }
-  .ed-hero-frame,
   .ed-float {
     animation: none;
   }

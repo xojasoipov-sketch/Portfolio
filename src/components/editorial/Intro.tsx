@@ -17,8 +17,7 @@ export function Intro() {
         />
         <Spoken
           className="ed-say-note"
-          delay={0.2}
-          step={0.05}
+          ink="#6b6863"
           parts={[{ text: "Avval chuqur audit. Keyin aniq yechim." }]}
         />
       </div>

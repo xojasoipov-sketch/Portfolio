@@ -4,8 +4,8 @@ import { Arrow } from "./icons";
 import { Spoken } from "./Spoken";
 
 /**
- * Four services as an asymmetric 2+2 bento (wide/narrow, then
- * narrow/wide) instead of four identical numbered rows. Each cell has its
+ * Four services as cards that stack on top of each other while the
+ * visitor scrolls (CSS sticky), instead of four numbered rows. Each card has its
  * own quiet surface (white, stone, dotted) so the grid does not read as
  * four copies.
  */
@@ -60,7 +60,7 @@ export function Services() {
               className="ed-bento-cell ed-rise"
               data-tone={s.tone}
               data-shown={shown}
-              style={{ transitionDelay: `${i * 0.07}s` }}
+              style={{ "--i": i } as React.CSSProperties}
             >
               <span className="ed-bento-name">{s.name}</span>
               <span className="ed-bento-note">{s.note}</span>

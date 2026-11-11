@@ -1,13 +1,23 @@
-import { Fragment, type ElementType } from "react";
-import { useReveal } from "./useReveal";
+import { Fragment, useRef, type ElementType } from "react";
+import {
+  motion,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+  type MotionValue,
+} from "framer-motion";
 
 /**
- * Kinetic "spoken" text, the core motion of the uslub guide: every word is
- * already on screen in the muted, blurred "not yet said" state and turns to
- * ink, sharp, one after another when the line scrolls into view, as if it
- * were being read aloud. Pure CSS transitions on color and filter, driven by
- * one IntersectionObserver per block, so there is no scroll listener and no
- * animation-frame loop.
+ * Kinetic "spoken" text, the core motion of the uslub guide. Every word is
+ * on screen from the start in the muted, 6px-blurred "not yet said" state
+ * and turns to ink, sharp, one after another. The reveal is scrubbed by
+ * scroll: the visitor's scroll is the voice, so scrolling back un-says the
+ * words again.
+ *
+ * Progress comes from framer-motion's useScroll (one shared, batched scroll
+ * source, no per-component listener and no React re-render per frame), or
+ * from a caller-supplied MotionValue so a pinned scene can choreograph
+ * several lines on one timeline.
  *
  * tone:
  *  - "intro"  small lead-in words (weight 500)
@@ -22,72 +32,133 @@ export type SpokenPart = {
   br?: boolean;
 };
 
+const PAPER = { mute: "#b9b6b0", ink: "#111111", accent: "#b3121e" };
+const NIGHT = { mute: "#3b3a38", ink: "#f6f5f2", accent: "#e8404a" };
+
 export function Spoken({
   parts,
   as: Tag = "p",
   className,
   style,
-  step = 0.07,
-  delay = 0,
-  threshold = 0.35,
+  progress,
+  range = [0, 1],
+  night = false,
+  ink,
 }: {
   parts: SpokenPart[];
   as?: ElementType;
   className?: string;
   style?: React.CSSProperties;
-  /** Seconds between two words. */
-  step?: number;
-  /** Seconds before the first word. */
-  delay?: number;
-  threshold?: number;
+  /** Drive the reveal from an outer timeline instead of this block's scroll. */
+  progress?: MotionValue<number>;
+  /** The slice of `progress` over which the words are said. */
+  range?: [number, number];
+  /** Colors for the night surface. */
+  night?: boolean;
+  /** Final color of plain words, e.g. a grey for body copy. */
+  ink?: string;
 }) {
-  const { ref, shown } = useReveal<HTMLElement>(threshold);
-  let i = 0;
+  const ref = useRef<HTMLElement>(null);
+  const reduce = useReducedMotion();
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start 0.92", "start 0.42"],
+  });
+  // Routed through a plain function transform on purpose: framer-motion
+  // otherwise hands opacity/filter mappings of a scroll value to a native
+  // ScrollTimeline, which mis-maps multi-stop ranges here (values rose and
+  // then fell back past the end of their range). The JS path is exact and
+  // still runs off framer's single batched scroll source.
+  const own = useTransform(scrollYProgress, (v) => v);
+  const p = progress ?? own;
+  const palette = night ? NIGHT : PAPER;
+
+  const words: { word: string; tone: string; space: boolean; br: boolean }[] =
+    [];
+  parts.forEach((part, pi) => {
+    const list = part.text.split(/\s+/).filter(Boolean);
+    list.forEach((word, wi) => {
+      const next = parts[pi + 1];
+      words.push({
+        word,
+        tone: part.tone ?? "plain",
+        br: Boolean(part.br && pi > 0 && wi === 0),
+        space: wi < list.length - 1 || Boolean(next && !next.br),
+      });
+    });
+  });
+
+  const n = words.length;
+  const [r0, r1] = range;
+  const span = r1 - r0;
+  // Each word takes a little over its share so neighbours overlap a bit
+  // and the line reads as speech, not as a ticker.
+  const each = Math.min(span, (span / n) * 2.2);
 
   return (
     <Tag
       ref={ref}
       className={["ed-spoken", className].filter(Boolean).join(" ")}
-      data-shown={shown}
       style={style}
     >
-      {parts.map((part, p) => (
-        <Fragment key={p}>
-          {part.br && p > 0 && <br />}
-          {part.text
-            .split(/\s+/)
-            .filter(Boolean)
-            .map((word, w, all) => {
-              const idx = i++;
-              return (
-                <Fragment key={w}>
-                  <span
-                    className="ed-word"
-                    data-tone={part.tone ?? "plain"}
-                    style={
-                      {
-                        "--d": `${(delay + idx * step).toFixed(2)}s`,
-                      } as React.CSSProperties
-                    }
-                  >
-                    {word}
-                  </span>
-                  {/* The space carries the word's tone so it is sized like
-                    the word next to it, not like the (much larger) block. */}
-                  {w < all.length - 1 || needsSpace(parts, p) ? (
-                    <span data-tone={part.tone ?? "plain"}> </span>
-                  ) : null}
-                </Fragment>
-              );
-            })}
-        </Fragment>
-      ))}
+      {words.map((w, i) => {
+        const a = r0 + ((span - each) * i) / Math.max(1, n - 1);
+        const final =
+          w.tone === "accent" ? palette.accent : (ink ?? palette.ink);
+        return (
+          <Fragment key={i}>
+            {w.br && <br />}
+            <Word
+              p={p}
+              a={a}
+              b={a + each}
+              mute={palette.mute}
+              ink={final}
+              tone={w.tone}
+              still={Boolean(reduce)}
+            >
+              {w.word}
+            </Word>
+            {w.space && <span data-tone={w.tone}> </span>}
+          </Fragment>
+        );
+      })}
     </Tag>
   );
 }
 
-/** A space after a part's last word unless the next part opens a new line. */
-function needsSpace(parts: SpokenPart[], p: number) {
-  const next = parts[p + 1];
-  return Boolean(next && !next.br);
+function Word({
+  p,
+  a,
+  b,
+  mute,
+  ink,
+  tone,
+  still,
+  children,
+}: {
+  p: MotionValue<number>;
+  a: number;
+  b: number;
+  mute: string;
+  ink: string;
+  tone: string;
+  still: boolean;
+  children: string;
+}) {
+  const color = useTransform(p, [a, b], [mute, ink]);
+  const filter = useTransform(p, [a, b], ["blur(6px)", "blur(0px)"]);
+
+  if (still) {
+    return (
+      <span className="ed-word" data-tone={tone} style={{ color: ink }}>
+        {children}
+      </span>
+    );
+  }
+  return (
+    <motion.span className="ed-word" data-tone={tone} style={{ color, filter }}>
+      {children}
+    </motion.span>
+  );
 }
