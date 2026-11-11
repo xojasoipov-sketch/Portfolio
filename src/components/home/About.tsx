@@ -1,3 +1,10 @@
+import { useRef } from "react";
+import {
+  motion,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+} from "framer-motion";
 import { Reveal } from "./Reveal";
 import { CLOSEUP } from "./media";
 
@@ -25,12 +32,24 @@ const STACK: { title: string; items: string[] }[] = [
 ];
 
 export function About() {
+  const reduce = useReducedMotion();
+  const photo = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: photo,
+    offset: ["start end", "end start"],
+  });
+  const p = useTransform(scrollYProgress, (v) => v);
+  // The portrait eases back from a slight close-up while it crosses the
+  // screen, like a slow camera pull.
+  const scale = useTransform(p, [0, 1], [1.14, 1]);
+
   return (
     <section id="about" className="hx-section">
       <div className="hx-shell">
         <div className="hx-about">
           <Reveal className="hx-about-photo">
-            <img
+            <motion.img
+              style={reduce ? undefined : { scale }}
               src={CLOSEUP}
               alt="Saidburxon Xojasoipov"
               width={932}
@@ -38,6 +57,7 @@ export function About() {
               loading="lazy"
               decoding="async"
             />
+            <div ref={photo} className="hx-about-probe" aria-hidden="true" />
           </Reveal>
 
           <div className="hx-about-copy">

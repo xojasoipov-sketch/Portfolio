@@ -2,8 +2,10 @@ import { useRef } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   motion,
+  useMotionValue,
   useReducedMotion,
   useScroll,
+  useSpring,
   useTransform,
 } from "framer-motion";
 import { PROJECTS, type Project } from "@/data/projects";
@@ -59,27 +61,50 @@ function Case({ project: p }: { project: Project }) {
   // screenshot is never cropped once the visitor is looking at it.
   const scale = useTransform(prog, [0, 0.45], [1.08, 1]);
 
+  // Desktop only: the frame leans a couple of degrees towards the cursor.
+  const tx = useMotionValue(0);
+  const ty = useMotionValue(0);
+  const rotateY = useSpring(tx, { stiffness: 120, damping: 16, mass: 0.5 });
+  const rotateX = useSpring(ty, { stiffness: 120, damping: 16, mass: 0.5 });
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (reduce || e.pointerType !== "mouse") return;
+    const r = e.currentTarget.getBoundingClientRect();
+    tx.set(((e.clientX - r.left) / r.width - 0.5) * 5);
+    ty.set(((e.clientY - r.top) / r.height - 0.5) * -4);
+  };
+  const onPointerLeave = () => {
+    tx.set(0);
+    ty.set(0);
+  };
+
   const name = [p.title, p.titleAlt].filter(Boolean).join(" ");
 
   return (
     <li className="hx-case">
       <Reveal className="hx-case-shot">
         <div
-          ref={ref}
-          className="hx-case-frame"
-          data-poster={p.poster || undefined}
+          className="hx-case-tilt"
+          onPointerMove={onPointerMove}
+          onPointerLeave={onPointerLeave}
         >
-          {p.shot && (
-            <motion.img
-              src={p.shot}
-              alt={`${name} loyihasi ekrani`}
-              width={1400}
-              height={788}
-              loading="lazy"
-              decoding="async"
-              style={reduce ? undefined : { scale }}
-            />
-          )}
+          <motion.div
+            ref={ref}
+            className="hx-case-frame"
+            data-poster={p.poster || undefined}
+            style={reduce ? undefined : { rotateX, rotateY }}
+          >
+            {p.shot && (
+              <motion.img
+                src={p.shot}
+                alt={`${name} loyihasi ekrani`}
+                width={1400}
+                height={788}
+                loading="lazy"
+                decoding="async"
+                style={reduce ? undefined : { scale }}
+              />
+            )}
+          </motion.div>
         </div>
       </Reveal>
 

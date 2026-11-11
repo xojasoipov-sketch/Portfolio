@@ -1,13 +1,16 @@
 import { useRef } from "react";
 import {
   motion,
+  useMotionValue,
   useReducedMotion,
   useScroll,
+  useSpring,
   useTransform,
 } from "framer-motion";
 import { Arrow } from "@/components/editorial/icons";
 import { Inbox } from "./Inbox";
-import { AVATAR, FIGURE, HERO_VIDEO } from "./media";
+import { Magnetic } from "./Magnetic";
+import { AVATAR, FIGURE } from "./media";
 
 /**
  * The hook (uslub.md, 5.1): the visitor's three pains in plain ink, the
@@ -16,8 +19,13 @@ import { AVATAR, FIGURE, HERO_VIDEO } from "./media";
  *
  * The first paint is the finished frame. The entrance is a short CSS
  * animation that needs no JavaScript (lines rise out of their own mask),
- * so the headline is legible even before hydration. Scroll only adds a
- * slow parallax to the figure; it gates nothing.
+ * so the headline is legible even before hydration.
+ *
+ * On top of that the stage has depth: the disc, the figure and the card
+ * sit on three planes that shift by a few pixels against each other, with
+ * the mouse on a desktop and with scroll everywhere. The card also floats
+ * slowly on its own (CSS). All of it is transform only and none of it
+ * gates anything.
  */
 export function Hero() {
   const reduce = useReducedMotion();
@@ -29,10 +37,42 @@ export function Hero() {
   const p = useTransform(scrollYProgress, (v) => v);
   const figureY = useTransform(p, [0, 1], ["0%", "-7%"]);
   const figureScale = useTransform(p, [0, 1], [1, 1.04]);
-  const discY = useTransform(p, [0, 1], ["0%", "10%"]);
+  const discY = useTransform(p, [0, 1], ["0%", "12%"]);
+  const cardY = useTransform(p, [0, 1], [0, -70]);
+
+  // Pointer position over the hero, -1..1 on both axes, eased by a spring
+  // so the planes glide instead of tracking the cursor rigidly.
+  const mx = useMotionValue(0);
+  const my = useMotionValue(0);
+  const spring = { stiffness: 60, damping: 18, mass: 0.6 };
+  const sx = useSpring(mx, spring);
+  const sy = useSpring(my, spring);
+  const figX = useTransform(sx, (v) => v * 10);
+  const figPY = useTransform(sy, (v) => v * 6);
+  const discX = useTransform(sx, (v) => v * -16);
+  const discPY = useTransform(sy, (v) => v * -10);
+  const cardX = useTransform(sx, (v) => v * 22);
+  const cardPY = useTransform(sy, (v) => v * 14);
+
+  const onPointerMove = (e: React.PointerEvent<HTMLElement>) => {
+    if (reduce || e.pointerType !== "mouse") return;
+    const r = e.currentTarget.getBoundingClientRect();
+    mx.set(((e.clientX - r.left) / r.width) * 2 - 1);
+    my.set(((e.clientY - r.top) / r.height) * 2 - 1);
+  };
+  const onPointerLeave = () => {
+    mx.set(0);
+    my.set(0);
+  };
 
   return (
-    <section id="top" ref={ref} className="hx-hero">
+    <section
+      id="top"
+      ref={ref}
+      className="hx-hero"
+      onPointerMove={onPointerMove}
+      onPointerLeave={onPointerLeave}
+    >
       <div className="hx-dots" aria-hidden="true" />
       <div className="hx-shell hx-hero-grid">
         <div className="hx-hero-copy">
@@ -79,9 +119,11 @@ export function Hero() {
             className="hx-cta hx-in"
             style={{ "--d": 6 } as React.CSSProperties}
           >
-            <a href="#contact" className="hx-btn hx-btn-accent">
-              Bepul tahlil <Arrow size="0.95em" />
-            </a>
+            <Magnetic>
+              <a href="#contact" className="hx-btn hx-btn-accent">
+                Bepul tahlil <Arrow size="0.95em" />
+              </a>
+            </Magnetic>
             <a href="#work" className="hx-textlink">
               Ishlarni ko'rish <Arrow direction="down" size="0.9em" />
             </a>
@@ -93,25 +135,23 @@ export function Hero() {
           style={{ "--d": 4 } as React.CSSProperties}
         >
           <motion.div
-            className="hx-disc"
+            className="hx-plane"
             aria-hidden="true"
-            style={reduce ? undefined : { y: discY }}
-          />
-          <motion.div
-            className="hx-figure"
-            style={reduce ? undefined : { y: figureY, scale: figureScale }}
+            style={reduce ? undefined : { x: discX, y: discPY }}
           >
-            {HERO_VIDEO && !reduce ? (
-              <video
-                src={HERO_VIDEO}
-                poster={FIGURE}
-                autoPlay
-                muted
-                playsInline
-                preload="metadata"
-                aria-label="Saidburxon Xojasoipov"
-              />
-            ) : (
+            <motion.div
+              className="hx-disc"
+              style={reduce ? undefined : { y: discY }}
+            />
+          </motion.div>
+          <motion.div
+            className="hx-plane"
+            style={reduce ? undefined : { x: figX, y: figPY }}
+          >
+            <motion.div
+              className="hx-figure"
+              style={reduce ? undefined : { y: figureY, scale: figureScale }}
+            >
               <img
                 src={FIGURE}
                 alt="Saidburxon Xojasoipov"
@@ -121,9 +161,19 @@ export function Hero() {
                 decoding="sync"
                 fetchPriority="high"
               />
-            )}
+            </motion.div>
           </motion.div>
-          <Inbox />
+          <motion.div
+            className="hx-plane"
+            style={reduce ? undefined : { x: cardX, y: cardPY }}
+          >
+            <motion.div
+              className="hx-inbox-pos"
+              style={reduce ? undefined : { y: cardY }}
+            >
+              <Inbox />
+            </motion.div>
+          </motion.div>
         </div>
       </div>
     </section>

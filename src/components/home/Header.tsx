@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { Arrow } from "@/components/editorial/icons";
 
 // Hash links go through the home route, so the same header would still
@@ -28,6 +29,9 @@ export function Header() {
   const panelRef = useRef<HTMLDivElement | null>(null);
   const closeRef = useRef<HTMLButtonElement | null>(null);
   const toggleRef = useRef<HTMLButtonElement | null>(null);
+  // How far down the page the visitor is, drawn as a hairline on the bar.
+  const { scrollYProgress } = useScroll();
+  const progress = useTransform(scrollYProgress, (v) => v);
 
   // One passive scroll listener, coalesced to a frame. State only changes
   // when a threshold is crossed, so scrolling does not re-render the bar.
@@ -136,6 +140,11 @@ export function Header() {
             </button>
           </div>
         </div>
+        <motion.span
+          className="hx-progress"
+          aria-hidden="true"
+          style={{ scaleX: progress }}
+        />
       </header>
 
       {open && (

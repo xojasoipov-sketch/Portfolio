@@ -13,11 +13,3 @@ import avatar from "@/assets/avatar.webp";
 export const FIGURE: string = standing;
 export const CLOSEUP: string = closeup;
 export const AVATAR: string = avatar;
-
-/**
- * Optional walk-in clip for the hero. When a file is set here the hero
- * plays it once (muted, inline) in place of the still figure and keeps the
- * still as its poster and as the reduced-motion fallback. Null means the
- * hero shows the still figure, which is a finished state on its own.
- */
-export const HERO_VIDEO: string | null = null;

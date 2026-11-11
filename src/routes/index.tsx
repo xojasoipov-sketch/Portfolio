@@ -3,6 +3,7 @@ import { Header } from "@/components/home/Header";
 import { Hero } from "@/components/home/Hero";
 import { Manifest } from "@/components/home/Manifest";
 import { Process } from "@/components/home/Process";
+import { Drift } from "@/components/home/Drift";
 import { Services } from "@/components/home/Services";
 import { Work } from "@/components/home/Work";
 import { About } from "@/components/home/About";
@@ -39,6 +40,7 @@ function Index() {
       <Hero />
       <Manifest />
       <Process />
+      <Drift />
       <Services />
       <Work />
       <About />
