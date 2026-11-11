@@ -1,6 +1,9 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
+@import "@fontsource-variable/geist";
+@import "@fontsource/instrument-serif/400-italic.css";
+@import "./home.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -161,49 +164,51 @@
 }
 
 /* ============================================================
-   EDITORIAL DESIGN SYSTEM — Saidburxon Xojasoipov
-   Off-white / black canvas, deep editorial red accent.
-   No neon, no glassmorphism, no blue/purple gradients.
+   DESIGN SYSTEM: Saidburxon Xojasoipov, after uslub.md (section 3).
+   "Tinch, premium, tabiiy." Paper, ink, one red accent used for one
+   key word or the CTA (well under 10% of any screen), night only for the
+   single "turn" scene. No glitch, neon, glow, sharp zoom or spinning.
    ============================================================ */
 :root {
-  /* Core palette */
-  --ed-offwhite: #f5f2ef;
+  /* uslub.md palette */
+  --ed-offwhite: #f6f5f2; /* --paper */
   --ed-white: #ffffff;
-  --ed-black: #050505;
-  --ed-deep: #000000;
-  --ed-red: #8e0710;
-  --ed-red-br: #b20d18;
-  /* The brand red as TEXT. Separate from --ed-red-br because that one is also
-     a button background carrying off-white text, so the two roles pull the
-     hue in opposite directions: light enough to read on near-black is too
-     light to sit behind off-white. Overridden per surface below. */
-  --ed-red-tx: #8e0710;
+  --ed-black: #111111; /* --ink */
+  --ed-night: #0d0d0e; /* --night: the one "burilish" scene */
+  --ed-mute: #b9b6b0; /* --mute: words not yet "spoken" */
+  --ed-line: #e4e2dd; /* --line: dotted grid, dividers */
+  --ed-deep: #0d0d0e;
+  --ed-red: #b3121e; /* --accent */
+  --ed-red-br: #b3121e;
+  /* The accent as TEXT. #b3121e on paper is 6.1:1; on night it drops under
+     3:1, so the night surface swaps in a lighter red below. */
+  --ed-red-tx: #b3121e;
   --ed-red-mut: #6e0a10;
-  --ed-gray-sf: #d9d6d2;
-  --ed-gray-tx: #696969;
+  --ed-gray-sf: #eceae6;
+  /* Secondary body text. --mute itself is 1.9:1 on paper, fine for a word
+     that is about to turn to ink, not for text that stays. */
+  --ed-gray-tx: #6b6863;
 
   /* Type */
-  --ed-font: "Inter", "Neue Montreal", "Helvetica Neue", Arial, sans-serif;
+  --ed-font: "Geist Variable", "Helvetica Neue", Arial, sans-serif;
+  --ed-serif: "Instrument Serif", Georgia, serif;
 
-  /* Rhythm */
+  /* Motion: uslub.md asks for a soft 0.5s power3.out appear. */
+  --ed-ease: cubic-bezier(0.215, 0.61, 0.355, 1);
+
+  /* Rhythm: a lot of air, the "oq havo" of the guide. */
   --ed-gutter: clamp(1.25rem, 5vw, 5rem);
-  --ed-section: clamp(5rem, 12vw, 11rem);
-  --ed-max: 1600px;
+  --ed-section: clamp(5rem, 11vw, 9.5rem);
+  --ed-max: 1440px;
 }
 
-/* Dark surfaces need lighter values of the two text roles. Measured against
-   --ed-black (#050505), the light-surface values fail WCAG AA for body text:
-   #8e0710 is 2.12:1 and #696969 is 3.71:1, both well under the 4.5:1 floor,
-   and every affected string is 9-13px. The replacements measure 5.11:1 and
-   7.24:1. Redefining the tokens here rather than editing call sites means
-   every existing use picks the right one up from its surface.
-
-   --ed-red-br is deliberately NOT redefined: it is a button background on
-   these same surfaces, and lightening it would drop off-white text on those
-   buttons from 6.35:1 to 3.58:1 -- fixing one failure by creating another. */
+/* Night surface (projects scene, /demo, /admin): lighter text roles so they
+   keep WCAG AA against near-black. */
 [data-surface="black"] {
   --ed-red-tx: #e8404a;
   --ed-gray-tx: #9a9a9a;
+  --ed-mute: #3b3a38;
+  --ed-ink-now: var(--ed-offwhite);
 }
 
 html {
@@ -251,10 +256,10 @@ body {
 /* Reveal-on-scroll primitives */
 .ed-rise {
   opacity: 0;
-  transform: translateY(30px);
+  transform: translateY(14px);
   transition:
-    opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+    opacity 0.5s var(--ed-ease),
+    transform 0.5s var(--ed-ease);
 }
 .ed-rise[data-shown="true"] {
   opacity: 1;
@@ -269,28 +274,22 @@ body {
 .ed-clip > span {
   display: block;
   transform: translateY(110%);
-  transition: transform 1s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 0.5s var(--ed-ease);
 }
 .ed-clip[data-shown="true"] > span {
   transform: none;
 }
 
-/* Image reveal: curtain wipes away to expose the visual */
+/* Image reveal: a plain soft fade. The red curtain wipe it replaced is the
+   "qizil mo'yqalam o'tishi" uslub.md retired. */
 .ed-veil {
   position: relative;
   overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.5s var(--ed-ease);
 }
-.ed-veil::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: var(--ed-red);
-  transform-origin: right;
-  transform: scaleX(1);
-  transition: transform 1.1s cubic-bezier(0.76, 0, 0.24, 1);
-}
-.ed-veil[data-shown="true"]::after {
-  transform: scaleX(0);
+.ed-veil[data-shown="true"] {
+  opacity: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -300,23 +299,10 @@ body {
     transform: none;
     transition: none;
   }
-  .ed-veil::after {
-    display: none;
+  .ed-veil {
+    opacity: 1;
+    transition: none;
   }
-}
-
-/* Cursor-follow ambient glow for dark sections — set as a background layer
-   (not a positioned overlay) so it always paints behind real content with
-   no z-index bookkeeping. `--spot-x`/`--spot-y` are written by useSpotlight;
-   they default to the section's center so nothing looks broken before the
-   first pointermove. */
-.ed-spotlight {
-  background-image: radial-gradient(
-    560px circle at var(--spot-x, 50%) var(--spot-y, 30%),
-    rgba(178, 13, 24, 0.16),
-    transparent 62%
-  );
-  background-repeat: no-repeat;
 }
 
 /* Hairline red rule used between editorial blocks */
@@ -325,29 +311,6 @@ body {
   background: var(--ed-red);
   opacity: 0.35;
   border: 0;
-}
-
-/* Marquee — horizontal editorial movement */
-@keyframes ed-slide {
-  to {
-    transform: translateX(-50%);
-  }
-}
-.ed-track {
-  display: flex;
-  width: max-content;
-  animation: ed-slide 38s linear infinite;
-}
-.ed-track[data-reverse="true"] {
-  animation-direction: reverse;
-}
-.ed-marquee:hover .ed-track {
-  animation-play-state: paused;
-}
-@media (prefers-reduced-motion: reduce) {
-  .ed-track {
-    animation: none;
-  }
 }
 
 /* Selection + focus in brand red */
@@ -411,8 +374,8 @@ body {
 /* Filled (not outlined) so it reads as the one thing to notice, and stays
    visible on mobile where the rest of the nav collapses into the menu. */
 .ed-navpricing {
-  background: var(--ed-red-br);
-  color: var(--ed-offwhite);
+  border: 1px solid currentColor;
+  color: inherit;
   border-radius: 999px;
   padding: 0.45rem 1.1rem;
   white-space: nowrap;
@@ -421,7 +384,9 @@ body {
     transform 0.3s ease;
 }
 .ed-navpricing:hover {
-  background: var(--ed-red);
+  background: var(--ed-black);
+  border-color: var(--ed-black);
+  color: var(--ed-offwhite);
   transform: translateY(-1px);
 }
 
@@ -432,84 +397,6 @@ body {
   [data-mobile-toggle] {
     display: flex !important;
   }
-}
-
-/* ---------- Skills: oversized hoverable type list ---------- */
-.ed-skill {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 1.5rem;
-  padding: clamp(0.6rem, 1.6vw, 1.15rem) 0;
-  border-bottom: 1px solid rgba(5, 5, 5, 0.12);
-  transition: color 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.ed-skill:first-child {
-  border-top: 1px solid rgba(5, 5, 5, 0.12);
-}
-.ed-skill-name {
-  font-weight: 800;
-  letter-spacing: -0.045em;
-  text-transform: uppercase;
-  font-size: clamp(1.6rem, 5.2vw, 3.6rem);
-  line-height: 1;
-  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.ed-skill:hover {
-  color: var(--ed-red);
-}
-.ed-skill:hover .ed-skill-name {
-  transform: translateX(clamp(0.5rem, 2vw, 1.75rem));
-}
-
-/* ---------- Services: numbered rows that invert on hover ---------- */
-.ed-service {
-  position: relative;
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: clamp(1rem, 4vw, 3rem);
-  padding: clamp(1.4rem, 3.4vw, 2.6rem) var(--ed-gutter);
-  border-top: 1px solid rgba(5, 5, 5, 0.14);
-  transition:
-    background 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-    color 0.45s ease;
-}
-.ed-service:last-child {
-  border-bottom: 1px solid rgba(5, 5, 5, 0.14);
-}
-.ed-service:hover {
-  background: var(--ed-black);
-  color: var(--ed-offwhite);
-}
-.ed-service:hover .ed-service-num {
-  color: var(--ed-red-tx);
-}
-.ed-service-num {
-  font-weight: 500;
-  font-size: clamp(0.7rem, 1vw, 0.8rem);
-  letter-spacing: 0.2em;
-  color: var(--ed-red);
-  transition: color 0.45s ease;
-}
-.ed-service-name {
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: -0.04em;
-  line-height: 1;
-  font-size: clamp(1.35rem, 4.4vw, 3rem);
-}
-.ed-service-arrow {
-  font-size: clamp(1rem, 2vw, 1.5rem);
-  opacity: 0;
-  transform: translateX(-0.75rem);
-  transition:
-    opacity 0.4s ease,
-    transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.ed-service:hover .ed-service-arrow {
-  opacity: 1;
-  transform: none;
 }
 
 /* ---------- Buttons ---------- */
@@ -576,159 +463,6 @@ body {
       border-color 0.2s ease;
     transform: none !important;
   }
-}
-
-/* ---------- Contact form ---------- */
-.ed-field {
-  width: 100%;
-  background: transparent;
-  border: 0;
-  border-bottom: 1px solid rgba(245, 242, 239, 0.28);
-  color: var(--ed-offwhite);
-  font-family: inherit;
-  font-size: 1rem;
-  padding: 0.85rem 0;
-  transition: border-color 0.3s ease;
-}
-.ed-field::placeholder {
-  color: rgba(245, 242, 239, 0.42);
-}
-.ed-field:focus {
-  outline: none;
-  border-bottom-color: var(--ed-red-br);
-}
-
-/* ---------- About: editorial three-column ---------- */
-.ed-about-grid {
-  display: grid;
-  grid-template-columns: minmax(6rem, 1fr) minmax(0, 2fr) minmax(0, 2fr);
-  gap: clamp(1.5rem, 5vw, 4.5rem);
-  align-items: start;
-}
-@media (max-width: 900px) {
-  .ed-about-grid {
-    grid-template-columns: 1fr;
-    gap: 2.25rem;
-  }
-}
-
-/* ---------- Projects: large editorial panel ---------- */
-@keyframes ed-panel-in {
-  from {
-    opacity: 0;
-    transform: translateX(28px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-.ed-proj {
-  animation: ed-panel-in 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-}
-@media (prefers-reduced-motion: reduce) {
-  .ed-proj {
-    animation: none;
-  }
-}
-
-.ed-proj-head {
-  display: flex;
-  align-items: flex-start;
-  gap: clamp(0.75rem, 2vw, 1.75rem);
-}
-.ed-proj-index {
-  font-size: clamp(0.85rem, 1.2vw, 1rem);
-  color: var(--ed-red-tx);
-  padding-top: 0.6em;
-  flex-shrink: 0;
-}
-.ed-proj-title {
-  font-size: clamp(2.6rem, 12vw, 9rem);
-  margin: 0;
-  line-height: 0.85;
-}
-
-.ed-proj-visual {
-  margin-top: clamp(1.5rem, 4vw, 2.75rem);
-  aspect-ratio: 16 / 9;
-  width: 100%;
-  max-height: min(50vh, 480px);
-  overflow: hidden;
-  border-radius: 4px;
-  background: #0e0e0e;
-  box-shadow: 0 40px 90px rgba(0, 0, 0, 0.55);
-}
-
-.ed-proj-meta {
-  display: grid;
-  grid-template-columns: 1.4fr 1fr;
-  gap: clamp(1.5rem, 4vw, 3.5rem);
-  margin-top: clamp(1.5rem, 4vw, 2.5rem);
-}
-@media (max-width: 860px) {
-  .ed-proj-meta {
-    grid-template-columns: 1fr;
-  }
-}
-
-.ed-proj-tech {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-}
-.ed-proj-tech li {
-  font-size: 0.68rem;
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  padding: 0.4rem 0.8rem;
-  border: 1px solid rgba(245, 242, 239, 0.22);
-  border-radius: 999px;
-  white-space: nowrap;
-}
-
-.ed-proj-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-  margin-top: clamp(2rem, 5vw, 3.5rem);
-  padding-top: clamp(1.25rem, 3vw, 2rem);
-  border-top: 1px solid rgba(245, 242, 239, 0.16);
-}
-@media (max-width: 640px) {
-  .ed-proj-nav {
-    justify-content: center;
-  }
-  .ed-proj-nav .ed-btn {
-    font-size: 0.62rem;
-    padding: 0.7rem 1.1rem;
-  }
-}
-
-/* ---------- Contact ---------- */
-.ed-contact-grid {
-  display: grid;
-  grid-template-columns: 1.3fr 1fr;
-  gap: clamp(2rem, 6vw, 5rem);
-  margin-top: clamp(2.5rem, 6vw, 4.5rem);
-}
-@media (max-width: 860px) {
-  .ed-contact-grid {
-    grid-template-columns: 1fr;
-  }
-}
-.ed-contact-grid label {
-  display: block;
-}
-.ed-contact-grid label > span {
-  display: block;
-  margin-bottom: 0.35rem;
 }
 
 /* Anchor targets clear the fixed nav rather than hiding under it. */
@@ -1308,62 +1042,6 @@ body {
   color: var(--ed-red);
 }
 
-/* ============================================================== ORBIT ====
-   The work section: the projects turn around the portrait, and a click
-   opens one full size.
-
-   The ring is driven by one CSS custom property, --ed-spin, written by a
-   single rAF loop. Everything else is static CSS reading that variable, so
-   a frame costs one property write and no React render. Each card keeps the
-   angle of its place on the ring, and the ring's plane is tilted back so the
-   whole thing is seen slightly from above: the far side rides higher, the
-   near side lower, and the path reads as a circle instead of a straight row.
-   ======================================================================== */
-
-.ed-orbit-stage {
-  position: relative;
-  perspective: 2400px;
-  perspective-origin: 50% 52%;
-  height: clamp(430px, 62vh, 700px);
-  margin-inline: calc(var(--ed-gutter) * -1);
-}
-
-.ed-orbit-world {
-  position: absolute;
-  inset: 0;
-  transform-style: preserve-3d;
-  /* A grab cursor tells the visitor the ring is theirs to spin; ':active'
-     flips to grabbing so the press feels like a hold. */
-  cursor: grab;
-  --ed-spin: 0deg;
-  --ed-orbit-r: clamp(230px, 30vw, 430px);
-  /* Negative tilts the far half of the ring up the screen, which is what
-     looking down on a turntable does. Positive would show it from below. */
-  --ed-orbit-tilt: -13deg;
-}
-
-/* The figure stands at the centre of the ring, so cards pass in front of and
-   behind it. Sorting is the browser's, from the shared 3D context.
-
-   The photo is not a cutout: its background is already within a few levels of
-   the section's black, so feathering the edges is enough to make it read as
-   one. -60% rather than -50% because the man stands right of his own frame. */
-.ed-orbit-figure {
-  position: absolute;
-  left: 50%;
-  bottom: 0;
-  width: clamp(250px, 29vw, 400px);
-  transform: translateX(-50%) translateZ(0);
-  transform-style: preserve-3d;
-  pointer-events: none;
-}
-
-.ed-orbit-figure img {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
 /* ---------------------------------------------------------------------------
    Ring entry: the cards bloom out of the centre the first time the section
    is scrolled into view, then the ring behaves exactly as it always has.
@@ -1392,728 +1070,6 @@ body {
   syntax: "<number>";
   inherits: false;
   initial-value: 1;
-}
-
-/* Set from the component before the first paint of the section, so the deck
-   is never seen expanded and then yanked back in. */
-.ed-orbit-world[data-entry="pending"] .ed-orbit-slot {
-  --ed-enter: 0.1;
-}
-
-.ed-orbit-world[data-entry="done"] .ed-orbit-slot {
-  --ed-enter: 1;
-  transition: --ed-enter 1.15s cubic-bezier(0.22, 1, 0.36, 1);
-  /* Written per slot by the component, so the cards leave the stack one after
-     another instead of expanding as a single disc. */
-  transition-delay: var(--ed-enter-delay, 0ms);
-}
-
-/* Reduced motion gets the settled ring immediately -- the component skips
-   straight to "done" and this drops the easing that would otherwise still
-   play out over a second. */
-@media (prefers-reduced-motion: reduce) {
-  .ed-orbit-world[data-entry="done"] .ed-orbit-slot {
-    transition: none;
-  }
-}
-
-.ed-orbit-slot {
-  position: absolute;
-  /* The tilt swings the front of the ring down the stage, so the centre sits
-     higher than it would on a flat ring to leave the near card room. */
-  top: 52%;
-  left: 50%;
-  width: clamp(180px, 21vw, 290px);
-  margin: 0;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: inherit;
-  cursor: pointer;
-  transform-style: preserve-3d;
-  /* No counter-rotation: the card stays tangent to the ring, so it turns as it
-     travels and the arc reads as depth rather than as a flat row.
-
-     The rotateX comes first, so it tilts the plane the whole orbit is drawn
-     in rather than just the card -- the translateZ that follows is measured
-     along an axis that has already been tipped back. */
-  transform: translate(-50%, -50%) rotateX(var(--ed-orbit-tilt))
-    rotateY(calc(var(--ed-slot) + var(--ed-spin)))
-    translateZ(calc(var(--ed-orbit-r) * var(--ed-enter, 1)));
-  /* --ed-depth is 0 at the back of the ring and 1 at the front; the two
-     faces below each carry their own backface-visibility so the slot itself
-     stays double-sided. */
-  --ed-depth: 1;
-  /* No opacity on the slot: setting it forces the browser to composite this
-     element as a flat layer, which pulls it out of the shared 3D context and
-     breaks depth-sorting for its children (front face and back face). */
-}
-
-.ed-orbit-face {
-  position: relative;
-  display: block;
-  transition:
-    border-color 0.4s ease,
-    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.45s ease,
-    background 0.45s ease;
-  border-radius: 1.25rem;
-  border: 1px solid rgba(245, 242, 239, 0.16);
-  background:
-    linear-gradient(
-      180deg,
-      rgba(245, 242, 239, 0.07),
-      rgba(245, 242, 239, 0.02)
-    ),
-    rgba(5, 5, 5, 0.55);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  padding: 1rem 1rem 1.15rem;
-  text-align: left;
-  box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.9);
-  /* The reverse of this face is the back layer below; the browser only paints
-     whichever one is currently pointing at the viewer. */
-  backface-visibility: hidden;
-}
-
-/* The card's other side. Rotated 180 degrees around Y so it sits on the same
-   plane as the face but pointing away from it: as the slot turns, the browser
-   shows exactly one of the two at any time. Kept nearly blank on purpose --
-   only the project number sits on it -- so a card behind the figure reads as
-   turned around rather than as another content-heavy card fighting for the
-   eye. */
-.ed-orbit-back {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 1.25rem;
-  border: 1px solid rgba(245, 242, 239, 0.1);
-  background: radial-gradient(
-    circle at 50% 30%,
-    rgba(245, 242, 239, 0.05),
-    rgba(5, 5, 5, 0.6) 70%
-  );
-  transform: rotateY(180deg);
-  backface-visibility: hidden;
-  pointer-events: none;
-}
-
-.ed-orbit-back-index {
-  font-size: 2rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  color: rgba(245, 242, 239, 0.35);
-}
-
-/* Hover was a 1px border-colour change and nothing else, which on a card that
-   is already rotating past you barely registered as a response at all. The
-   lift is done with translateZ rather than translateY on purpose: the slot is
-   inside a preserve-3d context tilted by --ed-orbit-tilt, so Z moves the card
-   toward the viewer *along the ring's own axis* and the highlight reads as
-   the card stepping out of the orbit. A Y translate would slide it across the
-   tilted plane and look like it had come loose.
-
-   Nothing here touches the slot's own transform, so the ring's geometry,
-   spacing and physics are exactly as before. */
-.ed-orbit-slot:hover .ed-orbit-face,
-.ed-orbit-slot:focus-visible .ed-orbit-face {
-  border-color: var(--ed-red-tx);
-  transform: translateZ(18px);
-  background:
-    linear-gradient(
-      180deg,
-      rgba(245, 242, 239, 0.12),
-      rgba(245, 242, 239, 0.03)
-    ),
-    rgba(5, 5, 5, 0.55);
-  box-shadow:
-    0 30px 60px -30px rgba(0, 0, 0, 0.9),
-    0 0 34px -8px rgba(232, 64, 74, 0.45);
-}
-
-/* The corner tally lights up with it -- a small second cue, so the state is
-   still legible for someone who cannot pick a red border out of a dark card. */
-.ed-orbit-slot:hover .ed-orbit-index,
-.ed-orbit-slot:focus-visible .ed-orbit-index {
-  color: var(--ed-offwhite);
-}
-
-/* No transform transition under reduced motion: the colour cues alone carry
-   the state. */
-@media (prefers-reduced-motion: reduce) {
-  .ed-orbit-slot:hover .ed-orbit-face,
-  .ed-orbit-slot:focus-visible .ed-orbit-face {
-    transform: none;
-  }
-}
-
-/* The outline used to be removed here outright, leaving a 1px border colour
-   change as the only cue -- 1.73:1 between the two states, on a card that is
-   rotating while you look at it. For practical purposes the five project
-   cards had no visible focus. */
-.ed-orbit-slot:focus-visible {
-  outline: 2px solid var(--ed-offwhite);
-  outline-offset: 4px;
-  border-radius: 1.4rem;
-}
-
-.ed-orbit-world:active {
-  cursor: grabbing;
-}
-
-.ed-orbit-index {
-  font-size: 0.62rem;
-  letter-spacing: 0.22em;
-  color: var(--ed-red-tx);
-}
-
-.ed-orbit-title {
-  margin: 0.5rem 0 0.15rem;
-  font-size: clamp(0.95rem, 1.5vw, 1.2rem);
-  font-weight: 600;
-  line-height: 1.1;
-  letter-spacing: -0.01em;
-}
-
-.ed-orbit-cat {
-  margin: 0;
-  font-size: 0.6rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--ed-gray-tx);
-}
-
-.ed-orbit-shot {
-  margin-top: 0.85rem;
-  aspect-ratio: 16 / 10;
-  border-radius: 0.75rem;
-  overflow: hidden;
-  background: rgba(245, 242, 239, 0.05);
-}
-
-.ed-orbit-shot img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.ed-orbit-open {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin-top: 0.85rem;
-  font-size: 0.62rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--ed-offwhite);
-}
-
-/* --- the zoomed card ---------------------------------------------------- */
-
-.ed-zoom {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  display: grid;
-  place-items: center;
-  padding: var(--ed-gutter);
-  background: rgba(0, 0, 0, 0.86);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  animation: ed-zoom-in 0.32s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.ed-zoom-panel {
-  position: relative;
-  width: min(1040px, 100%);
-  max-height: 100%;
-  overflow-y: auto;
-  border-radius: 1.5rem;
-  border: 1px solid rgba(245, 242, 239, 0.14);
-  background: linear-gradient(180deg, #0c0c0e, #050505);
-  padding: clamp(1.25rem, 3vw, 2.5rem);
-  animation: ed-zoom-panel 0.42s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.ed-zoom-close {
-  position: absolute;
-  top: 0.9rem;
-  right: 0.9rem;
-  width: 2.4rem;
-  height: 2.4rem;
-  display: grid;
-  place-items: center;
-  border-radius: 999px;
-  border: 1px solid rgba(245, 242, 239, 0.2);
-  background: none;
-  color: var(--ed-offwhite);
-  cursor: pointer;
-  transition: border-color 0.3s ease;
-}
-
-.ed-zoom-close:hover {
-  border-color: var(--ed-red-br);
-}
-
-.ed-zoom-shot {
-  border-radius: 1rem;
-  overflow: hidden;
-  margin-bottom: clamp(1rem, 2.5vw, 1.75rem);
-  background: rgba(245, 242, 239, 0.05);
-}
-
-.ed-zoom-shot img {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
-@keyframes ed-zoom-in {
-  from {
-    opacity: 0;
-  }
-}
-
-@keyframes ed-zoom-panel {
-  from {
-    opacity: 0;
-    transform: scale(0.94) translateY(14px);
-  }
-}
-
-/* --- small screens ------------------------------------------------------
-   At 72 degrees apart the cards clear each other on any radius that fits the
-   screen, so the ring can sit inside the viewport here rather than running
-   off both edges.
-
-   The figure goes: at this width it sits behind every card and reads as a
-   smudge, and with it gone the ring belongs in the middle of the stage
-   rather than low in it. */
-@media (max-width: 760px) {
-  .ed-orbit-stage {
-    perspective: 1100px;
-    height: clamp(460px, 68vh, 560px);
-  }
-
-  .ed-orbit-world {
-    --ed-orbit-r: 200px;
-    /* Less tilt: the stage is short here, and a steep one would push the near
-       card off its bottom edge. */
-    --ed-orbit-tilt: -10deg;
-  }
-
-  /* The figure survives on mobile too, only narrower: without it the ring
-     turned around nothing and the section lost its subject. Raised well
-     off the stage bottom so his head sits above the ring, not behind it --
-     without that the near card covered his face and only the shoulders
-     showed. */
-  .ed-orbit-figure {
-    display: block;
-    width: 210px;
-    bottom: 18%;
-  }
-
-  .ed-orbit-slot {
-    /* Ring sits at waist height, so cards orbit around him like an aura
-       rather than passing over his face. */
-    top: 62%;
-    width: 155px;
-  }
-
-  .ed-orbit-title {
-    font-size: 0.9rem;
-  }
-
-  .ed-orbit-shot {
-    margin-top: 0.6rem;
-  }
-
-  .ed-orbit-back-index {
-    font-size: 1.5rem;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ed-zoom,
-  .ed-zoom-panel {
-    animation: none;
-  }
-}
-
-/* --- floating turntable toggle -----------------------------------------
-   A record deck in the bottom corner of every page, pinned there by
-   rendering in __root.tsx so no route has to know it exists.
-
-   The first version of this did spin, and no one could tell: the disc was a
-   radial gradient with concentric rings, which is rotationally symmetric, so
-   every frame of the rotation looked exactly like the last. Motion needs
-   something off-axis to carry it -- here a sheen wedge, an off-centre mark
-   on the label, and a tone arm that drops onto the record on play. */
-
-.ed-music-toggle {
-  position: fixed;
-  right: max(1.1rem, env(safe-area-inset-right, 0));
-  bottom: max(1.1rem, env(safe-area-inset-bottom, 0));
-  z-index: 60;
-  width: 64px;
-  height: 64px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-  color: inherit;
-  transition: transform 0.25s ease;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.ed-music-toggle:hover {
-  transform: scale(1.06);
-}
-
-.ed-music-toggle:focus-visible {
-  outline: 2px solid var(--ed-red-br, #d43f2b);
-  outline-offset: 4px;
-  border-radius: 999px;
-}
-
-.ed-music-deck {
-  position: relative;
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
-/* --- the record --------------------------------------------------------- */
-
-.ed-music-disc {
-  position: absolute;
-  inset: 4px;
-  border-radius: 999px;
-  overflow: hidden;
-  background: radial-gradient(
-    circle at 50% 50%,
-    #1c1c21 0%,
-    #0a0a0c 62%,
-    #050506 100%
-  );
-  box-shadow:
-    0 8px 24px rgba(0, 0, 0, 0.6),
-    inset 0 0 0 1px rgba(245, 242, 239, 0.09);
-  /* Wound up but held: animation-play-state lets a stopped record coast the
-     rest of its current turn instead of snapping back to zero. */
-  animation: ed-music-spin 2.6s linear infinite;
-  animation-play-state: paused;
-}
-
-.ed-music-toggle[data-playing] .ed-music-disc {
-  animation-play-state: running;
-}
-
-.ed-music-groove {
-  position: absolute;
-  border-radius: 999px;
-  border: 1px solid rgba(245, 242, 239, 0.055);
-  pointer-events: none;
-}
-
-.ed-music-groove:nth-child(1) {
-  inset: 3px;
-}
-.ed-music-groove:nth-child(2) {
-  inset: 8px;
-}
-.ed-music-groove:nth-child(3) {
-  inset: 13px;
-}
-
-/* The asymmetry that makes the spin legible. A conic gradient with one
-   bright wedge: as the disc turns, the wedge sweeps past like light
-   catching the vinyl. */
-.ed-music-sheen {
-  position: absolute;
-  inset: 0;
-  border-radius: 999px;
-  background: conic-gradient(
-    from 0deg,
-    rgba(245, 242, 239, 0) 0deg,
-    rgba(245, 242, 239, 0.14) 26deg,
-    rgba(245, 242, 239, 0.02) 58deg,
-    rgba(245, 242, 239, 0) 120deg,
-    rgba(245, 242, 239, 0) 300deg,
-    rgba(245, 242, 239, 0.07) 336deg,
-    rgba(245, 242, 239, 0) 360deg
-  );
-  pointer-events: none;
-}
-
-/* The paper label at the centre, in the site's red so the deck reads as
-   part of the page rather than a stock media widget. */
-.ed-music-label {
-  position: absolute;
-  inset: 34%;
-  border-radius: 999px;
-  background: radial-gradient(
-    circle at 50% 38%,
-    var(--ed-red-br, #d43f2b),
-    #8f1a0e 92%
-  );
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35);
-}
-
-/* Off-centre print: traces a small circle as the record turns, which is the
-   detail the eye actually locks onto at this size. */
-.ed-music-mark {
-  position: absolute;
-  top: 14%;
-  left: 50%;
-  width: 3px;
-  height: 3px;
-  margin-left: -1.5px;
-  border-radius: 999px;
-  background: rgba(255, 235, 230, 0.75);
-}
-
-.ed-music-hole {
-  width: 4px;
-  height: 4px;
-  border-radius: 999px;
-  background: #050506;
-  box-shadow: 0 0 0 1px rgba(245, 242, 239, 0.14);
-}
-
-/* --- the tone arm ------------------------------------------------------- */
-
-/* Parked off the record at rest; swings down onto it on play. Pivot is the
-   top-right corner, where a real deck's spindle sits. */
-.ed-music-arm {
-  position: absolute;
-  top: 7px;
-  right: 7px;
-  width: 3px;
-  height: 30px;
-  border-radius: 999px;
-  background: linear-gradient(
-    180deg,
-    rgba(245, 242, 239, 0.7),
-    rgba(245, 242, 239, 0.35)
-  );
-  transform-origin: 50% 2px;
-  transform: rotate(34deg);
-  transition: transform 0.5s cubic-bezier(0.34, 1.4, 0.64, 1);
-  pointer-events: none;
-}
-
-.ed-music-toggle[data-playing] .ed-music-arm {
-  transform: rotate(-16deg);
-}
-
-.ed-music-arm-head {
-  position: absolute;
-  bottom: -2px;
-  left: 50%;
-  width: 7px;
-  height: 5px;
-  margin-left: -3.5px;
-  border-radius: 1.5px;
-  background: rgba(245, 242, 239, 0.85);
-}
-
-/* --- the pulse ---------------------------------------------------------- */
-
-/* Two rings expanding out of the deck while it plays. This is the cue that
-   survives peripheral vision -- the sheen and the mark need a direct look,
-   this does not. */
-.ed-music-pulse {
-  position: absolute;
-  inset: 0;
-  border-radius: 999px;
-  border: 1px solid var(--ed-red-br, #d43f2b);
-  opacity: 0;
-  pointer-events: none;
-}
-
-.ed-music-toggle[data-playing] .ed-music-pulse {
-  animation: ed-music-pulse 2.6s ease-out infinite;
-}
-
-.ed-music-toggle[data-playing] .ed-music-pulse:nth-child(2) {
-  animation-delay: 1.3s;
-}
-
-@keyframes ed-music-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes ed-music-pulse {
-  0% {
-    transform: scale(1);
-    opacity: 0.5;
-  }
-  100% {
-    transform: scale(1.85);
-    opacity: 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  /* Someone who asked for less motion still gets a working deck: audio
-     plays, the arm still drops (it is a state change, not an animation),
-     and the spin and pulse stay put. */
-  .ed-music-toggle[data-playing] .ed-music-disc {
-    animation-play-state: paused;
-  }
-  .ed-music-toggle[data-playing] .ed-music-pulse {
-    animation: none;
-  }
-}
-
-/* --- carousel position dots ---------------------------------------------
-   Replaces the "05 ta loyiha" caption that used to sit between the arrows.
-   A count is not something a visitor can act on; these say which card is in
-   front and are a shortcut to any other one. */
-.ed-orbit-dots {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-}
-
-.ed-orbit-dot {
-  /* The hit area is the padding, not the dot -- a 7px target is unusable on
-     a phone, but a 7px dot inside a 25px button is both. */
-  width: 25px;
-  height: 25px;
-  padding: 0;
-  border: 0;
-  background: none;
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.ed-orbit-dot::before {
-  content: "";
-  width: 7px;
-  height: 7px;
-  border-radius: 999px;
-  background: rgba(245, 242, 239, 0.28);
-  transition:
-    background-color 0.3s ease,
-    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.ed-orbit-dot:hover::before {
-  background: rgba(245, 242, 239, 0.55);
-}
-
-.ed-orbit-dot[data-active]::before {
-  background: var(--ed-red-br);
-  transform: scale(1.5);
-}
-
-.ed-orbit-dot:focus-visible {
-  outline: 2px solid var(--ed-offwhite);
-  outline-offset: -2px;
-  border-radius: 999px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ed-orbit-dot::before {
-    transition: none;
-  }
-}
-
-/* ---------------------------------------------------------------------------
-   Dot-and-ring cursor (CursorGlow.tsx)
-
-   The native cursor is hidden from <html data-cursor="custom">, an attribute
-   the component sets only once its effect has run -- so a browser that never
-   executes the script keeps its real cursor rather than being left with none.
-
-   Both layers are translated in device pixels by the component and centred
-   here with a margin, which keeps the JS writing one plain translate3d and
-   nothing else per frame.
---------------------------------------------------------------------------- */
-html[data-cursor="custom"],
-html[data-cursor="custom"] * {
-  cursor: none !important;
-}
-
-.ed-cursor-dot,
-.ed-cursor-ring {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 9999;
-  pointer-events: none;
-  border-radius: 50%;
-  opacity: 0;
-  transition: opacity 0.25s ease;
-  /* Own layer: these move every frame and must never make the page repaint. */
-  will-change: transform;
-}
-
-.ed-cursor-dot {
-  width: 7px;
-  height: 7px;
-  margin: -3.5px 0 0 -3.5px;
-  background: var(--ed-offwhite);
-  /* Punches through a photograph or a light card, where a plain offwhite dot
-     would disappear. */
-  mix-blend-mode: difference;
-}
-
-.ed-cursor-ring {
-  width: 34px;
-  height: 34px;
-  margin: -17px 0 0 -17px;
-  /* Colours are literal rather than var(--ed-*): this element is fixed to
-     <html>, outside every section, so the surface-aware tokens would always
-     resolve to the light theme's values no matter what it is floating over.
-     The component reads the surface under the pointer into data-surface
-     instead, and the two rules below pick the pair that will actually be
-     visible against it. */
-  border: 1px solid rgba(20, 20, 20, 0.4);
-  /* Only the ring's own look animates here; its position is set from the
-     frame loop and must stay untransitioned or it would ease twice. */
-  transition:
-    opacity 0.25s ease,
-    width 0.3s cubic-bezier(0.22, 1, 0.36, 1),
-    height 0.3s cubic-bezier(0.22, 1, 0.36, 1),
-    margin 0.3s cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 0.3s ease,
-    background-color 0.3s ease;
-}
-
-.ed-cursor-ring[data-surface="black"] {
-  border-color: rgba(245, 242, 239, 0.45);
-}
-
-/* Over anything clickable: opens up and picks up the site's red -- the darker
-   red on the cream surfaces, the brighter one on black, matching what
-   --ed-red-tx resolves to in each. */
-.ed-cursor-ring[data-hot="true"] {
-  width: 54px;
-  height: 54px;
-  margin: -27px 0 0 -27px;
-  border-color: #8e0710;
-  background: rgba(142, 7, 16, 0.08);
-}
-
-.ed-cursor-ring[data-hot="true"][data-surface="black"] {
-  border-color: #e8404a;
-  background: rgba(232, 64, 74, 0.1);
 }
 
 /* ---------------------------------------------------------------------------
@@ -2295,4 +1251,38 @@ html[data-cursor="custom"] * {
 }
 .ed-admin-feed-tg {
   color: var(--ed-red-tx);
+}
+/* Cursor press: a physical push plus one soft ring, the guide's "kursor
+   bosishi" beat. Transform/opacity only. */
+.ed-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.ed-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: currentColor;
+  opacity: 0;
+  pointer-events: none;
+}
+.ed-btn:active:not(:disabled)::after {
+  animation: ed-press 0.5s var(--ed-ease);
+}
+@keyframes ed-press {
+  from {
+    opacity: 0.22;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.4);
+  }
+}
+
+/* ---------- Reduced motion: everything lands at once, nothing floats ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .ed-btn:active:not(:disabled)::after {
+    animation: none;
+  }
 }

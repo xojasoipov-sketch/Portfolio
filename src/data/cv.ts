@@ -20,8 +20,7 @@ export const CV_PROFILE = {
   // code-hosting URL, which carries the owner's account name -- that name is
   // closed information the bot is explicitly instructed never to reveal
   // (bot/src/ai/systemPrompt.ts), so printing it on the CV would be the site
-  // leaking what the bot guards. Same reasoning as the Business Hub entry
-  // below. Restore a `site` field once a neutral domain exists.
+  // leaking what the bot guards. Restore a `site` field once a neutral domain exists.
   summary:
     "To'liq stack dasturchi — frontend, backend va mobil. Asosiy yo'nalish: sun'iy intellekt bilan integratsiya qilingan tizimlar — AI mijozlarga xizmat botlari, ko'p-provayderli AI infratuzilma, avtomatlashtirilgan SMM tizimlari va CRM'lar. Ishning yadrosi — avval chuqur audit, keyin aniq yechim.",
 } as const;
@@ -66,21 +65,6 @@ export interface CvProject {
 /** Selected work — the same projects the site shows, condensed. */
 export const CV_PROJECTS: CvProject[] = [
   {
-    title: "ZET",
-    category: "AI Operating System",
-    summary:
-      "Shaxsiy AI operatsion tizimi: Buyruq → Reja → Harakat → Tekshirish → Natija modeli. To'rt bosqichli model strategiyasi va qattiq budjet chegaralari bilan.",
-    tech: [
-      "Python 3.12",
-      "FastAPI",
-      "PostgreSQL",
-      "pgvector",
-      "Redis",
-      "Multi-agent",
-    ],
-    link: "t.me/zetassbot",
-  },
-  {
     title: "SadiPrime",
     category: "AI SaaS / Education",
     summary:
@@ -95,37 +79,12 @@ export const CV_PROJECTS: CvProject[] = [
     link: "sadiprime-tizim.uz",
   },
   {
-    title: "Pari AI",
-    category: "AI Assistant / Telegram",
-    summary:
-      "Next.js asosidagi shaxsiy AI assistant: chat, Telegram bot, knowledge base, SMM va biznes vositalari bitta tizimda. Bulut LLM va lokal model (Ollama).",
-    tech: ["Next.js", "TypeScript", "Python", "Telegram Bot API", "Ollama"],
-    link: "t.me/Pariaiuzbot",
-  },
-  {
     title: "DLI Shop",
     category: "E-Commerce",
     summary:
       "To'liq e-commerce platformasi va unga ulangan Telegram do'koni: katalog, filtrlar, JWT autentifikatsiya, ko'p tilli interfeys va admin dashboard.",
     tech: ["React", "FastAPI", "MongoDB", "Telegram Mini App", "JWT", "i18n"],
     link: "t.me/Dli_shinebot",
-  },
-  {
-    title: "Business Hub",
-    category: "Bot + boshqaruv paneli",
-    summary:
-      "Xizmat ko'rsatuvchi bizneslar uchun asos: Telegram botda olingan navbat shu zahoti paneldagi kalendar, mijozlar bazasi va xabarnomalarda paydo bo'ladi. Besh yo'nalish uchun sozlangan; AI operator server tomonidagi funksiya orqali ishlaydi.",
-    tech: [
-      "TanStack Start",
-      "TypeScript",
-      "Recharts",
-      "Supabase Edge Functions",
-      "Gemini",
-    ],
-    // No address here on purpose: the CV is a document that travels, and the
-    // only URL this demo has is the site's own host. It is reachable from the
-    // portfolio's work section instead.
-    link: "portfolio saytidagi jonli demo",
   },
   {
     title: "Hisobim",

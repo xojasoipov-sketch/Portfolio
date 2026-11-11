@@ -14,9 +14,7 @@ export function Testimonials() {
     <section
       id="testimonials"
       ref={ref}
-      data-surface="offwhite"
       style={{
-        background: "var(--ed-offwhite)",
         paddingBlock: "var(--ed-section)",
       }}
     >
@@ -29,7 +27,7 @@ export function Testimonials() {
             color: "var(--ed-red)",
           }}
         >
-          05 — Mijozlar fikri
+          Mijozlar fikri
         </p>
 
         <ul className="ed-quotes">

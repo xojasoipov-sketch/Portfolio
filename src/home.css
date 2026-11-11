@@ -1,0 +1,1625 @@
+/* ============================================================
+   HOME PAGE (src/routes/index.tsx, src/components/home/*)
+
+   uslub.md, section 3: paper, ink, one red accent kept for the CTA and
+   the "unread" marks, night for the single projects scene. Geist for
+   text, Instrument Serif Italic for one tonal word per statement.
+
+   Motion rules for this file:
+   - the first paint is always a finished, legible frame; entrances are
+     short CSS animations that do not wait for JavaScript;
+   - everything that moves does so through transform, opacity, colour or
+     clip-path, so scrolling never triggers layout;
+   - prefers-reduced-motion switches every animation and transition off
+     and shows the final state (block at the end of the file).
+   ============================================================ */
+
+.hx {
+  --paper: #f6f5f2;
+  --ink: #111111;
+  --ink2: #5f5c57;
+  --mute: #b9b6b0;
+  --line: #e4e2dd;
+  --stone: #eceae6;
+  --accent: #b3121e;
+  --night: #0d0d0e;
+  --font: "Geist Variable", "Inter", "Helvetica Neue", Arial, sans-serif;
+  --serif: "Instrument Serif", Georgia, serif;
+  --ease: cubic-bezier(0.215, 0.61, 0.355, 1);
+  --gutter: clamp(1.25rem, 5vw, 4.5rem);
+  --section: clamp(5rem, 11vw, 9rem);
+  --max: 1320px;
+  --bar: 64px;
+  /* Inside a Telegram Mini App the client draws its own close and menu
+     buttons over the top of the page. These two variables are set by
+     Telegram's SDK (0 in a normal browser), so the header and the hero
+     start below those controls instead of under them. */
+  --hx-top: calc(
+    var(--tg-safe-area-inset-top, 0px) +
+      var(--tg-content-safe-area-inset-top, 0px)
+  );
+
+  position: relative;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font);
+  overflow-x: clip;
+}
+
+.hx *,
+.hx *::before,
+.hx *::after {
+  box-sizing: border-box;
+}
+
+.hx a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.hx :focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.hx-shell {
+  width: 100%;
+  max-width: var(--max);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+.hx-section {
+  position: relative;
+  padding-block: var(--section);
+}
+
+/* ---------- shared type ---------- */
+
+.hx-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 0 1.25rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink2);
+}
+.hx-label::before {
+  content: "";
+  width: 1.75rem;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.5;
+}
+
+.hx-h2 {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 4rem);
+  font-weight: 500;
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+}
+.hx-h2 b {
+  font-weight: 800;
+}
+
+.hx-head {
+  margin-bottom: clamp(2.25rem, 5vw, 4rem);
+}
+
+/* The scroll-said statements (Said.tsx). */
+.hx-said {
+  margin: 0;
+}
+.hx-big {
+  font-size: clamp(2.05rem, 7.4vw, 6.25rem);
+  font-weight: 500;
+  line-height: 1.03;
+  letter-spacing: -0.045em;
+}
+.hx-said [data-tone="key"] {
+  font-weight: 800;
+}
+.hx-said [data-tone="serif"] {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1.1em;
+  letter-spacing: -0.02em;
+}
+
+/* ---------- buttons and links ---------- */
+
+.hx-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  height: 3.375rem;
+  padding: 0 1.6rem;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 0.25s var(--ease),
+    transform 0.25s var(--ease);
+  -webkit-tap-highlight-color: transparent;
+}
+.hx-btn svg {
+  transition: transform 0.25s var(--ease);
+}
+.hx-btn:active {
+  transform: scale(0.98);
+}
+.hx-btn-accent {
+  background: var(--accent);
+  color: #fff !important;
+}
+.hx-btn-ink {
+  background: var(--ink);
+  color: var(--paper) !important;
+}
+.hx-btn[disabled] {
+  opacity: 0.6;
+  cursor: progress;
+}
+@media (hover: hover) {
+  .hx-btn-accent:hover {
+    background: #980e18;
+  }
+  .hx-btn-ink:hover {
+    background: #2a2a2a;
+  }
+  .hx-btn:hover svg {
+    transform: translateX(3px);
+  }
+}
+
+.hx-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  height: 2.5rem;
+  padding: 0 1rem;
+  border: 1px solid color-mix(in srgb, currentColor 24%, transparent);
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition:
+    background-color 0.25s var(--ease),
+    color 0.25s var(--ease),
+    border-color 0.25s var(--ease);
+}
+@media (hover: hover) {
+  .hx-pill:hover {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
+  }
+  .hx-night .hx-pill:hover,
+  .hx-bar[data-dark] .hx-pill:hover {
+    background: var(--paper);
+    border-color: var(--paper);
+    color: var(--ink);
+  }
+}
+
+.hx-textlink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-block: 0.4rem;
+  font-size: 1rem;
+  font-weight: 500;
+  background: linear-gradient(currentColor, currentColor) 0 100% / 100% 1px
+    no-repeat;
+  transition: background-size 0.3s var(--ease);
+}
+@media (hover: hover) {
+  .hx-textlink:hover {
+    background-size: 0 1px;
+    background-position: 100% 100%;
+  }
+}
+
+/* ---------- reveal on scroll (Reveal.tsx) ---------- */
+
+.hx-rv {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 0.7s var(--ease),
+    transform 0.7s var(--ease);
+  transition-delay: calc(var(--i, 0) * 70ms);
+}
+.hx-rv[data-shown="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------- header ---------- */
+
+.hx-bar {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 60;
+  padding-top: var(--hx-top);
+  color: var(--ink);
+  border-bottom: 1px solid transparent;
+  transition:
+    background-color 0.3s var(--ease),
+    border-color 0.3s var(--ease),
+    color 0.3s var(--ease);
+}
+.hx-bar[data-scrolled] {
+  background: rgba(246, 245, 242, 0.94);
+  border-bottom-color: var(--line);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+.hx-bar[data-dark] {
+  background: rgba(13, 13, 14, 0.92);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+  color: var(--paper);
+}
+/* Reading progress: a hairline along the bottom of the bar. */
+.hx-progress {
+  position: absolute;
+  inset: auto 0 -1px 0;
+  height: 2px;
+  background: currentColor;
+  transform-origin: left;
+  transform: scaleX(0);
+}
+.hx-bar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  height: var(--bar);
+}
+.hx-brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.7rem;
+}
+.hx-brand-mark {
+  font-size: 1.125rem;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+}
+.hx-brand-name {
+  display: none;
+  font-size: 0.875rem;
+  opacity: 0.6;
+}
+.hx-nav {
+  display: none;
+  align-items: center;
+  gap: clamp(1.1rem, 2.2vw, 2rem);
+}
+.hx-navlink {
+  position: relative;
+  padding-block: 0.4rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+.hx-navlink::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.3s var(--ease);
+}
+@media (hover: hover) {
+  .hx-navlink:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+}
+.hx-bar-end {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.hx-burger {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin-right: -0.6rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+.hx-burger span {
+  width: 22px;
+  height: 1.5px;
+  background: currentColor;
+}
+@media (min-width: 520px) {
+  .hx-brand-name {
+    display: inline;
+  }
+}
+@media (min-width: 1000px) {
+  .hx-nav {
+    display: flex;
+  }
+  .hx-burger {
+    display: none;
+  }
+}
+
+/* Full-screen menu (below 1000px). */
+.hx-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  padding: var(--hx-top) var(--gutter) max(1.5rem, env(safe-area-inset-bottom));
+  background: var(--paper);
+  color: var(--ink);
+  animation: hx-fade 0.25s var(--ease) both;
+}
+.hx-menu-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--bar);
+  flex: none;
+}
+.hx-menu-close {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin-right: -0.6rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+.hx-menu-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.hx-menu-link {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  padding-block: 0.55rem;
+  border-bottom: 1px solid var(--line);
+  font-size: clamp(2rem, 9.5vw, 3.25rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  animation: hx-rise 0.5s var(--ease) both;
+  animation-delay: calc(var(--i) * 50ms + 60ms);
+}
+.hx-menu-no {
+  width: 1.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--mute);
+}
+.hx-menu-foot {
+  display: flex;
+  gap: 0.6rem;
+  flex: none;
+}
+
+/* ---------- hero ---------- */
+
+.hx-hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100svh;
+  padding-top: calc(var(--hx-top) + var(--bar) + 1.25rem);
+  border-bottom: 1px solid var(--line);
+  overflow: clip;
+}
+/* Telegram reports the height that is really visible under its header. */
+html[data-telegram="true"] .hx-hero {
+  min-height: var(--tg-viewport, 100svh);
+}
+
+/* The quiet dotted grid of the guide, faded out towards the edges. */
+.hx-dots {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle, #d9d6d0 1.1px, transparent 1.3px);
+  background-size: 26px 26px;
+  -webkit-mask-image: radial-gradient(
+    ellipse 75% 70% at 72% 45%,
+    #000 10%,
+    transparent 72%
+  );
+  mask-image: radial-gradient(
+    ellipse 75% 70% at 72% 45%,
+    #000 10%,
+    transparent 72%
+  );
+}
+.hx-dots-low {
+  -webkit-mask-image: radial-gradient(
+    ellipse 70% 60% at 85% 20%,
+    #000 0%,
+    transparent 70%
+  );
+  mask-image: radial-gradient(
+    ellipse 70% 60% at 85% 20%,
+    #000 0%,
+    transparent 70%
+  );
+}
+
+.hx-hero-grid {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.hx-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin: 0 0 1.4rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+.hx-eyebrow-sub {
+  display: block;
+  font-weight: 400;
+  color: var(--ink2);
+}
+.hx-avatar {
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  object-fit: cover;
+  filter: grayscale(1) contrast(1.05);
+  background: var(--stone);
+}
+.hx-avatar-lg {
+  width: 3.5rem;
+  height: 3.5rem;
+}
+
+.hx-h1 {
+  margin: 0;
+  font-size: clamp(1.75rem, 9.3vw, 3.5rem);
+  font-weight: 500;
+  line-height: 1.02;
+  letter-spacing: -0.045em;
+}
+.hx-h1 b {
+  font-weight: 800;
+}
+/* Each line rises out of its own mask. The padding keeps descenders
+   (q, g) inside the mask; the negative margin gives the space back. */
+.hx-line {
+  display: block;
+  /* Clips top and bottom only, so a long line can never lose its end. */
+  clip-path: inset(0 -100vw);
+  padding-bottom: 0.14em;
+  margin-bottom: -0.14em;
+  white-space: nowrap;
+}
+.hx-line > span {
+  display: block;
+  animation: hx-line 0.9s var(--ease) both;
+  animation-delay: calc(var(--d) * 90ms);
+}
+
+.hx-sub {
+  max-width: 24ch;
+  margin: 1.35rem 0 0;
+  font-size: clamp(1.2rem, 2.1vw, 1.6rem);
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.hx-sub em {
+  font-family: var(--serif);
+  font-size: 1.14em;
+  letter-spacing: -0.01em;
+}
+
+.hx-cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.5rem;
+  margin-top: 1.6rem;
+}
+
+/* Entrance for everything in the hero that is not the headline. */
+.hx-in {
+  animation: hx-rise 0.8s var(--ease) both;
+  animation-delay: calc(var(--d) * 90ms);
+}
+
+.hx-stage {
+  position: relative;
+  flex: 1;
+  /* Always taller than the inbox card, so on a short screen the hero
+     grows instead of letting the card climb over the CTA. */
+  min-height: 21.5rem;
+  margin-top: 1.75rem;
+}
+.hx-disc {
+  position: absolute;
+  right: -16%;
+  top: 4%;
+  width: 80%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--stone);
+}
+/* The cutout fades out towards its lower edge. It hangs a little below
+   the hero, so the hero's own bottom line crops it cleanly instead. */
+.hx-figure {
+  position: absolute;
+  right: -0.25rem;
+  bottom: -11%;
+  height: 112%;
+  aspect-ratio: 760 / 1446;
+  transform-origin: 50% 100%;
+}
+.hx-figure img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: bottom center;
+  filter: grayscale(1) contrast(1.08);
+}
+
+/* The inbox card (Inbox.tsx). */
+/* Each layer of the stage sits in a full-size plane, so the pointer
+   parallax moves the plane and the layer keeps its own placement. */
+.hx-plane {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.hx-inbox-pos {
+  position: absolute;
+  left: 0;
+  bottom: 1.25rem;
+  width: min(66%, 15.5rem);
+}
+.hx-inbox {
+  /* A very slow float, 8px, the way objects rest in the guide. */
+  animation: hx-float 7s ease-in-out infinite alternate;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow:
+    0 1px 1px rgba(17, 17, 17, 0.03),
+    0 18px 40px -18px rgba(17, 17, 17, 0.22);
+  overflow: hidden;
+}
+.hx-inbox-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.8rem;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.hx-inbox-count {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  color: var(--ink2);
+}
+.hx-maket {
+  margin-left: auto;
+  padding: 0.15rem 0.4rem;
+  border: 1px solid var(--line);
+  border-radius: 0.3rem;
+  font-size: 0.5625rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink2);
+}
+.hx-inbox-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.hx-msg {
+  display: flex;
+  gap: 0.6rem;
+  padding: 0.6rem 0.8rem;
+}
+.hx-msg + .hx-msg {
+  border-top: 1px solid var(--line);
+}
+.hx-msg-mark {
+  position: relative;
+  flex: none;
+  width: 1.125rem;
+  height: 1.125rem;
+  margin-top: 0.05rem;
+  border-radius: 50%;
+  background: transparent;
+  transition: background-color 0.35s var(--ease);
+}
+.hx-msg-dot {
+  position: absolute;
+  inset: 0.34rem;
+  border-radius: 50%;
+  background: var(--accent);
+  transition:
+    transform 0.3s var(--ease),
+    opacity 0.3s var(--ease);
+}
+.hx-msg-check {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.hx-msg-check path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 0.45s var(--ease) 0.12s;
+}
+.hx-msg[data-done] .hx-msg-mark {
+  background: var(--ink);
+}
+.hx-msg[data-done] .hx-msg-dot {
+  transform: scale(0);
+  opacity: 0;
+}
+.hx-msg[data-done] .hx-msg-check path {
+  stroke-dashoffset: 0;
+}
+.hx-msg-text {
+  display: grid;
+  min-width: 0;
+  gap: 0.1rem;
+}
+.hx-msg-meta {
+  font-size: 0.6875rem;
+  color: var(--ink2);
+}
+.hx-msg-body {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+.hx-msg-status {
+  display: grid;
+  font-size: 0.6875rem;
+}
+.hx-msg-status > span {
+  grid-area: 1 / 1;
+  transition:
+    opacity 0.35s var(--ease),
+    transform 0.35s var(--ease);
+}
+.hx-msg-wait {
+  color: var(--ink2);
+}
+.hx-msg-ok {
+  font-weight: 600;
+  opacity: 0;
+  transform: translateY(5px);
+}
+.hx-msg[data-done] .hx-msg-wait {
+  opacity: 0;
+  transform: translateY(-5px);
+}
+.hx-msg[data-done] .hx-msg-ok {
+  opacity: 1;
+  transform: none;
+}
+.hx-inbox-bar {
+  height: 2px;
+  background: var(--line);
+}
+.hx-inbox-bar span {
+  display: block;
+  height: 100%;
+  background: var(--ink);
+  transform-origin: left;
+  transition: transform 0.6s var(--ease);
+}
+
+@media (min-width: 900px) {
+  .hx-hero {
+    padding-top: calc(var(--hx-top) + var(--bar));
+  }
+  .hx-hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: clamp(1.5rem, 3vw, 3rem);
+  }
+  .hx-hero-copy {
+    align-self: center;
+    padding-block: 2rem 4rem;
+  }
+  .hx-eyebrow {
+    margin-bottom: 2rem;
+  }
+  .hx-h1 {
+    font-size: clamp(3rem, 5.05vw, 4.6rem);
+  }
+  .hx-sub {
+    margin-top: 2rem;
+  }
+  .hx-cta {
+    margin-top: 2.25rem;
+  }
+  .hx-stage {
+    min-height: 34rem;
+    margin-top: 0;
+  }
+  .hx-disc {
+    right: -4%;
+    top: 13%;
+    width: min(92%, 36rem);
+  }
+  .hx-figure {
+    right: 4%;
+    bottom: -10%;
+    height: min(106%, 56rem);
+  }
+  .hx-inbox-pos {
+    left: -6%;
+    bottom: 13%;
+    width: 19.5rem;
+  }
+  .hx-inbox {
+    border-radius: 1.15rem;
+  }
+  .hx-inbox-head {
+    padding: 0.8rem 1.05rem;
+    font-size: 0.8125rem;
+  }
+  .hx-msg {
+    gap: 0.75rem;
+    padding: 0.8rem 1.05rem;
+  }
+  .hx-msg-meta,
+  .hx-msg-status {
+    font-size: 0.75rem;
+  }
+  .hx-msg-body {
+    font-size: 0.9375rem;
+  }
+  .hx-maket {
+    font-size: 0.625rem;
+  }
+}
+
+/* Narrow desktop: the stage is barely wider than the figure, so the card
+   sits lower and stays clear of the face. */
+@media (min-width: 900px) and (max-width: 1199px) {
+  .hx-inbox-pos {
+    left: -10%;
+    bottom: 5%;
+    width: 16.5rem;
+  }
+}
+
+/* ---------- manifest ---------- */
+
+.hx-manifest {
+  padding-block: clamp(5.5rem, 13vw, 11rem) clamp(2rem, 6vw, 5rem);
+}
+.hx-manifest-note {
+  margin: clamp(1.75rem, 4vw, 3rem) 0 0;
+  font-size: clamp(1.05rem, 1.6vw, 1.35rem);
+  color: var(--ink2);
+}
+
+/* ---------- process ---------- */
+
+.hx-process {
+  display: grid;
+  gap: clamp(2.5rem, 6vw, 5rem);
+}
+.hx-counter {
+  display: none;
+}
+.hx-steps-wrap {
+  position: relative;
+  padding-left: 2.75rem;
+}
+.hx-rail {
+  position: absolute;
+  left: 0.5625rem;
+  top: 0.75rem;
+  bottom: 0.75rem;
+  width: 2px;
+  background: var(--line);
+}
+.hx-rail-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--ink);
+  transform-origin: top;
+}
+.hx-steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.hx-step {
+  position: relative;
+  padding-bottom: clamp(2.5rem, 6vw, 4.5rem);
+}
+.hx-step:last-child {
+  padding-bottom: 0;
+}
+.hx-step-node {
+  position: absolute;
+  left: -2.5rem;
+  top: 0.15rem;
+  width: 0.875rem;
+  height: 0.875rem;
+  border: 2px solid var(--mute);
+  border-radius: 50%;
+  background: var(--paper);
+  transition:
+    background-color 0.4s var(--ease),
+    border-color 0.4s var(--ease),
+    transform 0.4s var(--ease);
+}
+.hx-step[data-on] .hx-step-node {
+  border-color: var(--ink);
+  background: var(--ink);
+  transform: scale(1.15);
+}
+.hx-step-no {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink2);
+}
+.hx-step-title {
+  margin: 0.5rem 0 0;
+  font-size: clamp(1.5rem, 3.3vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+}
+.hx-step-text {
+  max-width: 34ch;
+  margin: 0.7rem 0 0;
+  font-size: clamp(1rem, 1.35vw, 1.1875rem);
+  line-height: 1.5;
+  color: var(--ink2);
+}
+.hx-step-title,
+.hx-step-text {
+  opacity: 0.42;
+  transition: opacity 0.5s var(--ease);
+}
+.hx-step[data-on] .hx-step-title,
+.hx-step[data-on] .hx-step-text {
+  opacity: 1;
+}
+
+@media (min-width: 900px) {
+  .hx-process {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    align-items: start;
+  }
+  .hx-process-head {
+    position: sticky;
+    top: calc(var(--hx-top) + var(--bar) + 3rem);
+  }
+  .hx-counter {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin-top: clamp(2.5rem, 5vw, 4.5rem);
+    font-variant-numeric: tabular-nums;
+    overflow: hidden;
+  }
+  .hx-counter-now {
+    display: block;
+    font-size: clamp(5rem, 10vw, 9rem);
+    font-weight: 800;
+    line-height: 0.9;
+    letter-spacing: -0.06em;
+    animation: hx-line 0.5s var(--ease) both;
+  }
+  .hx-counter-of {
+    font-size: 1.125rem;
+    color: var(--mute);
+  }
+}
+
+/* ---------- services ---------- */
+
+.hx-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-bottom: 1px solid var(--line);
+}
+
+/* ---------- drift: one oversized line that travels with the scroll ---------- */
+
+.hx-drift {
+  padding-block: clamp(1rem, 4vw, 3rem);
+  overflow: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.hx-drift-line {
+  display: flex;
+  width: max-content;
+  gap: 0.35em;
+  font-size: clamp(3.25rem, 12.5vw, 11rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.055em;
+  white-space: nowrap;
+  color: var(--line);
+  will-change: transform;
+}
+.hx-drift-line i {
+  font-family: var(--serif);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.hx-drift-line span {
+  color: var(--mute);
+  font-weight: 500;
+}
+.hx-row {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+  column-gap: 0.75rem;
+  align-items: start;
+  position: relative;
+  padding-block: clamp(1.35rem, 3vw, 2.25rem);
+}
+/* The rule above each row draws itself from the left as the row arrives. */
+.hx-row::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: var(--ink);
+  opacity: 0.16;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 1.1s var(--ease);
+  transition-delay: calc(var(--i, 0) * 90ms);
+}
+.hx-rv[data-shown="true"] > .hx-row::before {
+  transform: scaleX(1);
+}
+.hx-row-no {
+  padding-top: 0.55em;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink2);
+}
+.hx-row-name {
+  font-size: clamp(1.45rem, 3.2vw, 2.6rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+  transition: transform 0.35s var(--ease);
+}
+.hx-row-note {
+  grid-column: 2;
+  max-width: 44ch;
+  margin-top: 0.6rem;
+  font-size: clamp(0.975rem, 1.25vw, 1.0625rem);
+  line-height: 1.5;
+  color: var(--ink2);
+}
+.hx-row-arrow {
+  grid-column: 3;
+  grid-row: 1;
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  font-size: 1rem;
+  transition:
+    background-color 0.3s var(--ease),
+    color 0.3s var(--ease),
+    border-color 0.3s var(--ease),
+    transform 0.35s var(--ease);
+}
+@media (hover: hover) {
+  .hx-row:hover .hx-row-name {
+    transform: translateX(0.6rem);
+  }
+  .hx-row:hover .hx-row-arrow {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
+    transform: rotate(45deg);
+  }
+}
+.hx-rows-foot {
+  margin-top: clamp(1.75rem, 4vw, 2.5rem);
+}
+@media (min-width: 900px) {
+  .hx-row {
+    grid-template-columns: 4.5rem minmax(0, 1.15fr) minmax(0, 1fr) 3rem;
+    column-gap: 2rem;
+    align-items: center;
+  }
+  .hx-row-no {
+    padding-top: 0;
+  }
+  .hx-row-note {
+    grid-column: 3;
+    margin-top: 0;
+  }
+  .hx-row-arrow {
+    grid-column: 4;
+  }
+}
+
+/* ---------- work: the night scene ---------- */
+
+.hx-night {
+  position: relative;
+  padding-block: var(--section);
+  border-radius: clamp(1.25rem, 3vw, 2.5rem);
+  background: var(--night);
+  color: var(--paper);
+}
+.hx-night .hx-label {
+  color: rgba(246, 245, 242, 0.6);
+}
+.hx-cases {
+  display: grid;
+  gap: clamp(4rem, 10vw, 8.5rem);
+  margin: clamp(3rem, 7vw, 6rem) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.hx-case {
+  display: grid;
+  gap: 1.75rem;
+}
+.hx-case-tilt {
+  perspective: 1100px;
+}
+.hx-case-frame {
+  position: relative;
+  aspect-ratio: 1400 / 788;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1.125rem;
+  background: #161617;
+  overflow: hidden;
+  clip-path: inset(5% round 1.125rem);
+  transition: clip-path 1.1s var(--ease);
+}
+.hx-case-shot[data-shown="true"] .hx-case-frame {
+  clip-path: inset(0 round 1.125rem);
+}
+.hx-case-frame img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* Drawn posters stay in grey tones; only real screens carry colour. */
+.hx-case-frame[data-poster] img {
+  filter: grayscale(1) contrast(1.05) brightness(0.92);
+}
+.hx-case-meta {
+  display: flex;
+  gap: 1rem;
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(246, 245, 242, 0.55);
+}
+.hx-case-title {
+  margin: 0.9rem 0 0;
+  font-size: clamp(2.1rem, 4.6vw, 3.75rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+.hx-case-summary {
+  margin: 1rem 0 0;
+  font-size: clamp(1.1rem, 1.6vw, 1.3rem);
+  line-height: 1.4;
+  letter-spacing: -0.015em;
+  text-wrap: pretty;
+}
+.hx-case-detail {
+  margin: 0.9rem 0 0;
+  font-size: 0.9688rem;
+  line-height: 1.65;
+  color: rgba(246, 245, 242, 0.62);
+}
+.hx-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 1.35rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.hx-tags li {
+  padding: 0.3rem 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  color: rgba(246, 245, 242, 0.78);
+}
+.hx-case-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1.5rem;
+}
+.hx-case-links:empty {
+  display: none;
+}
+@media (min-width: 900px) {
+  .hx-case {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: clamp(2.5rem, 5vw, 5rem);
+    align-items: center;
+  }
+  .hx-case:nth-child(even) .hx-case-shot {
+    order: 2;
+  }
+}
+
+/* ---------- about ---------- */
+
+.hx-about {
+  display: grid;
+  gap: clamp(2rem, 5vw, 4rem);
+}
+.hx-about-photo {
+  position: relative;
+  width: min(100%, 26rem);
+  aspect-ratio: 4 / 5;
+  border-radius: 1.25rem;
+  background: var(--stone);
+  overflow: hidden;
+}
+.hx-about-probe {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.hx-about-photo img {
+  transform-origin: 50% 35%;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 30%;
+  filter: grayscale(1) contrast(1.08);
+}
+.hx-lead {
+  margin: clamp(1.5rem, 3vw, 2.25rem) 0 0;
+  font-size: clamp(1.2rem, 2vw, 1.6rem);
+  line-height: 1.42;
+  letter-spacing: -0.02em;
+  text-wrap: pretty;
+}
+.hx-body {
+  max-width: 54ch;
+  margin: 1.25rem 0 0;
+  font-size: clamp(1rem, 1.3vw, 1.125rem);
+  line-height: 1.65;
+  color: var(--ink2);
+}
+.hx-quote {
+  max-width: 30ch;
+  margin: 1.75rem 0 0;
+  padding-left: 1.1rem;
+  border-left: 2px solid var(--ink);
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(1.35rem, 2.1vw, 1.7rem);
+  line-height: 1.25;
+}
+.hx-stack {
+  display: grid;
+  gap: 2rem;
+  margin-top: clamp(3.5rem, 8vw, 6.5rem);
+}
+.hx-stack-group {
+  padding-top: 1rem;
+  border-top: 1px solid var(--ink);
+}
+.hx-stack-title {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink2);
+}
+.hx-stack-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 1.25rem;
+  margin: 0.9rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: clamp(1.3rem, 2.1vw, 1.75rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.3;
+}
+@media (min-width: 900px) {
+  .hx-about {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    align-items: center;
+  }
+  .hx-stack {
+    grid-template-columns: 1fr 1.6fr 1.2fr;
+    gap: 2.5rem;
+  }
+}
+
+/* ---------- contact ---------- */
+
+.hx-contact {
+  border-top: 1px solid var(--line);
+}
+.hx-contact-grid {
+  position: relative;
+  display: grid;
+  gap: clamp(2.5rem, 6vw, 5rem);
+  margin-top: clamp(2.75rem, 6vw, 4.75rem);
+}
+.hx-form {
+  display: grid;
+  gap: 1.75rem;
+}
+.hx-field {
+  display: grid;
+  gap: 0.35rem;
+}
+.hx-field > span {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--ink2);
+}
+.hx-field input,
+.hx-field textarea {
+  width: 100%;
+  padding: 0.7rem 0;
+  border: 0;
+  border-bottom: 1px solid #cfccc6;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  /* 16px minimum keeps iOS from zooming the page on focus. */
+  font-size: 1.125rem;
+  letter-spacing: -0.01em;
+  transition:
+    border-color 0.25s var(--ease),
+    box-shadow 0.25s var(--ease);
+}
+.hx-field textarea {
+  resize: vertical;
+  min-height: 6.5rem;
+}
+.hx-field input::placeholder,
+.hx-field textarea::placeholder {
+  color: var(--mute);
+}
+.hx-field input:focus,
+.hx-field textarea:focus {
+  outline: none;
+  border-bottom-color: var(--ink);
+  box-shadow: 0 1px 0 var(--ink);
+}
+.hx-honey {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+}
+.hx-form-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+.hx-form-status {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--accent);
+}
+.hx-direct {
+  align-self: start;
+  padding: clamp(1.25rem, 2.5vw, 1.75rem);
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+  background: #fff;
+}
+.hx-direct-who {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+.hx-direct-who p {
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.hx-direct-who span {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: var(--ink2);
+}
+.hx-direct-list {
+  margin: 1.25rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.hx-direct-list li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block: 0.85rem;
+  border-top: 1px solid var(--line);
+}
+.hx-direct-list span {
+  font-size: 0.8125rem;
+  color: var(--ink2);
+}
+.hx-direct-list a {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+@media (min-width: 900px) {
+  .hx-contact-grid {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  }
+}
+
+/* ---------- footer ---------- */
+
+.hx-footer {
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--line);
+  overflow: hidden;
+}
+.hx-footer-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  font-size: 0.875rem;
+  color: var(--ink2);
+}
+.hx-footer-row p {
+  margin: 0;
+}
+.hx-footer-row nav {
+  display: flex;
+  gap: 1.25rem;
+}
+@media (hover: hover) {
+  .hx-footer-row a:hover {
+    color: var(--ink);
+  }
+}
+.hx-wordmark {
+  margin: clamp(1.5rem, 4vw, 3rem) 0 -0.04em;
+  font-size: 15.2vw;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.065em;
+  text-align: center;
+  white-space: nowrap;
+  color: var(--line);
+  user-select: none;
+}
+
+/* ---------- sound toggle (MusicToggle.tsx, mounted on every route) ---------- */
+
+.hx-sound {
+  position: fixed;
+  right: max(1rem, env(safe-area-inset-right, 0px));
+  bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+  z-index: 55;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2.5px;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border: 1px solid #e4e2dd;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.94);
+  color: #111;
+  box-shadow: 0 10px 24px -14px rgba(17, 17, 17, 0.35);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.25s cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+.hx-sound:focus-visible {
+  outline: 2px solid #111;
+  outline-offset: 3px;
+}
+.hx-sound i {
+  display: block;
+  width: 2px;
+  height: 14px;
+  border-radius: 1px;
+  background: currentColor;
+  transform: scaleY(0.4);
+  transform-origin: center;
+  transition: transform 0.3s ease;
+}
+/* At rest the bars hold a still level-meter shape, so the button reads as
+   sound rather than as a "more" menu. */
+.hx-sound i:nth-child(2) {
+  transform: scaleY(0.85);
+}
+.hx-sound i:nth-child(3) {
+  transform: scaleY(0.55);
+}
+.hx-sound i:nth-child(4) {
+  transform: scaleY(1);
+}
+.hx-sound[data-playing] i {
+  animation: hx-eq 1.1s ease-in-out infinite alternate;
+}
+.hx-sound[data-playing] i:nth-child(2) {
+  animation-duration: 0.8s;
+  animation-delay: -0.3s;
+}
+.hx-sound[data-playing] i:nth-child(3) {
+  animation-duration: 1.3s;
+  animation-delay: -0.6s;
+}
+.hx-sound[data-playing] i:nth-child(4) {
+  animation-duration: 0.95s;
+  animation-delay: -0.15s;
+}
+@media (hover: hover) {
+  .hx-sound:hover {
+    transform: scale(1.06);
+  }
+}
+
+/* ---------- keyframes ---------- */
+
+@keyframes hx-line {
+  from {
+    transform: translateY(108%);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes hx-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes hx-float {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-8px);
+  }
+}
+@keyframes hx-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes hx-eq {
+  from {
+    transform: scaleY(0.25);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+/* ---------- reduced motion: the final state, no movement ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .hx *,
+  .hx *::before,
+  .hx *::after,
+  .hx-sound,
+  .hx-sound i {
+    animation: none !important;
+    transition: none !important;
+  }
+  .hx-rv {
+    opacity: 1;
+    transform: none;
+  }
+  .hx-case-frame {
+    clip-path: inset(0 round 1.125rem);
+  }
+  .hx-step-title,
+  .hx-step-text {
+    opacity: 1;
+  }
+  .hx-row::before {
+    transform: scaleX(1);
+  }
+  .hx-progress {
+    display: none;
+  }
+}

@@ -16,7 +16,6 @@ import { trackPageview } from "../lib/analytics";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { asset } from "../lib/asset";
 import { MusicToggle } from "../components/editorial/MusicToggle";
-import { CursorGlow } from "../components/editorial/CursorGlow";
 
 /**
  * Branded 404, in the site's own editorial language rather than the generic
@@ -143,9 +142,9 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 const SITE_ORIGIN = "https://xojasoipov-sketch.github.io";
 const absolute = (path: string) => `${SITE_ORIGIN}${asset(path)}`;
 
-const SITE_TITLE = "Saidburxon Xojasoipov — Full-stack Developer & AI Builder";
+const SITE_TITLE = "Saidburxon Xojasoipov | Full-stack Developer & AI Builder";
 const SITE_DESCRIPTION =
-  "Saidburxon Xojasoipov — full-stack dasturchi va AI-yechimlar mutaxassisi. Web, AI tizimlar, SaaS mahsulotlar va biznes avtomatlashtirish.";
+  "Saidburxon Xojasoipov, full-stack dasturchi va AI-yechimlar mutaxassisi. Web, AI tizimlar, SaaS mahsulotlar va biznes avtomatlashtirish.";
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   {
@@ -168,7 +167,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         { property: "og:image:height", content: "630" },
         {
           property: "og:image:alt",
-          content: "Saidburxon Xojasoipov — Full-stack Developer & AI Builder",
+          content: "Saidburxon Xojasoipov | Full-stack Developer & AI Builder",
         },
         { name: "twitter:card", content: "summary_large_image" },
         { name: "twitter:title", content: SITE_TITLE },
@@ -227,25 +226,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       links: [
         { rel: "icon", type: "image/svg+xml", href: asset("favicon.svg") },
         { rel: "apple-touch-icon", href: asset("apple-touch-icon.png") },
-        // Both preconnects come before any stylesheet link. They were after,
-        // which made the googleapis one dead weight -- the browser had
-        // already started that fetch several tags earlier, when it parsed the
-        // stylesheet the hint was supposed to be warming.
-        { rel: "preconnect", href: "https://fonts.googleapis.com" },
-        {
-          rel: "preconnect",
-          href: "https://fonts.gstatic.com",
-          crossOrigin: "anonymous",
-        },
+        // Geist is self-hosted through @fontsource-variable/geist (imported in
+        // styles.css), so no third-party font origin is contacted at all.
         { rel: "stylesheet", href: appCss },
-        {
-          rel: "stylesheet",
-          // 900 is requested but never used anywhere in the codebase. Left in
-          // because Google serves one variable file per subset -- all six
-          // weights resolve to the same URL, so dropping it saves ~200 bytes
-          // of CSS and no font bytes at all.
-          href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap",
-        },
       ],
     }),
     shellComponent: RootShell,
@@ -290,7 +273,6 @@ function RootComponent() {
           each of them having to know about it. */}
       <MusicToggle />
       {/* Renders nothing on a touch screen or under reduced motion. */}
-      <CursorGlow />
     </QueryClientProvider>
   );
 }

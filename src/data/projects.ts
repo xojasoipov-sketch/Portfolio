@@ -1,8 +1,5 @@
-import zetShot from "@/assets/projects/zet.webp";
 import sadiprimeShot from "@/assets/projects/sadiprime.webp";
-import pariShot from "@/assets/projects/pari.webp";
 import dliShot from "@/assets/projects/dli.webp";
-import businessHubShot from "@/assets/projects/business-hub.webp";
 import hisobimShot from "@/assets/projects/hisobim.webp";
 import sahnaStudioShot from "@/assets/projects/sahna-studio.webp";
 
@@ -27,37 +24,22 @@ export type Project = {
   /** Route on this site, for a project a visitor can open and operate here. */
   demo?: string;
   shot?: string | null;
+  /**
+   * True when `shot` is a drawn poster rather than a real screenshot. The
+   * home page shows posters in grey tones, so only real screens carry colour.
+   */
+  poster?: boolean;
 };
 
 export const PROJECTS: Project[] = [
   {
-    id: "zet",
-    index: "01",
-    title: "ZET",
-    category: "AI Operating System",
-    summary:
-      "Shaxsiy AI operatsion tizimi — bitta egaga tegishli, ommaviy SaaS emas.",
-    detail:
-      "An'anaviy AI savolga javob beradi. ZET buyruqni rejaga, rejani harakatga, harakatni tekshirilgan natijaga aylantiradi: Buyruq → Reja → Harakat → Tekshirish → Natija. To'rt bosqichli model strategiyasi (lokal → bepul → arzon → kuchli) va qattiq budjet chegaralari bilan.",
-    tech: [
-      "Python 3.12",
-      "FastAPI",
-      "PostgreSQL",
-      "pgvector",
-      "Redis",
-      "Multi-agent",
-    ],
-    bot: "zetassbot",
-    shot: zetShot,
-  },
-  {
     id: "sadiprime",
-    index: "02",
+    index: "01",
     title: "SADIPRIME",
     category: "AI SaaS / Education",
     summary: "O'quv markazlari uchun AI-quvvatli boshqaruv platformasi.",
     detail:
-      "Ko'p-tenantli CRM: o'qituvchilar, guruhlar, o'quvchilar, davomat, to'lov davrlari va obunalarni boshqaruvchi super-admin paneli. Ishlab turgan mahsulot — sadiprime-tizim.uz.",
+      "Ko'p-tenantli CRM: o'qituvchilar, guruhlar, o'quvchilar, davomat, to'lov davrlari va obunalarni boshqaruvchi super-admin paneli. Ishlab turgan mahsulot: sadiprime-tizim.uz.",
     tech: [
       "TanStack Start",
       "TypeScript",
@@ -70,98 +52,60 @@ export const PROJECTS: Project[] = [
     shot: sadiprimeShot,
   },
   {
-    id: "pari",
-    index: "03",
-    title: "PARI AI",
-    category: "AI Assistant / Telegram",
-    summary: "Next.js asosidagi shaxsiy AI assistant.",
-    detail:
-      "Chat, Telegram bot, knowledge base, SMM va biznes vositalari bitta tizimda. Bulutli LLM'lar bilan bir qatorda lokal model (Ollama) qo'llab-quvvatlanadi, shuning uchun maxfiy ma'lumot qurilmadan chiqmasligi mumkin.",
-    tech: [
-      "Next.js",
-      "TypeScript",
-      "Python",
-      "Telegram Bot API",
-      "Ollama",
-      "Railway",
-    ],
-    bot: "Pariaiuzbot",
-    shot: pariShot,
-  },
-  {
     id: "dli",
-    index: "04",
+    index: "02",
     title: "DLI",
     titleAlt: "SHOP",
     category: "E-Commerce",
     summary: "To'liq e-commerce platformasi va unga ulangan Telegram do'koni.",
     detail:
-      "Katalog, qidiruv, narx oralig'i va saralash filtrlari; JWT autentifikatsiya, ko'p tilli interfeys va admin dashboard. \"Look\" tizimi tayyor kiyim to'plamlarini bitta mahsulot sifatida ko'rsatadi — katalogda ham, Telegram mini-ilovasida ham.",
+      "Katalog, qidiruv, narx oralig'i va saralash filtrlari; JWT autentifikatsiya, ko'p tilli interfeys va admin dashboard. \"Look\" tizimi tayyor kiyim to'plamlarini bitta mahsulot sifatida ko'rsatadi: katalogda ham, Telegram mini-ilovasida ham.",
     tech: ["React", "FastAPI", "MongoDB", "Telegram Mini App", "JWT", "i18n"],
     bot: "Dli_shinebot",
     shot: dliShot,
   },
   {
-    id: "business-hub",
-    index: "05",
-    title: "BUSINESS",
-    titleAlt: "HUB",
-    category: "Bot + panel / Demo",
-    summary:
-      "Telegram bot va boshqaruv paneli bitta tizim sifatida — ochib, o'zingiz ishlatib ko'rasiz.",
-    detail:
-      "Xizmat ko'rsatuvchi bizneslar uchun tayyor asos: botda navbat olinadi, u shu zahoti paneldagi kalendar, mijozlar bazasi va xabarnomalarda paydo bo'ladi. Besh yo'nalish uchun sozlangan — salon, restoran, o'quv markazi, klinika, avtoservis. AI operator haqiqiy model bilan ishlaydi; savol serverdagi funksiyaga boradi, kalit brauzerga chiqmaydi.",
-    tech: [
-      "TanStack Start",
-      "TypeScript",
-      "Recharts",
-      "Supabase Edge Functions",
-      "Gemini",
-      "Telegram Bot API",
-    ],
-    demo: "/demo",
-    shot: businessHubShot,
-  },
-  {
     id: "hisobim",
-    index: "06",
+    index: "03",
     title: "HISOBIM",
-    category: "AI Moliya / Telegram",
+    category: "Moliya / Hisob-kitob",
     summary:
-      "O'zbekcha ovozli xabarni tushunadigan Telegram buxgalter va Mini App.",
+      "Telegram'dagi AI shaxsiy buxgalter: ovoz yoki matn bilan yozasiz, hisobni o'zi yuritadi.",
     detail:
-      "\"Bugun taksiga 25 ming, ovqatga 48 ming ketdi, mijozdan 900 ming oldim\" — bitta ovozli xabardan uchta alohida tranzaksiya ajraladi. AI faqat gapni strukturaga soladi: balans, sof foyda va valyuta hisobini backend bilan PostgreSQL o'zi sanaydi, shuning uchun raqamda model xatosi bo'lmaydi va so'm bilan dollar aralashmaydi. Qarz berish va qaytarishni yuritadi, \"haligi benzin 85 emas, 65 ming edi\" deganda oxirgi mos yozuvni tuzatadi — har o'zgarish audit jurnaliga tushadi. Mini App va o'rnatiladigan PWA dashboard, Markaziy bank kursi, push-bildirishnoma bilan.",
+      "\"Taksiga 25 ming, ovqatga 48 ming ketdi, mijozdan 900 ming oldim\": bitta xabardan uchta alohida tranzaksiya. AI faqat o'zbekcha nutqni tuzilmaga aylantiradi; balans, foyda va qarz qoldiqlari backend va PostgreSQL'da aniq matematika bilan hisoblanadi, UZS va USD hech qachon aralashmaydi. Qarzlar, tabiiy tilda tuzatish, audit jurnali, Markaziy bank kursi bilan Telegram Mini App va o'rnatiladigan PWA.",
     tech: [
       "TypeScript",
       "Hono",
       "grammY",
+      "React",
       "Supabase PostgreSQL",
-      "React + Vite",
-      "Whisper STT",
-      "Zod",
-      "Railway",
+      "Whisper",
+      "Telegram Mini App",
+      "PWA",
     ],
     bot: "Hisobimaibot",
     shot: hisobimShot,
+    poster: true,
   },
   {
     id: "sahna-studio",
-    index: "07",
+    index: "04",
     title: "SAHNA",
     titleAlt: "STUDIO",
-    category: "Chrome kengaytma / AI video",
+    category: "Studio / Kreativ loyiha",
     summary:
-      "Google Flow uchun yon panel — sahnalar bittalab emas, navbat bilan ketadi.",
+      "Google Flow uchun Chrome kengaytmasi: AI video promptlarini navbat bilan ishlatadigan studiya paneli.",
     detail:
-      "Flow'da har bir promptni qo'lda yuborib o'tirish o'rniga, ularni ro'yxatga yig'asiz yoki XLSX'dan import qilasiz va navbatni qo'yib yuborasiz: to'xtatish, davom ettirish, chiqmagan sahnani avtomatik qayta yuborish bor. Yonida prompt ustaxonasi, media galereya, tezkor montaj va ovoz bilan boshqaruv. AI uchun o'zingizning OpenAI, Gemini yoki OpenRouter kalitingiz ulanadi — promptlar qurilmada qoladi, oraliq server yo'q.",
+      "Brauzer yon panelida ishlaydi: promptlar ro'yxati navbatga qo'yiladi va Flow'da birma-bir bajariladi, tayyor media galereyaga yig'iladi va yuklab olinadi. AI yordamchi promptlarni yozib beradi: OpenAI, Gemini yoki OpenRouter kaliti bilan, ruxsat faqat kerak bo'lganda so'raladi. Ovozli boshqaruv, Excel'dan prompt import va video montaj bo'limi bor.",
     tech: [
-      "Chrome MV3",
-      "Side Panel API",
+      "Chrome Extension (MV3)",
       "JavaScript",
-      "Service Worker",
-      "Web Speech API",
+      "Side Panel API",
+      "OpenAI / Gemini / OpenRouter",
+      "Web Speech",
       "SheetJS",
     ],
     shot: sahnaStudioShot,
+    poster: true,
   },
 ];
