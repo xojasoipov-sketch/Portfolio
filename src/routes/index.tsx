@@ -1,15 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Nav } from "@/components/editorial/Nav";
-import { Daylight } from "@/components/editorial/Daylight";
-import { Hero } from "@/components/editorial/Hero";
-import { Intro } from "@/components/editorial/Intro";
-import { About } from "@/components/editorial/About";
-import { Skills } from "@/components/editorial/Skills";
-import { Services } from "@/components/editorial/Services";
-import { Projects } from "@/components/editorial/Projects";
+import { Header } from "@/components/home/Header";
+import { Hero } from "@/components/home/Hero";
+import { Manifest } from "@/components/home/Manifest";
+import { Process } from "@/components/home/Process";
+import { Services } from "@/components/home/Services";
+import { Work } from "@/components/home/Work";
+import { About } from "@/components/home/About";
+import { Contact } from "@/components/home/Contact";
+import { Footer } from "@/components/home/Footer";
 import { Testimonials } from "@/components/editorial/Testimonials";
-import { Contact } from "@/components/editorial/Contact";
-import { Footer } from "@/components/editorial/Footer";
 
 const TITLE = "Saidburxon Xojasoipov | Full-stack Developer & AI Builder";
 const DESCRIPTION =
@@ -30,20 +29,19 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  // The page is built like one of the owner's reels (uslub.md): hook on
+  // The page is built like one of the owner's reels (uslub.md): a hook on
   // the visitor's pain, trust (who, how, what), one night "turn" into real
-  // projects, then a single call to action. Paper background with a quiet
-  // dotted grid; only the projects scene goes to night.
+  // projects, then a single call to action. Paper, ink and one red accent;
+  // only the projects scene goes to night. Styles live in src/home.css.
   return (
-    <main className="ed-paper" style={{ overflowX: "clip" }}>
-      <Daylight />
-      <Nav />
+    <main className="hx">
+      <Header />
       <Hero />
-      <Intro />
-      <About />
-      <Skills />
+      <Manifest />
+      <Process />
       <Services />
-      <Projects />
+      <Work />
+      <About />
       {/* Renders only once real testimonials exist. */}
       <Testimonials />
       <Contact />

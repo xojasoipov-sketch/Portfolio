@@ -24,6 +24,11 @@ export type Project = {
   /** Route on this site, for a project a visitor can open and operate here. */
   demo?: string;
   shot?: string | null;
+  /**
+   * True when `shot` is a drawn poster rather than a real screenshot. The
+   * home page shows posters in grey tones, so only real screens carry colour.
+   */
+  poster?: boolean;
 };
 
 export const PROJECTS: Project[] = [
@@ -64,11 +69,23 @@ export const PROJECTS: Project[] = [
     index: "03",
     title: "HISOBIM",
     category: "Moliya / Hisob-kitob",
-    summary: "Shaxsiy hisob-kitob loyihasi.",
+    summary:
+      "Telegram'dagi AI shaxsiy buxgalter: ovoz yoki matn bilan yozasiz, hisobni o'zi yuritadi.",
     detail:
-      "Hisob-kitobni tartibli yuritish uchun ishlab chiqilgan loyiha. Batafsil tavsif va texnologiyalar muallif tomonidan tasdiqlanadi.",
-    tech: [],
+      "\"Taksiga 25 ming, ovqatga 48 ming ketdi, mijozdan 900 ming oldim\": bitta xabardan uchta alohida tranzaksiya. AI faqat o'zbekcha nutqni tuzilmaga aylantiradi; balans, foyda va qarz qoldiqlari backend va PostgreSQL'da aniq matematika bilan hisoblanadi, UZS va USD hech qachon aralashmaydi. Qarzlar, tabiiy tilda tuzatish, audit jurnali, Markaziy bank kursi bilan Telegram Mini App va o'rnatiladigan PWA.",
+    tech: [
+      "TypeScript",
+      "Hono",
+      "grammY",
+      "React",
+      "Supabase PostgreSQL",
+      "Whisper",
+      "Telegram Mini App",
+      "PWA",
+    ],
+    bot: "Hisobimaibot",
     shot: hisobimShot,
+    poster: true,
   },
   {
     id: "sahna-studio",
@@ -76,10 +93,19 @@ export const PROJECTS: Project[] = [
     title: "SAHNA",
     titleAlt: "STUDIO",
     category: "Studio / Kreativ loyiha",
-    summary: "Sahna va vizual kontent yaratish uchun studiya loyihasi.",
+    summary:
+      "Google Flow uchun Chrome kengaytmasi: AI video promptlarini navbat bilan ishlatadigan studiya paneli.",
     detail:
-      "Studiya loyihasi sifatida ishlab chiqilgan. Batafsil tavsif, texnologiyalar va havola muallif tomonidan tasdiqlanadi.",
-    tech: [],
+      "Brauzer yon panelida ishlaydi: promptlar ro'yxati navbatga qo'yiladi va Flow'da birma-bir bajariladi, tayyor media galereyaga yig'iladi va yuklab olinadi. AI yordamchi promptlarni yozib beradi: OpenAI, Gemini yoki OpenRouter kaliti bilan, ruxsat faqat kerak bo'lganda so'raladi. Ovozli boshqaruv, Excel'dan prompt import va video montaj bo'limi bor.",
+    tech: [
+      "Chrome Extension (MV3)",
+      "JavaScript",
+      "Side Panel API",
+      "OpenAI / Gemini / OpenRouter",
+      "Web Speech",
+      "SheetJS",
+    ],
     shot: sahnaStudioShot,
+    poster: true,
   },
 ];

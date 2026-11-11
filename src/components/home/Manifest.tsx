@@ -1,13 +1,13 @@
-import { Spoken } from "./Spoken";
+import { Said } from "./Said";
+import { Reveal } from "./Reveal";
 
 /** Trust, part one: who he is, in the owner's own framing (uslub.md, 1). */
-export function Intro() {
+export function Manifest() {
   return (
-    <section style={{ paddingBlock: "var(--ed-section)" }}>
-      <div className="ed-shell">
-        <Spoken
-          as="h2"
-          className="ed-say"
+    <section className="hx-section hx-manifest">
+      <div className="hx-shell">
+        <Said
+          className="hx-big"
           parts={[
             { text: "Kod yozuvchi emas.", tone: "intro" },
             { text: "Muammoni tahlil qilib,", tone: "key", br: true },
@@ -15,11 +15,9 @@ export function Intro() {
             { text: "quraman.", tone: "key" },
           ]}
         />
-        <Spoken
-          className="ed-say-note"
-          ink="#6b6863"
-          parts={[{ text: "Avval chuqur audit. Keyin aniq yechim." }]}
-        />
+        <Reveal as="p" className="hx-manifest-note">
+          Avval chuqur audit. Keyin aniq yechim.
+        </Reveal>
       </div>
     </section>
   );

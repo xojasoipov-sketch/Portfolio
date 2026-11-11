@@ -13,7 +13,8 @@ const VOLUME = 0.55;
 const FADE_MS = 700;
 
 /**
- * A turntable in the corner of every page. The record starts on its own when
+ * A small sound button in the corner of every page (it used to be drawn as
+ * a turntable; the behaviour below is unchanged). The track starts on its own when
  * a visitor arrives; anyone who would rather not hear it taps the deck once
  * and it lifts the arm for the rest of this visit. Nothing is remembered
  * across visits -- every fresh load, from anyone, including someone who
@@ -280,41 +281,19 @@ export function MusicToggle() {
       </audio>
       <button
         type="button"
-        className="ed-music-toggle"
+        className="hx-sound"
         data-playing={playing || undefined}
         onClick={toggle}
         aria-pressed={playing}
         aria-label={playing ? "Musiqani to'xtatish" : "Fon musiqasini yoqish"}
         title={playing ? "Musiqani to'xtatish" : "Fon musiqasini yoqish"}
       >
-        <span className="ed-music-deck" aria-hidden="true">
-          {/* Rings that ripple outward while the record plays -- the one cue
-              that reads even at a glance, from the far side of the page. */}
-          <span className="ed-music-pulse" />
-          <span className="ed-music-pulse" />
-
-          <span className="ed-music-disc">
-            <span className="ed-music-groove" />
-            <span className="ed-music-groove" />
-            <span className="ed-music-groove" />
-            {/* A rotationally symmetric disc looks identical at every angle,
-                so spinning it changed nothing on screen. This sheen is the
-                asymmetry that makes the rotation visible: a bright wedge
-                that sweeps past as the record turns. */}
-            <span className="ed-music-sheen" />
-            <span className="ed-music-label">
-              {/* Off-centre so it traces a visible circle, the way the paper
-                  label's print does on a real record. */}
-              <span className="ed-music-mark" />
-              <span className="ed-music-hole" />
-            </span>
-          </span>
-
-          {/* Tone arm: rests off the record, swings down onto it on play. */}
-          <span className="ed-music-arm">
-            <span className="ed-music-arm-head" />
-          </span>
-        </span>
+        {/* Four level bars: flat while silent, moving while the track
+            plays. Styled in src/home.css (.hx-sound). */}
+        <i aria-hidden="true" />
+        <i aria-hidden="true" />
+        <i aria-hidden="true" />
+        <i aria-hidden="true" />
       </button>
     </>
   );
