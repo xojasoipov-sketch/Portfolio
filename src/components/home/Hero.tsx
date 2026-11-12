@@ -8,25 +8,21 @@ import {
   useTransform,
 } from "framer-motion";
 import { Arrow } from "@/components/editorial/icons";
-import { Inbox } from "./Inbox";
 import { Magnetic } from "./Magnetic";
 import { AVATAR, FIGURE } from "./media";
 
 /**
  * The hook (uslub.md, 5.1): the visitor's three pains in plain ink, the
- * one promise, the one CTA, and next to them the owner and one object,
- * the inbox that sorts itself out.
+ * one promise, the one CTA, and next to them the owner himself.
  *
  * The first paint is the finished frame. The entrance is a short CSS
  * animation that needs no JavaScript (lines rise out of their own mask),
  * so the headline is legible even before hydration.
  *
- * On top of that the stage has depth: the disc, the figure and the card
- * sit on two planes that shift by a few pixels against each other, with
- * the mouse on a desktop and with scroll everywhere. The inbox card has its
- * own place under the copy (the dock) and never covers the portrait; it
- * floats slowly on its own (CSS). All of it is transform only and none of it
- * gates anything.
+ * On top of that the stage has depth: the disc and the figure sit on two
+ * planes that shift by a few pixels against each other, with the mouse on a
+ * desktop and with scroll everywhere. All of it is transform only and none
+ * of it gates anything.
  */
 export function Hero() {
   const reduce = useReducedMotion();
@@ -119,7 +115,7 @@ export function Hero() {
           >
             <Magnetic>
               <a href="#contact" className="hx-btn hx-btn-accent">
-                Bepul tahlil <Arrow size="0.95em" />
+                Bog'lanish <Arrow size="0.95em" />
               </a>
             </Magnetic>
             <a href="#work" className="hx-textlink">
@@ -161,13 +157,6 @@ export function Hero() {
               />
             </motion.div>
           </motion.div>
-        </div>
-
-        <div
-          className="hx-dock hx-in"
-          style={{ "--d": 7 } as React.CSSProperties}
-        >
-          <Inbox />
         </div>
       </div>
     </section>
