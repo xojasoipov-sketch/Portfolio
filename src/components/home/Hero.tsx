@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   motion,
   useMotionValue,
@@ -10,6 +10,43 @@ import {
 import { Arrow } from "@/components/editorial/icons";
 import { Magnetic } from "./Magnetic";
 import { AVATAR, FIGURE } from "./media";
+
+const ROLES = [
+  "SadiPrime Lab asoschisi",
+  "Full-stack dasturchi",
+  "AI-yechimlar mutaxassisi",
+] as const;
+
+/**
+ * The line under the name changes role every few seconds: the old one
+ * blurs and sinks away while the next one comes into focus. The widest
+ * role sizes the box (all three share one grid cell), so nothing around
+ * it ever shifts. The first role is what is rendered and read first;
+ * reduced motion leaves it alone.
+ */
+function RoleCycle() {
+  const reduce = useReducedMotion();
+  const [on, setOn] = useState(0);
+
+  useEffect(() => {
+    if (reduce) return;
+    const id = window.setInterval(
+      () => setOn((v) => (v + 1) % ROLES.length),
+      3400,
+    );
+    return () => window.clearInterval(id);
+  }, [reduce]);
+
+  return (
+    <span className="hx-eyebrow-sub hx-cycle">
+      {ROLES.map((r, i) => (
+        <span key={r} data-on={i === on || undefined} aria-hidden={i !== on}>
+          {r}
+        </span>
+      ))}
+    </span>
+  );
+}
 
 /**
  * The hook (uslub.md, 5.1): the visitor's three pains in plain ink, the
@@ -84,7 +121,7 @@ export function Hero() {
             />
             <span>
               Saidburxon Xojasoipov
-              <span className="hx-eyebrow-sub">SadiPrime Lab asoschisi</span>
+              <RoleCycle />
             </span>
           </p>
 
