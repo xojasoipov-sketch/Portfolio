@@ -6,7 +6,8 @@ import {
   useScroll,
   useTransform,
 } from "framer-motion";
-import { Reveal } from "./Reveal";
+import { Reveal, Rise } from "./Reveal";
+import { Odometer } from "./Odometer";
 
 /**
  * How the work goes, as one line that draws itself down the page while
@@ -63,12 +64,14 @@ export function Process() {
           <Reveal as="p" className="hx-label">
             Jarayon
           </Reveal>
-          <Reveal as="h2" className="hx-h2" i={1}>
-            Tartibsizlikdan <b>tizimgacha.</b>
-          </Reveal>
+          <Rise
+            className="hx-h2"
+            i={1}
+            parts={[{ t: "Tartibsizlikdan" }, { t: "tizimgacha.", b: true }]}
+          />
           <div className="hx-counter" aria-hidden="true">
-            <span className="hx-counter-now" key={reached}>
-              0{reached + 1}
+            <span className="hx-counter-now">
+              <Odometer value={`0${reached + 1}`} />
             </span>
             <span className="hx-counter-of">/ 0{STEPS.length}</span>
           </div>

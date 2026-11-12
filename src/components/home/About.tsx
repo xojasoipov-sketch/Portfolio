@@ -5,14 +5,14 @@ import {
   useScroll,
   useTransform,
 } from "framer-motion";
-import { Reveal } from "./Reveal";
+import { Reveal, Rise } from "./Reveal";
 import { CLOSEUP } from "./media";
 
 /**
  * Tools grouped by what they serve, so twelve names read at a glance
  * instead of as one long list.
  */
-const STACK: { title: string; items: string[] }[] = [
+export const STACK: { title: string; items: string[] }[] = [
   { title: "Frontend", items: ["React", "Next.js", "TypeScript"] },
   {
     title: "Backend va infratuzilma",
@@ -64,9 +64,11 @@ export function About() {
             <Reveal as="p" className="hx-label">
               Men haqimda
             </Reveal>
-            <Reveal as="h2" className="hx-h2" i={1}>
-              Men <b>kimman?</b>
-            </Reveal>
+            <Rise
+              className="hx-h2"
+              i={1}
+              parts={[{ t: "Men" }, { t: "kimman?", b: true }]}
+            />
             <Reveal as="p" className="hx-lead" i={2}>
               Men to'liq stack dasturchiman: frontend, backend va mobil. So'nggi
               yillarda asosiy yo'nalishim sun'iy intellekt bilan integratsiya
