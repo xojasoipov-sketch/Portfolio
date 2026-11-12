@@ -1,23 +1,12 @@
-import { useRef } from "react";
-import { Link } from "@tanstack/react-router";
-import {
-  motion,
-  useMotionValue,
-  useReducedMotion,
-  useScroll,
-  useSpring,
-  useTransform,
-} from "framer-motion";
-import { PROJECTS, type Project } from "@/data/projects";
-import { Arrow } from "@/components/editorial/icons";
 import { Reveal } from "./Reveal";
 import { Said } from "./Said";
+import { Orbit } from "./Orbit";
 
 /**
  * The one night scene (uslub.md: --night for the "burilish" only). After
- * the words, the proof: real, running projects. The section slides up over
- * the paper as a dark sheet with rounded shoulders, and each project's
- * screenshot settles into its frame as it comes up the screen.
+ * the words, the proof: real, running projects, turning around the owner
+ * on a ring. The section slides up over the paper as a dark sheet with
+ * rounded shoulders.
  */
 export function Work() {
   return (
@@ -39,118 +28,8 @@ export function Work() {
           />
         </div>
 
-        <ol className="hx-cases">
-          {PROJECTS.map((p) => (
-            <Case key={p.id} project={p} />
-          ))}
-        </ol>
+        <Orbit />
       </div>
     </section>
-  );
-}
-
-function Case({ project: p }: { project: Project }) {
-  const reduce = useReducedMotion();
-  const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end start"],
-  });
-  const prog = useTransform(scrollYProgress, (v) => v);
-  // Settles from a slight push-in to its exact size by mid-screen, so a
-  // screenshot is never cropped once the visitor is looking at it.
-  const scale = useTransform(prog, [0, 0.45], [1.08, 1]);
-
-  // Desktop only: the frame leans a couple of degrees towards the cursor.
-  const tx = useMotionValue(0);
-  const ty = useMotionValue(0);
-  const rotateY = useSpring(tx, { stiffness: 120, damping: 16, mass: 0.5 });
-  const rotateX = useSpring(ty, { stiffness: 120, damping: 16, mass: 0.5 });
-  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (reduce || e.pointerType !== "mouse") return;
-    const r = e.currentTarget.getBoundingClientRect();
-    tx.set(((e.clientX - r.left) / r.width - 0.5) * 5);
-    ty.set(((e.clientY - r.top) / r.height - 0.5) * -4);
-  };
-  const onPointerLeave = () => {
-    tx.set(0);
-    ty.set(0);
-  };
-
-  const name = [p.title, p.titleAlt].filter(Boolean).join(" ");
-
-  return (
-    <li className="hx-case">
-      <Reveal className="hx-case-shot">
-        <div
-          className="hx-case-tilt"
-          onPointerMove={onPointerMove}
-          onPointerLeave={onPointerLeave}
-        >
-          <motion.div
-            ref={ref}
-            className="hx-case-frame"
-            data-poster={p.poster || undefined}
-            style={reduce ? undefined : { rotateX, rotateY }}
-          >
-            {p.shot && (
-              <motion.img
-                src={p.shot}
-                alt={`${name} loyihasi ekrani`}
-                width={1400}
-                height={788}
-                loading="lazy"
-                decoding="async"
-                style={reduce ? undefined : { scale }}
-              />
-            )}
-          </motion.div>
-        </div>
-      </Reveal>
-
-      <Reveal className="hx-case-copy" i={1}>
-        <p className="hx-case-meta">
-          <span>{p.index}</span>
-          <span>{p.category}</span>
-        </p>
-        <h3 className="hx-case-title">{name}</h3>
-        <p className="hx-case-summary">{p.summary}</p>
-        <p className="hx-case-detail">{p.detail}</p>
-        {p.tech.length > 0 && (
-          <ul className="hx-tags">
-            {p.tech.map((t) => (
-              <li key={t}>{t}</li>
-            ))}
-          </ul>
-        )}
-        <div className="hx-case-links">
-          {p.site && (
-            <a
-              href={p.site}
-              target="_blank"
-              rel="noreferrer"
-              className="hx-pill"
-            >
-              Saytni ochish <Arrow direction="upRight" size="0.9em" />
-            </a>
-          )}
-          {p.bot && (
-            <a
-              href={`https://t.me/${p.bot}`}
-              target="_blank"
-              rel="noreferrer"
-              className="hx-pill"
-            >
-              Telegram bot <Arrow direction="upRight" size="0.9em" />
-            </a>
-          )}
-          {p.demo && (
-            <Link to="/demo" className="hx-pill">
-              Demoni ochish <Arrow size="0.9em" />
-            </Link>
-          )}
-        </div>
-      </Reveal>
-    </li>
   );
 }

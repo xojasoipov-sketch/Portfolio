@@ -158,7 +158,7 @@ export function Contact() {
               </li>
               <li>
                 <span>Telefon</span>
-                <a href="tel:+998910666777">+998 91 066 67 77</a>
+                <a href="tel:+998885556604">+998 88 555 66 04</a>
               </li>
             </ul>
           </Reveal>
