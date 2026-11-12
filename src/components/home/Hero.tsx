@@ -22,9 +22,10 @@ import { AVATAR, FIGURE } from "./media";
  * so the headline is legible even before hydration.
  *
  * On top of that the stage has depth: the disc, the figure and the card
- * sit on three planes that shift by a few pixels against each other, with
- * the mouse on a desktop and with scroll everywhere. The card also floats
- * slowly on its own (CSS). All of it is transform only and none of it
+ * sit on two planes that shift by a few pixels against each other, with
+ * the mouse on a desktop and with scroll everywhere. The inbox card has its
+ * own place under the copy (the dock) and never covers the portrait; it
+ * floats slowly on its own (CSS). All of it is transform only and none of it
  * gates anything.
  */
 export function Hero() {
@@ -38,7 +39,6 @@ export function Hero() {
   const figureY = useTransform(p, [0, 1], ["0%", "-7%"]);
   const figureScale = useTransform(p, [0, 1], [1, 1.04]);
   const discY = useTransform(p, [0, 1], ["0%", "12%"]);
-  const cardY = useTransform(p, [0, 1], [0, -70]);
 
   // Pointer position over the hero, -1..1 on both axes, eased by a spring
   // so the planes glide instead of tracking the cursor rigidly.
@@ -51,8 +51,6 @@ export function Hero() {
   const figPY = useTransform(sy, (v) => v * 6);
   const discX = useTransform(sx, (v) => v * -16);
   const discPY = useTransform(sy, (v) => v * -10);
-  const cardX = useTransform(sx, (v) => v * 22);
-  const cardPY = useTransform(sy, (v) => v * 14);
 
   const onPointerMove = (e: React.PointerEvent<HTMLElement>) => {
     if (reduce || e.pointerType !== "mouse") return;
@@ -83,8 +81,8 @@ export function Hero() {
             <img
               src={AVATAR}
               alt=""
-              width={36}
-              height={36}
+              width={44}
+              height={44}
               className="hx-avatar"
               decoding="async"
             />
@@ -163,17 +161,13 @@ export function Hero() {
               />
             </motion.div>
           </motion.div>
-          <motion.div
-            className="hx-plane"
-            style={reduce ? undefined : { x: cardX, y: cardPY }}
-          >
-            <motion.div
-              className="hx-inbox-pos"
-              style={reduce ? undefined : { y: cardY }}
-            >
-              <Inbox />
-            </motion.div>
-          </motion.div>
+        </div>
+
+        <div
+          className="hx-dock hx-in"
+          style={{ "--d": 7 } as React.CSSProperties}
+        >
+          <Inbox />
         </div>
       </div>
     </section>

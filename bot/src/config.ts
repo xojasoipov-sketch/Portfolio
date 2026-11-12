@@ -96,7 +96,7 @@ const EnvSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(20, "SUPABASE_SERVICE_ROLE_KEY yo'q"),
 
   CONTACT_EMAIL: z.string().default("xojasoipov@gmail.com"),
-  CONTACT_PHONE: z.string().default("+998910666777"),
+  CONTACT_PHONE: z.string().default("+998885556604"),
   CONTACT_TELEGRAM: z.string().default("@xojasoipov"),
   CONTACT_INSTAGRAM: z.string().default(""),
 
