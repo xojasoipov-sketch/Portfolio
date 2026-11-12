@@ -84,9 +84,8 @@ export const PROJECTS: Project[] = [
       "PWA",
     ],
     bot: "Hisobimaibot",
-    site: "https://hisobim.uz",
+    site: "https://hisobimai.uz",
     shot: hisobimShot,
-    poster: true,
   },
   {
     id: "sahna-studio",
