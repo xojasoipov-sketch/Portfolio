@@ -8,25 +8,22 @@ import { FIGURE } from "./media";
 
 /**
  * The projects carousel: the work turns around Saidburxon like a ring.
+ * This is the original ring, restored as it was (same geometry, same card,
+ * same physics and detent tick), now sitting in the night scene with the
+ * site's type and one accent.
  *
- * Drag it, flick it, press the arrows or the dots, or just scroll: the
- * ring also turns with the page. One card faces the visitor at a time and
- * its name, summary and links are written out under the ring, so the 3D
- * never carries the reading on its own.
- *
- * Physics (kept from the earlier ring, which was the part worth keeping):
- * a slow base drift, plus an extra angular velocity from drag and scroll
- * that decays exponentially back to rest. Arrows and dots set an exact
- * target angle instead, so one press is always exactly one card. The frame
- * loop writes a single CSS variable; everything else is static CSS, so a
- * frame costs one style write and no React render.
+ * Drag it, flick it, press the arrows or the dots. A slow base drift plus an
+ * extra angular velocity from the drag that decays exponentially back to
+ * rest; arrows and dots set an exact target angle, so one press is exactly
+ * one card. The frame loop writes one CSS variable; everything else is static
+ * CSS, so a frame costs one style write and no React render.
  */
 
 const COUNT = PROJECTS.length;
 /** Degrees between neighbours. */
 const STEP = 360 / COUNT;
 /** Idle drift, degrees per second. */
-const BASE_SPEED = 7;
+const BASE_SPEED = 9;
 /** How long a deliberate action keeps the idle drift off. */
 const HOLD_MS = 6000;
 /** Half-life, in seconds, of the leftover velocity from a flick. */
@@ -34,8 +31,6 @@ const HALF_LIFE = 0.9;
 const DECAY = Math.log(2) / HALF_LIFE;
 /** Degrees per second imparted by one pixel per second of drag. */
 const DRAG_GAIN = 0.5;
-/** Degrees of ring turn per pixel of page scroll. */
-const SCROLL_GAIN = 0.1;
 /** Movement beyond this many pixels is a drag, not a click. */
 const DRAG_PX = 6;
 /** Ceiling on detent ticks per second. */
@@ -171,16 +166,11 @@ export function Orbit() {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
     let raf = 0;
     let last = performance.now();
-    let lastY = window.scrollY;
 
     const frame = (now: number) => {
       const dt = Math.min((now - last) / 1000, 0.05);
       last = now;
       const paused = zoomed !== null || focused || !onScreen || document.hidden;
-
-      const y = window.scrollY;
-      const dy = y - lastY;
-      lastY = y;
 
       const snapping = snapTo.current !== null;
       if (snapping) {
@@ -194,10 +184,6 @@ export function Orbit() {
       } else if (!paused) {
         if (now > holdUntil.current && !reduced.matches) {
           spin.current += BASE_SPEED * dt;
-        }
-        // Scrolling the page turns the ring a little as well.
-        if (!reduced.matches && onScreen && Math.abs(dy) < 400) {
-          spin.current += dy * SCROLL_GAIN;
         }
         spin.current += extra.current * dt;
         extra.current *= Math.exp(-DECAY * dt);
@@ -383,11 +369,11 @@ export function Orbit() {
     setZoomed(i);
   };
 
-  const current = PROJECTS[front] ?? PROJECTS[0]!;
   const open = zoomed === null ? null : PROJECTS[zoomed];
 
   return (
     <div className="hx-orbit" ref={sectionRef}>
+      <p className="hx-orbit-hint">Sudrab aylantiring, kartani bosib oching</p>
       <div className="hx-orbit-stage" ref={stageRef}>
         <div
           className="hx-orbit-world"
@@ -397,7 +383,6 @@ export function Orbit() {
           onBlurCapture={() => setFocused(false)}
           style={{ touchAction: "pan-y" }}
         >
-          <div className="hx-orbit-disc" aria-hidden="true" />
           <div className="hx-orbit-figure" aria-hidden="true">
             <img src={FIGURE} alt="" loading="lazy" decoding="async" />
           </div>
@@ -410,6 +395,7 @@ export function Orbit() {
                 slotsRef.current[i] = node;
               }}
               className="hx-orbit-slot"
+              data-front={i === front || undefined}
               style={
                 {
                   "--hx-slot": `${i * STEP}deg`,
@@ -421,11 +407,14 @@ export function Orbit() {
               aria-label={`${nameOf(p)}: batafsil ochish`}
             >
               <span className="hx-orbit-face">
-                <span
-                  className="hx-orbit-shot"
-                  data-poster={p.poster || undefined}
-                >
-                  {p.shot && (
+                <span className="hx-orbit-index">{p.index}</span>
+                <h3 className="hx-orbit-title">{nameOf(p)}</h3>
+                <span className="hx-orbit-cat">{p.category}</span>
+                {p.shot && (
+                  <span
+                    className="hx-orbit-shot"
+                    data-poster={p.poster || undefined}
+                  >
                     <img
                       src={p.shot}
                       alt=""
@@ -435,11 +424,10 @@ export function Orbit() {
                       decoding="async"
                       draggable={false}
                     />
-                  )}
-                </span>
-                <span className="hx-orbit-meta">
-                  <span className="hx-orbit-no">{p.index}</span>
-                  <span className="hx-orbit-name">{nameOf(p)}</span>
+                  </span>
+                )}
+                <span className="hx-orbit-open">
+                  Ochish <Arrow direction="upRight" size="0.8em" />
                 </span>
               </span>
               <span className="hx-orbit-back" aria-hidden="true">
@@ -450,23 +438,7 @@ export function Orbit() {
         </div>
       </div>
 
-      <div className="hx-orbit-caption" aria-live="polite">
-        <div className="hx-orbit-now" key={current.id}>
-          <p className="hx-orbit-cat">
-            <span>{current.index}</span>
-            <span>{current.category}</span>
-          </p>
-          <h3 className="hx-orbit-title">{nameOf(current)}</h3>
-          <p className="hx-orbit-sum">{current.summary}</p>
-          <button
-            type="button"
-            className="hx-pill"
-            onClick={() => setZoomed(frontRef.current)}
-          >
-            Batafsil <Arrow size="0.9em" />
-          </button>
-        </div>
-
+      <div className="hx-orbit-under">
         <div className="hx-orbit-controls">
           <button
             type="button"
@@ -498,7 +470,6 @@ export function Orbit() {
             <Arrow size="0.95em" />
           </button>
         </div>
-        <p className="hx-orbit-hint">Sudrab aylantiring yoki kartani bosing</p>
       </div>
 
       {open &&

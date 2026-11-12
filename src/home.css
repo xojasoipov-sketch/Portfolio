@@ -617,171 +617,6 @@ html[data-telegram="true"] .hx-hero {
   pointer-events: none;
 }
 
-/* The inbox card (Inbox.tsx) has its own place under the copy and never
-   sits on the portrait. */
-.hx-dock {
-  container-type: inline-size;
-  margin-top: 0.5rem;
-  padding-bottom: 3rem;
-}
-.hx-dock .hx-inbox {
-  max-width: 28rem;
-}
-/* The inbox card (Inbox.tsx). */
-/* Each layer of the stage sits in a full-size plane, so the pointer
-   parallax moves the plane and the layer keeps its own placement. */
-.hx-plane {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-.hx-inbox {
-  /* A very slow float, 8px, the way objects rest in the guide. */
-  animation: hx-float 7s ease-in-out infinite alternate;
-  border: 1px solid var(--line);
-  border-radius: 1rem;
-  background: #fff;
-  box-shadow:
-    0 1px 1px rgba(17, 17, 17, 0.03),
-    0 18px 40px -18px rgba(17, 17, 17, 0.22);
-  overflow: hidden;
-}
-.hx-inbox-head {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 0.8rem;
-  border-bottom: 1px solid var(--line);
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-.hx-inbox-count {
-  font-variant-numeric: tabular-nums;
-  font-weight: 500;
-  color: var(--ink2);
-}
-.hx-maket {
-  margin-left: auto;
-  padding: 0.15rem 0.4rem;
-  border: 1px solid var(--line);
-  border-radius: 0.3rem;
-  font-size: 0.5625rem;
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--ink2);
-}
-.hx-inbox-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.hx-msg {
-  display: flex;
-  gap: 0.6rem;
-  padding: 0.6rem 0.8rem;
-}
-.hx-msg + .hx-msg {
-  border-top: 1px solid var(--line);
-}
-.hx-msg-mark {
-  position: relative;
-  flex: none;
-  width: 1.125rem;
-  height: 1.125rem;
-  margin-top: 0.05rem;
-  border-radius: 50%;
-  background: transparent;
-  transition: background-color 0.35s var(--ease);
-}
-.hx-msg-dot {
-  position: absolute;
-  inset: 0.34rem;
-  border-radius: 50%;
-  background: var(--accent);
-  transition:
-    transform 0.3s var(--ease),
-    opacity 0.3s var(--ease);
-}
-.hx-msg-check {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  fill: none;
-  stroke: #fff;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.hx-msg-check path {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  transition: stroke-dashoffset 0.45s var(--ease) 0.12s;
-}
-.hx-msg[data-done] .hx-msg-mark {
-  background: var(--ink);
-}
-.hx-msg[data-done] .hx-msg-dot {
-  transform: scale(0);
-  opacity: 0;
-}
-.hx-msg[data-done] .hx-msg-check path {
-  stroke-dashoffset: 0;
-}
-.hx-msg-text {
-  display: grid;
-  min-width: 0;
-  gap: 0.1rem;
-}
-.hx-msg-meta {
-  font-size: 0.6875rem;
-  color: var(--ink2);
-}
-.hx-msg-body {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  line-height: 1.25;
-  letter-spacing: -0.01em;
-}
-.hx-msg-status {
-  display: grid;
-  font-size: 0.6875rem;
-}
-.hx-msg-status > span {
-  grid-area: 1 / 1;
-  transition:
-    opacity 0.35s var(--ease),
-    transform 0.35s var(--ease);
-}
-.hx-msg-wait {
-  color: var(--ink2);
-}
-.hx-msg-ok {
-  font-weight: 600;
-  opacity: 0;
-  transform: translateY(5px);
-}
-.hx-msg[data-done] .hx-msg-wait {
-  opacity: 0;
-  transform: translateY(-5px);
-}
-.hx-msg[data-done] .hx-msg-ok {
-  opacity: 1;
-  transform: none;
-}
-.hx-inbox-bar {
-  height: 2px;
-  background: var(--line);
-}
-.hx-inbox-bar span {
-  display: block;
-  height: 100%;
-  background: var(--ink);
-  transform-origin: left;
-  transition: transform 0.6s var(--ease);
-}
-
 @media (min-width: 900px) {
   .hx-hero {
     padding-top: calc(var(--hx-top) + var(--bar));
@@ -789,25 +624,11 @@ html[data-telegram="true"] .hx-hero {
   .hx-hero-grid {
     display: grid;
     grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
-    grid-template-rows: 1fr auto;
     column-gap: clamp(1.5rem, 3vw, 3rem);
   }
-  /* Left column: the copy with the inbox card under it. The portrait
-     takes the whole right column, so nothing ever covers it. */
   .hx-hero-copy {
-    grid-column: 1;
-    grid-row: 1;
-    align-self: end;
-    padding-block: 2rem 2.25rem;
-  }
-  .hx-dock {
-    grid-column: 1;
-    grid-row: 2;
-    margin-top: 0;
-    padding-bottom: 3rem;
-  }
-  .hx-dock .hx-inbox {
-    max-width: 40rem;
+    align-self: center;
+    padding-block: 2rem 4rem;
   }
   .hx-eyebrow {
     margin-bottom: 2rem;
@@ -822,8 +643,6 @@ html[data-telegram="true"] .hx-hero {
     margin-top: 2.25rem;
   }
   .hx-stage {
-    grid-column: 2;
-    grid-row: 1 / span 2;
     height: auto;
     min-height: 34rem;
     margin-top: 0;
@@ -843,40 +662,6 @@ html[data-telegram="true"] .hx-hero {
     right: 4%;
     bottom: -10%;
     height: min(106%, 56rem);
-  }
-  .hx-inbox {
-    border-radius: 1.15rem;
-  }
-  .hx-inbox-head {
-    padding: 0.8rem 1.05rem;
-    font-size: 0.8125rem;
-  }
-  .hx-msg {
-    gap: 0.75rem;
-    padding: 0.8rem 1.05rem;
-  }
-  .hx-msg-meta,
-  .hx-msg-status {
-    font-size: 0.75rem;
-  }
-  .hx-msg-body {
-    font-size: 0.9375rem;
-  }
-  .hx-maket {
-    font-size: 0.625rem;
-  }
-}
-
-/* The dock is wide enough for the card to lie down: three messages side
-   by side instead of stacked, so it stays short. */
-@container (min-width: 34rem) {
-  .hx-inbox-list {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  .hx-msg + .hx-msg {
-    border-top: 0;
-    border-left: 1px solid var(--line);
   }
 }
 
@@ -1212,16 +997,24 @@ html[data-telegram="true"] .hx-hero {
   display: none;
 }
 
-/* ---------- work: the ring ---------- */
+/* ---------- work: the ring ----------
+   The original ring, restored as it was: the cards turn around a standing
+   portrait on a circle seen slightly from above. Tokens follow the page
+   (night sheet, paper text, one red accent for the card number). */
 
 .hx-orbit {
-  margin-top: clamp(2rem, 5vw, 4rem);
+  margin-top: clamp(1.5rem, 4vw, 3rem);
+}
+.hx-orbit-hint {
+  margin: 0 0 clamp(0.5rem, 2vw, 1.25rem);
+  font-size: 0.8125rem;
+  color: rgba(246, 245, 242, 0.5);
 }
 .hx-orbit-stage {
   position: relative;
-  perspective: 2200px;
-  perspective-origin: 50% 50%;
-  height: clamp(30rem, 78vw, 41rem);
+  perspective: 2400px;
+  perspective-origin: 50% 52%;
+  height: clamp(430px, 62vh, 700px);
   margin-inline: calc(var(--gutter) * -1);
 }
 .hx-orbit-world {
@@ -1230,44 +1023,35 @@ html[data-telegram="true"] .hx-hero {
   transform-style: preserve-3d;
   cursor: grab;
   --hx-spin: 0deg;
-  --hx-r: clamp(15rem, 31vw, 27rem);
-  --hx-tilt: -11deg;
+  --hx-r: clamp(230px, 30vw, 430px);
+  /* Negative tilts the far half of the ring up the screen, as looking
+     down on a turntable does. */
+  --hx-tilt: -13deg;
   -webkit-user-select: none;
   user-select: none;
 }
 .hx-orbit-world:active {
   cursor: grabbing;
 }
-/* Flat stone disc behind the figure, the same shape as in the hero. */
-.hx-orbit-disc {
-  position: absolute;
-  left: 50%;
-  top: 46%;
-  width: clamp(15rem, 34vw, 27rem);
-  aspect-ratio: 1;
-  transform: translate(-50%, -50%) translateZ(-1px);
-  border-radius: 50%;
-  background: #1b1b1d;
-}
 .hx-orbit-figure {
   position: absolute;
   left: 50%;
   bottom: 0;
-  width: clamp(15rem, 28vw, 24rem);
+  width: clamp(250px, 29vw, 400px);
   transform: translateX(-50%) translateZ(0);
+  transform-style: preserve-3d;
   pointer-events: none;
 }
 .hx-orbit-figure img {
   display: block;
   width: 100%;
   height: auto;
-  filter: grayscale(1) contrast(1.05) brightness(1.12);
-  -webkit-mask-image: linear-gradient(#000 82%, transparent 100%);
-  mask-image: linear-gradient(#000 82%, transparent 100%);
+  filter: grayscale(1);
 }
 
-/* The deck opens: the radius is one registered number, so the ring blooms
-   out of the centre without the per-frame spin ever being transitioned. */
+/* The deck opens the first time the ring is on screen: the radius is one
+   registered number, so the cards bloom out of the centre without the
+   per-frame spin ever being transitioned. */
 @property --hx-enter {
   syntax: "<number>";
   inherits: false;
@@ -1278,14 +1062,14 @@ html[data-telegram="true"] .hx-hero {
 }
 .hx-orbit-world[data-entry="done"] .hx-orbit-slot {
   --hx-enter: 1;
-  transition: --hx-enter 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: --hx-enter 1.15s cubic-bezier(0.22, 1, 0.36, 1);
   transition-delay: var(--hx-delay, 0ms);
 }
 .hx-orbit-slot {
   position: absolute;
-  top: 46%;
+  top: 52%;
   left: 50%;
-  width: clamp(11.5rem, 21vw, 18.5rem);
+  width: clamp(180px, 21vw, 290px);
   margin: 0;
   padding: 0;
   border: 0;
@@ -1295,28 +1079,104 @@ html[data-telegram="true"] .hx-hero {
   text-align: left;
   cursor: pointer;
   transform-style: preserve-3d;
+  /* The card stays tangent to the ring, so it turns as it travels. */
   transform: translate(-50%, -50%) rotateX(var(--hx-tilt))
     rotateY(calc(var(--hx-slot) + var(--hx-spin)))
     translateZ(calc(var(--hx-r) * var(--hx-enter, 1)));
 }
 .hx-orbit-face {
+  position: relative;
   display: block;
-  padding: 0.55rem 0.55rem 0.8rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 1rem;
-  background: #151516;
-  box-shadow: 0 24px 40px -28px #000;
+  padding: 1rem 1rem 1.15rem;
+  border: 1px solid rgba(245, 242, 239, 0.16);
+  border-radius: 1.25rem;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(245, 242, 239, 0.07),
+      rgba(245, 242, 239, 0.02)
+    ),
+    rgba(5, 5, 5, 0.55);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.9);
   backface-visibility: hidden;
   transition:
-    border-color 0.35s var(--ease),
-    transform 0.45s var(--ease);
+    border-color 0.4s var(--ease),
+    transform 0.45s var(--ease),
+    background 0.45s var(--ease);
+}
+/* The card facing the visitor is the one that reads as chosen. */
+.hx-orbit-slot[data-front] .hx-orbit-face {
+  border-color: rgba(245, 242, 239, 0.34);
+}
+/* The reverse is nearly blank: a card behind the figure reads as turned
+   away, not as a second card competing for the eye. */
+.hx-orbit-back {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(245, 242, 239, 0.1);
+  border-radius: 1.25rem;
+  background: radial-gradient(
+    circle at 50% 30%,
+    rgba(245, 242, 239, 0.05),
+    rgba(5, 5, 5, 0.6) 70%
+  );
+  transform: rotateY(180deg);
+  backface-visibility: hidden;
+  pointer-events: none;
+  font-size: 2rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: rgba(245, 242, 239, 0.35);
+}
+/* Hover lifts the card along the ring's own axis, so it steps out of the
+   orbit instead of sliding across it. */
+.hx-orbit-slot:hover .hx-orbit-face,
+.hx-orbit-slot:focus-visible .hx-orbit-face {
+  border-color: var(--accent);
+  transform: translateZ(18px);
+}
+.hx-orbit-slot:focus-visible {
+  outline: 2px solid var(--paper);
+  outline-offset: 4px;
+  border-radius: 1.4rem;
+}
+.hx-orbit-index {
+  display: block;
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  color: rgba(245, 242, 239, 0.55);
+  transition: color 0.4s var(--ease);
+}
+.hx-orbit-slot[data-front] .hx-orbit-index,
+.hx-orbit-slot:hover .hx-orbit-index {
+  color: #e2525c;
+}
+.hx-orbit-title {
+  margin: 0.5rem 0 0.15rem;
+  font-size: clamp(0.95rem, 1.5vw, 1.2rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+.hx-orbit-cat {
+  display: block;
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(245, 242, 239, 0.55);
 }
 .hx-orbit-shot {
   display: block;
-  aspect-ratio: 1400 / 788;
+  margin-top: 0.85rem;
+  aspect-ratio: 16 / 10;
   overflow: hidden;
-  border-radius: 0.65rem;
-  background: #1d1d1f;
+  border-radius: 0.75rem;
+  background: rgba(245, 242, 239, 0.05);
 }
 .hx-orbit-shot img {
   display: block;
@@ -1328,98 +1188,26 @@ html[data-telegram="true"] .hx-hero {
 .hx-orbit-shot[data-poster] img {
   filter: grayscale(1) contrast(1.05) brightness(0.92);
 }
-.hx-orbit-meta {
+.hx-orbit-open {
   display: flex;
-  align-items: baseline;
-  gap: 0.6rem;
-  padding: 0.7rem 0.3rem 0;
-}
-.hx-orbit-no {
-  font-size: 0.7rem;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.12em;
-  color: rgba(246, 245, 242, 0.5);
-}
-.hx-orbit-name {
-  font-size: clamp(0.9rem, 1.3vw, 1.05rem);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-}
-/* The reverse is nearly blank: a card behind the figure reads as turned
-   away, not as a second card competing for the eye. */
-.hx-orbit-back {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 1rem;
-  background: #111112;
-  transform: rotateY(180deg);
-  backface-visibility: hidden;
-  font-size: 1.6rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: rgba(246, 245, 242, 0.28);
-  pointer-events: none;
-}
-.hx-orbit-slot:hover .hx-orbit-face,
-.hx-orbit-slot:focus-visible .hx-orbit-face {
-  border-color: rgba(246, 245, 242, 0.5);
-  transform: translateZ(16px);
-}
-.hx-orbit-slot:focus-visible {
-  outline: 2px solid var(--paper);
-  outline-offset: 4px;
-  border-radius: 1.2rem;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.85rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
 }
 
-/* What the ring is showing, written out. */
-.hx-orbit-caption {
-  display: grid;
-  justify-items: center;
-  gap: 1.75rem;
-  margin-top: clamp(0.5rem, 2vw, 1.5rem);
-  text-align: center;
-}
-.hx-orbit-now {
-  display: grid;
-  justify-items: center;
-  gap: 0.85rem;
-  max-width: 38rem;
-  min-height: 12.5rem;
-  animation: hx-rise 0.6s var(--ease) both;
-}
-.hx-orbit-cat {
+/* Arrows and position dots. */
+.hx-orbit-under {
   display: flex;
-  gap: 1rem;
-  margin: 0;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgba(246, 245, 242, 0.55);
-}
-.hx-orbit-title {
-  margin: 0;
-  font-size: clamp(2rem, 5.2vw, 3.5rem);
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: -0.05em;
-}
-.hx-orbit-sum {
-  margin: 0;
-  font-size: clamp(1.05rem, 1.5vw, 1.25rem);
-  line-height: 1.4;
-  letter-spacing: -0.015em;
-  color: rgba(246, 245, 242, 0.78);
-  text-wrap: balance;
+  justify-content: center;
+  margin-top: clamp(1rem, 3vw, 2rem);
 }
 .hx-orbit-controls {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 1.25rem;
 }
 .hx-orbit-arrow {
   display: grid;
@@ -1465,13 +1253,37 @@ html[data-telegram="true"] .hx-hero {
     transform 0.3s var(--ease);
 }
 .hx-orbit-dot[data-active]::before {
-  background: var(--paper);
-  transform: scale(1.6);
+  background: #e2525c;
+  transform: scale(1.5);
 }
-.hx-orbit-hint {
-  margin: -0.5rem 0 0;
-  font-size: 0.8125rem;
-  color: rgba(246, 245, 242, 0.45);
+
+@media (max-width: 760px) {
+  .hx-orbit-stage {
+    perspective: 1100px;
+    height: clamp(460px, 68vh, 560px);
+  }
+  .hx-orbit-world {
+    --hx-r: 200px;
+    --hx-tilt: -10deg;
+  }
+  /* Raised off the stage bottom so his head sits above the ring. */
+  .hx-orbit-figure {
+    width: 210px;
+    bottom: 18%;
+  }
+  .hx-orbit-slot {
+    top: 62%;
+    width: 155px;
+  }
+  .hx-orbit-title {
+    font-size: 0.9rem;
+  }
+  .hx-orbit-shot {
+    margin-top: 0.6rem;
+  }
+  .hx-orbit-back {
+    font-size: 1.5rem;
+  }
 }
 
 /* The opened project. */
@@ -1482,7 +1294,7 @@ html[data-telegram="true"] .hx-hero {
   display: grid;
   place-items: center;
   padding: clamp(0.75rem, 3vw, 2rem);
-  background: rgba(8, 8, 9, 0.94);
+  background: rgba(0, 0, 0, 0.86);
   animation: hx-fade 0.3s var(--ease) both;
 }
 .hx-zoom-panel {
@@ -1493,7 +1305,7 @@ html[data-telegram="true"] .hx-hero {
   padding: clamp(1.1rem, 3vw, 2.25rem);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 1.5rem;
-  background: var(--night);
+  background: linear-gradient(180deg, #0c0c0e, #050505);
   color: var(--paper);
   animation: hx-rise 0.45s var(--ease) both;
 }
@@ -1544,12 +1356,6 @@ html[data-telegram="true"] .hx-hero {
   font-weight: 800;
   line-height: 1;
   letter-spacing: -0.05em;
-}
-
-@media (min-width: 900px) {
-  .hx-orbit-stage {
-    margin-inline: 0;
-  }
 }
 
 /* ---------- about ---------- */
@@ -1895,14 +1701,6 @@ html[data-telegram="true"] .hx-hero {
   to {
     opacity: 1;
     transform: none;
-  }
-}
-@keyframes hx-float {
-  from {
-    transform: translateY(0);
-  }
-  to {
-    transform: translateY(-8px);
   }
 }
 @keyframes hx-fade {
