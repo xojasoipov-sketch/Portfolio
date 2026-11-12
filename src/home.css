@@ -1689,8 +1689,8 @@ html[data-telegram="true"] .hx-hero {
    quiet grey of a word not yet spoken to ink, left to right. The base
    state is the finished one (ink), so with no animation it is just ink. */
 .hx-h1 b {
-  background: linear-gradient(90deg, var(--ink) 50%, var(--mute) 50%) 0 0 /
-    200% 100%;
+  background: linear-gradient(90deg, var(--ink) 50%, var(--mute) 50%) 0 0 / 200%
+    100%;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
