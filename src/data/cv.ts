@@ -99,7 +99,7 @@ export const CV_PROJECTS: CvProject[] = [
       "React",
       "Whisper STT",
     ],
-    link: "hisobim.uz",
+    link: "hisobimai.uz",
   },
   {
     title: "Sahna Studio",
