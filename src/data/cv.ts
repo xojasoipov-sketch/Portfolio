@@ -115,6 +115,14 @@ export const CV_PROJECTS: CvProject[] = [
     ],
     // Not on the Chrome Web Store yet, so there is no address to print.
   },
+  {
+    title: "JARVIS",
+    category: "AI operatsion tizim",
+    summary:
+      "Kompyuterda ishlaydigan, ovoz bilan boshqariladigan shaxsiy AI: dasturlar va brauzerni boshqaradi, Telegram va Obsidian bilan ishlaydi. 12 ta agent; muhim amallardan oldin tasdiq so'raydi va har amalni jurnalga yozadi.",
+    tech: ["Python", "JavaScript", "Chrome Extension", "Telegram", "Obsidian"],
+    link: "myjarvis.uz",
+  },
 ];
 
 export interface CvSkillGroup {

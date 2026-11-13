@@ -1,6 +1,7 @@
 import sadiprimeShot from "@/assets/projects/sadiprime.webp";
 import dliShot from "@/assets/projects/dli.webp";
 import hisobimShot from "@/assets/projects/hisobim.webp";
+import jarvisShot from "@/assets/projects/jarvis.webp";
 import sahnaStudioShot from "@/assets/projects/sahna-studio.webp";
 
 /**
@@ -107,5 +108,18 @@ export const PROJECTS: Project[] = [
     ],
     shot: sahnaStudioShot,
     poster: true,
+  },
+  {
+    id: "jarvis",
+    index: "05",
+    title: "JARVIS",
+    category: "AI / Operatsion tizim",
+    summary:
+      "Chatbot emas, shaxsiy AI operatsion tizimi: ovoz bilan boshqariladi, kompyuterda ishlaydi, o'zbek tilida.",
+    detail:
+      "Kompyuterda ishlaydigan, ovoz bilan boshqariladigan AI: gapirasiz, u tushunib ovoz bilan javob beradi, dasturlarni ekran orqali ochadi, brauzerda formalarni to'ldiradi va Telegram xabarlarini yuritadi. 12 ta agent (strateg, hisobchi, kotib, kontentchi, muhandis va boshqalar), Obsidian bilan ikkinchi miya, ertalabki brifing va 3D globusda jonli kuzatuv. Yuborish, o'chirish va to'lov kabi muhim amallardan oldin har safar tasdiq so'raydi, har amal jurnalga yoziladi. O'zbek, rus va ingliz tillarida; Windows, macOS va Linux'da.",
+    tech: ["Python", "JavaScript", "Chrome Extension", "Telegram", "Obsidian"],
+    site: "https://myjarvis.uz",
+    shot: jarvisShot,
   },
 ];
