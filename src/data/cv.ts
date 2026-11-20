@@ -58,8 +58,7 @@ export const CV_HIGHLIGHTS: CvHighlight[] = [
   },
   {
     label: "Telegram ekotizimi",
-    detail:
-      "Bot, Mini App, webhook arxitektura, to'lov va CRM integratsiyasi.",
+    detail: "Bot, Mini App, webhook arxitektura, to'lov va CRM integratsiyasi.",
   },
   {
     label: "Tezlik",
@@ -84,7 +83,15 @@ export const CV_PROJECTS: CvProject[] = [
     category: "AI buxgalter",
     summary:
       "Ovozli xabardan tranzaksiya ajratadigan Telegram bot va Mini App. AI faqat gapni strukturaga soladi, balans va valyutani backend sanaydi. Docker, CI (36 test fayli, npm audit), 26 ta migratsiya, RLS.",
-    tech: ["TypeScript", "Hono", "grammY", "PostgreSQL", "React", "Whisper", "Docker"],
+    tech: [
+      "TypeScript",
+      "Hono",
+      "grammY",
+      "PostgreSQL",
+      "React",
+      "Whisper",
+      "Docker",
+    ],
     link: "hisobimai.uz",
     href: "https://hisobimai.uz",
   },
@@ -93,7 +100,13 @@ export const CV_PROJECTS: CvProject[] = [
     category: "Ta'lim SaaS",
     summary:
       "O'quv markazlari uchun ko'p-tenantli platforma: o'qituvchilar, guruhlar, davomat, to'lov davrlari va obunalar.",
-    tech: ["TanStack Start", "TypeScript", "PostgreSQL", "Cloudflare", "Docker"],
+    tech: [
+      "TanStack Start",
+      "TypeScript",
+      "PostgreSQL",
+      "Cloudflare",
+      "Docker",
+    ],
     link: "sadiprime-tizim.uz",
     href: "https://sadiprime-tizim.uz",
   },
@@ -142,12 +155,25 @@ export interface CvSkillGroup {
 export const CV_SKILLS: CvSkillGroup[] = [
   { group: "Til", items: ["Python", "TypeScript", "JavaScript"] },
   { group: "Backend", items: ["Node.js", "Hono", "FastAPI", "REST API"] },
-  { group: "Frontend", items: ["React", "Next.js", "TanStack Start", "Tailwind CSS"] },
+  {
+    group: "Frontend",
+    items: ["React", "Next.js", "TanStack Start", "Tailwind CSS"],
+  },
   { group: "Ma'lumot", items: ["PostgreSQL", "Supabase", "MongoDB", "Redis"] },
-  { group: "AI", items: ["OpenAI", "Gemini", "Whisper", "Ollama", "AI agentlar"] },
+  {
+    group: "AI",
+    items: ["OpenAI", "Gemini", "Whisper", "Ollama", "AI agentlar"],
+  },
   {
     group: "Infra",
-    items: ["Docker", "GitHub Actions", "Linux", "Railway", "Cloudflare", "Hetzner"],
+    items: [
+      "Docker",
+      "GitHub Actions",
+      "Linux",
+      "Railway",
+      "Cloudflare",
+      "Hetzner",
+    ],
   },
   { group: "Telegram", items: ["Bot API", "Mini App", "grammY", "Webhook"] },
 ];

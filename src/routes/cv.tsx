@@ -76,7 +76,11 @@ function Cv() {
                       {p.title} <span className="cvx-cat">— {p.category}</span>
                       {p.link &&
                         (p.href ? (
-                          <a href={p.href} target="_blank" rel="noopener noreferrer">
+                          <a
+                            href={p.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
                             {p.link}
                           </a>
                         ) : (
@@ -118,7 +122,9 @@ function Cv() {
                 </li>
                 <li>
                   <span aria-hidden="true">✈</span>
-                  <a href={`https://t.me/${CV_PROFILE.telegram.replace(/^@/, "")}`}>
+                  <a
+                    href={`https://t.me/${CV_PROFILE.telegram.replace(/^@/, "")}`}
+                  >
                     t.me/{CV_PROFILE.telegram.replace(/^@/, "")}
                   </a>
                 </li>
