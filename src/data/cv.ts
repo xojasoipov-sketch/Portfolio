@@ -1,28 +1,32 @@
 /**
- * CV content.
+ * CV content for /cv and the downloadable PDF (public/Saidburxon-Xojasoipov-CV.pdf).
  *
- * Every fact here traces back to something already published on this site or
- * in the bot's approved knowledge base (src/data/projects.ts,
- * bot/src/ai/knowledgeData.ts). Nothing is invented: there is deliberately no
- * fabricated employment history, no invented dates, and no "N years of
- * experience" claim, because none of that is on record anywhere. A
- * project-led CV is the honest shape for a freelance developer, and it is
- * also the shape a client actually reads.
+ * Every fact here traces back to shipped work: the projects on this site,
+ * the bot's approved knowledge base (bot/src/ai/knowledgeData.ts) and the
+ * source of those projects (Docker image, CI pipeline, migrations, RLS,
+ * auth). Nothing is invented: no employment history, no dates, no "N years
+ * of experience", because none of that is on record anywhere.
+ *
+ * No code-hosting address on purpose: that URL carries the owner's account
+ * name, which the bot is instructed never to reveal (bot/src/ai/systemPrompt.ts).
+ * Restore a `site` field once a neutral domain exists.
  */
 
 export const CV_PROFILE = {
   name: "Saidburxon Xojasoipov",
-  title: "Full-stack Developer & AI Solutions Developer",
+  firstName: "Saidburxon",
+  lastName: "Xojasoipov",
+  title: "Full-stack dasturchi · AI integratsiya",
   location: "Toshkent, O'zbekiston",
   email: "xojasoipov@gmail.com",
   telegram: "@xojasoipov",
-  // No web address on purpose. The only host this site currently has is the
-  // code-hosting URL, which carries the owner's account name -- that name is
-  // closed information the bot is explicitly instructed never to reveal
-  // (bot/src/ai/systemPrompt.ts), so printing it on the CV would be the site
-  // leaking what the bot guards. Restore a `site` field once a neutral domain exists.
-  summary:
-    "To'liq stack dasturchi — frontend, backend va mobil. Asosiy yo'nalish: sun'iy intellekt bilan integratsiya qilingan tizimlar — AI mijozlarga xizmat botlari, ko'p-provayderli AI infratuzilma, avtomatlashtirilgan SMM tizimlari va CRM'lar. Ishning yadrosi — avval chuqur audit, keyin aniq yechim.",
+  phone: "+998 88 555 66 04",
+  phoneHref: "+998885556604",
+  about: [
+    "G'oyadan ishlab turgan mahsulotgacha bo'lgan yo'lni yolg'iz bosib o'taman: arxitektura, backend, frontend, ma'lumotlar bazasi, deploy va AI.",
+    "LLM'ni biznesga xavfsiz ulayman: model gapni tushunadi, pul va hisob-kitobni esa aniq backend sanaydi.",
+    "Muammoni avval tahlil qilaman, keyin tizim quraman.",
+  ],
 } as const;
 
 export interface CvHighlight {
@@ -30,27 +34,37 @@ export interface CvHighlight {
   detail: string;
 }
 
-/** What differentiates the work — mirrors the site's DIFFERENTIATORS. */
+/** Strengths, each backed by shipped code. */
 export const CV_HIGHLIGHTS: CvHighlight[] = [
   {
-    label: "To'liq qamrov",
+    label: "Mahsulotni boshidan oxirigacha quraman",
     detail:
-      "Sayt, mobil ilova, Telegram bot/mini-app, AI integratsiya va CRM — bitta qo'ldan, izchil arxitektura bilan.",
+      "Ishlab turgan mahsulotlar: ta'lim SaaS, AI buxgalter, e-commerce, AI agent tizimi va Chrome kengaytma.",
   },
   {
-    label: "Tezkor yetkazib berish",
+    label: "AI'ni real biznesga ulayman",
     detail:
-      "AI-quvvatli ishlab chiqish jarayoni tufayli birinchi ishlaydigan natija odatda 3–7 kun ichida ko'rinadi.",
+      "OpenAI va Gemini routing, o'zbekcha nutqni tanish (Whisper), sxema bilan tekshirilgan javoblar.",
   },
   {
-    label: "Audit-birinchi yondashuv",
+    label: "Production intizomi",
     detail:
-      "Pul sarflashdan oldin nima va nega buzilganini ko'rsatadi, keyingina yechim taklif qiladi.",
+      "Docker, CI/CD, avtomatik testlar, versiyalangan migratsiyalar. Kod ishlab turgan holda yetkaziladi.",
   },
   {
-    label: "Xavfsizlik va brend nazorati",
+    label: "Xavfsizlikni o'ylab yozaman",
     detail:
-      "Klon botlar, eskirgan kanallar va domen xavflarini aniqlash — ishning ajralmas qismi.",
+      "PostgreSQL RLS, JWT, HMAC tekshiruvi, sirlarni himoyalash, audit jurnali.",
+  },
+  {
+    label: "Telegram ekotizimi",
+    detail:
+      "Bot, Mini App, webhook arxitektura, to'lov va CRM integratsiyasi.",
+  },
+  {
+    label: "Tezlik",
+    detail:
+      "AI yordamidagi ishlab chiqish: birinchi ishlaydigan natija 3–7 kunda.",
   },
 ];
 
@@ -60,69 +74,64 @@ export interface CvProject {
   summary: string;
   tech: string[];
   link?: string;
+  href?: string;
 }
 
 /** Selected work — the same projects the site shows, condensed. */
 export const CV_PROJECTS: CvProject[] = [
   {
-    title: "SadiPrime",
-    category: "AI SaaS / Education",
-    summary:
-      "O'quv markazlari uchun ko'p-tenantli boshqaruv platformasi: o'qituvchilar, guruhlar, davomat, to'lov davrlari va obunalar. Ishlab turgan mahsulot.",
-    tech: [
-      "TanStack Start",
-      "TypeScript",
-      "PostgreSQL",
-      "Cloudflare",
-      "Docker",
-    ],
-    link: "sadiprime-tizim.uz",
-  },
-  {
-    title: "DLI Shop",
-    category: "E-Commerce",
-    summary:
-      "To'liq e-commerce platformasi va unga ulangan Telegram do'koni: katalog, filtrlar, JWT autentifikatsiya, ko'p tilli interfeys va admin dashboard.",
-    tech: ["React", "FastAPI", "MongoDB", "Telegram Mini App", "JWT", "i18n"],
-    link: "t.me/Dli_shinebot",
-  },
-  {
     title: "Hisobim",
-    category: "AI Moliya / Telegram",
+    category: "AI buxgalter",
     summary:
-      "O'zbekcha ovozli xabardan tranzaksiyalarni ajratib oluvchi Telegram buxgalter va Mini App. AI faqat gapni strukturaga soladi; balans, foyda va valyuta hisobini backend bilan PostgreSQL deterministik sanaydi. Qarzlar, tabiiy tilda tuzatish va audit jurnali bilan.",
-    tech: [
-      "TypeScript",
-      "Hono",
-      "grammY",
-      "Supabase PostgreSQL",
-      "React",
-      "Whisper STT",
-    ],
+      "Ovozli xabardan tranzaksiya ajratadigan Telegram bot va Mini App. AI faqat gapni strukturaga soladi, balans va valyutani backend sanaydi. Docker, CI (36 test fayli, npm audit), 26 ta migratsiya, RLS.",
+    tech: ["TypeScript", "Hono", "grammY", "PostgreSQL", "React", "Whisper", "Docker"],
     link: "hisobimai.uz",
+    href: "https://hisobimai.uz",
   },
   {
-    title: "Sahna Studio",
-    category: "Chrome kengaytma / AI video",
+    title: "SadiPrime",
+    category: "Ta'lim SaaS",
     summary:
-      "Google Flow uchun yon panel: promptlarni navbatga qo'yib ishlatish, XLSX'dan import, chiqmagan sahnani avtomatik qayta yuborish, prompt ustaxonasi va ovoz bilan boshqaruv. Kalit va promptlar foydalanuvchi qurilmasida qoladi.",
-    tech: [
-      "Chrome MV3",
-      "Side Panel API",
-      "JavaScript",
-      "Service Worker",
-      "Web Speech API",
-    ],
-    // Not on the Chrome Web Store yet, so there is no address to print.
+      "O'quv markazlari uchun ko'p-tenantli platforma: o'qituvchilar, guruhlar, davomat, to'lov davrlari va obunalar.",
+    tech: ["TanStack Start", "TypeScript", "PostgreSQL", "Cloudflare", "Docker"],
+    link: "sadiprime-tizim.uz",
+    href: "https://sadiprime-tizim.uz",
   },
   {
     title: "JARVIS",
     category: "AI operatsion tizim",
     summary:
-      "Kompyuterda ishlaydigan, ovoz bilan boshqariladigan shaxsiy AI: dasturlar va brauzerni boshqaradi, Telegram va Obsidian bilan ishlaydi. 12 ta agent; muhim amallardan oldin tasdiq so'raydi va har amalni jurnalga yozadi.",
-    tech: ["Python", "JavaScript", "Chrome Extension", "Telegram", "Obsidian"],
+      "Ovoz bilan boshqariladigan 12 agentli shaxsiy AI. Muhim amallardan oldin tasdiq so'raydi va har amalni jurnalga yozadi.",
+    tech: ["Python", "JavaScript", "Chrome Extension", "Telegram"],
     link: "myjarvis.uz",
+    href: "https://myjarvis.uz",
   },
+  {
+    title: "DLI Shop",
+    category: "E-commerce",
+    summary:
+      "E-commerce platforma va Telegram do'kon: katalog, filtrlar, JWT autentifikatsiya, ko'p tilli interfeys, admin panel.",
+    tech: ["React", "FastAPI", "MongoDB", "Telegram Mini App"],
+    link: "t.me/Dli_shinebot",
+    href: "https://t.me/Dli_shinebot",
+  },
+  {
+    title: "Sahna Studio",
+    category: "Chrome kengaytma",
+    summary:
+      "Google Flow uchun yon panel: promptlar navbati, XLSX import, avtomatik qayta yuborish, ovoz bilan boshqaruv. Kalitlar foydalanuvchi qurilmasida qoladi.",
+    tech: ["Chrome MV3", "Service Worker", "JavaScript", "Web Speech API"],
+  },
+];
+
+/** Headline skills, shown as chips. */
+export const CV_CHIPS: string[] = [
+  "AI integratsiya",
+  "Backend",
+  "Frontend",
+  "CI/CD",
+  "Docker",
+  "Xavfsizlik",
 ];
 
 export interface CvSkillGroup {
@@ -131,43 +140,14 @@ export interface CvSkillGroup {
 }
 
 export const CV_SKILLS: CvSkillGroup[] = [
+  { group: "Til", items: ["Python", "TypeScript", "JavaScript"] },
+  { group: "Backend", items: ["Node.js", "Hono", "FastAPI", "REST API"] },
+  { group: "Frontend", items: ["React", "Next.js", "TanStack Start", "Tailwind CSS"] },
+  { group: "Ma'lumot", items: ["PostgreSQL", "Supabase", "MongoDB", "Redis"] },
+  { group: "AI", items: ["OpenAI", "Gemini", "Whisper", "Ollama", "AI agentlar"] },
   {
-    group: "Frontend",
-    items: ["React", "Next.js", "TanStack Start", "TypeScript", "Tailwind CSS"],
+    group: "Infra",
+    items: ["Docker", "GitHub Actions", "Linux", "Railway", "Cloudflare", "Hetzner"],
   },
-  {
-    group: "Backend",
-    items: ["Node.js", "Python", "FastAPI", "Hono", "REST API"],
-  },
-  {
-    group: "Ma'lumotlar bazasi",
-    items: ["PostgreSQL", "Supabase", "MongoDB", "Redis", "pgvector"],
-  },
-  {
-    group: "AI",
-    items: [
-      "LLM API integratsiya",
-      "AI agentlar",
-      "Multi-provider routing",
-      "Ollama",
-    ],
-  },
-  {
-    group: "Infratuzilma",
-    items: ["Docker", "Cloudflare Workers", "Vercel", "Railway", "Hetzner"],
-  },
-  {
-    group: "Telegram",
-    items: ["Bot API", "Mini App", "Webhook arxitektura", "grammY"],
-  },
-];
-
-/** Service directions offered — matches /xizmatlar. */
-export const CV_SERVICES: string[] = [
-  "Audit va strategiya",
-  "Veb va marketplace",
-  "Mobil va Telegram bot ekotizimi",
-  "AI integratsiyasi",
-  "CRM va ichki tizimlar",
-  "Doimiy texnik hamkorlik",
+  { group: "Telegram", items: ["Bot API", "Mini App", "grammY", "Webhook"] },
 ];
